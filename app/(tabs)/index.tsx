@@ -168,28 +168,34 @@ export default function HomeScreen() {
         <View style={styles.bottomSpacing} />
       </ScrollView>
 
-      {/* Botón Random mejorado */}
-      <TouchableOpacity
-        style={styles.randomButton}
-        onPress={handleRandomPlan}
-        testID="random-plan-button"
-      >
-        <LinearGradient
-          colors={[Colors.light.primary, '#00B894']}
-          style={styles.randomButtonGradient}
+      {/* Floating Action Buttons */}
+      <View style={styles.floatingButtons}>
+        {/* AI Assistant Button */}
+        <TouchableOpacity
+          style={styles.aiButton}
+          onPress={() => router.push('/ai-assistant')}
+          testID="ai-assistant-button"
         >
-          <Shuffle size={20} color={Colors.light.black} />
-          <Text style={styles.randomButtonText}>Parche Random</Text>
-        </LinearGradient>
-      </TouchableOpacity>
-
-      {/* Botón de ubicación */}
-      <TouchableOpacity
-        style={styles.locationButton}
-        onPress={() => router.push('/map')}
-      >
-        <MapPin size={20} color={Colors.light.primary} />
-      </TouchableOpacity>
+          <Text style={styles.aiButtonIcon}>🤖</Text>
+        </TouchableOpacity>
+        
+        {/* Random Parche Button - Minimalist */}
+        <TouchableOpacity
+          style={styles.randomButtonMinimal}
+          onPress={handleRandomPlan}
+          testID="random-plan-button"
+        >
+          <Shuffle size={18} color={Colors.light.primary} />
+        </TouchableOpacity>
+        
+        {/* Location Button */}
+        <TouchableOpacity
+          style={styles.locationButton}
+          onPress={() => router.push('/map')}
+        >
+          <MapPin size={18} color={Colors.light.primary} />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -278,46 +284,58 @@ const styles = StyleSheet.create({
   bottomSpacing: {
     height: 20,
   },
-  randomButton: {
+  floatingButtons: {
     position: "absolute",
-    bottom: 80,
-    left: 20,
-    right: 80,
-    borderRadius: 25,
-    shadowColor: Colors.light.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  randomButtonGradient: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 16,
-    borderRadius: 25,
-  },
-  randomButtonText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: Colors.light.black,
-    marginLeft: 8,
-  },
-  locationButton: {
-    position: "absolute",
-    bottom: 80,
+    bottom: 100,
     right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    alignItems: "center",
+    gap: 12,
+  },
+  aiButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: Colors.light.card,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: Colors.light.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  aiButtonIcon: {
+    fontSize: 20,
+  },
+  randomButtonMinimal: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.light.card,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: Colors.light.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  locationButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.light.card,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: Colors.light.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
     borderWidth: 1,
     borderColor: Colors.light.border,
   },
