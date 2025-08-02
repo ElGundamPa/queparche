@@ -1,0 +1,58 @@
+import { Comment } from "@/types/user";
+
+export const mockComments: Comment[] = [
+  {
+    id: "1",
+    userId: "2",
+    userName: "María González",
+    userAvatar: "https://images.unsplash.com/photo-1494790108755-2616b332c1c2?q=80&w=1000",
+    shortId: "1",
+    content: "¡Qué lugar tan hermoso! Definitivamente tengo que ir",
+    createdAt: "2025-07-15T11:00:00Z",
+  },
+  {
+    id: "2",
+    userId: "3",
+    userName: "Carlos Rodríguez",
+    userAvatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=1000",
+    shortId: "1",
+    content: "El aire puro de Arví es increíble 🌿",
+    createdAt: "2025-07-15T11:30:00Z",
+  },
+  {
+    id: "3",
+    userId: "1",
+    userName: "Juan Pérez",
+    userAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1000",
+    shortId: "2",
+    content: "María, eres la mejor guía de Comuna 13! 🎨",
+    createdAt: "2025-07-16T14:30:00Z",
+  },
+  {
+    id: "4",
+    userId: "3",
+    userName: "Carlos Rodríguez",
+    userAvatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=1000",
+    shortId: "2",
+    content: "La transformación de este lugar es inspiradora",
+    createdAt: "2025-07-16T15:00:00Z",
+  },
+  {
+    id: "5",
+    userId: "1",
+    userName: "Juan Pérez",
+    userAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1000",
+    shortId: "3",
+    content: "¡Se me hace agua la boca! ¿Cuál restaurante recomiendas?",
+    createdAt: "2025-07-17T19:00:00Z",
+  },
+  {
+    id: "6",
+    userId: "2",
+    userName: "María González",
+    userAvatar: "https://images.unsplash.com/photo-1494790108755-2616b332c1c2?q=80&w=1000",
+    shortId: "3",
+    content: "La bandeja paisa de El Poblado es la mejor! 🍽️",
+    createdAt: "2025-07-17T19:30:00Z",
+  },
+];
