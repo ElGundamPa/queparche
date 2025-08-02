@@ -10,6 +10,7 @@ import {
   Platform,
   Alert,
 } from "react-native";
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Stack } from "expo-router";
@@ -34,7 +35,7 @@ export default function AIAssistantScreen() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
-      content: `¡Hola ${user?.name?.split(' ')[0] || 'Parcero'}! 👋 Soy tu asistente de IA para encontrar el parche perfecto en Medellín. ¿Qué tipo de plan estás buscando hoy?`,
+      content: `¡Hola ${user?.name?.split(' ')[0] || 'amigo'}! 👋 Soy tu asistente de IA para encontrar el plan perfecto en Medellín. ¿Qué tipo de experiencia estás buscando hoy?`,
       isUser: false,
       timestamp: new Date(),
     },
@@ -60,7 +61,7 @@ export default function AIAssistantScreen() {
       ).join('\n');
 
       const systemPrompt = `Eres un asistente de IA especializado en recomendar planes y lugares en Medellín, Colombia. 
-Tu nombre es "Parche AI" y hablas de manera amigable y local (usando expresiones paisas como "parcero", "qué más", etc.).
+Tu nombre es "Parche AI" y hablas de manera amigable pero profesional.
 
 Planes disponibles actualmente:
 ${availablePlans}
@@ -70,7 +71,7 @@ Categorías disponibles: ${Array.from(new Set(plans.map(p => p.category))).join(
 Usuario actual: ${user?.name || 'Usuario'}
 Categoría seleccionada: ${selectedCategory || 'Ninguna'}
 
-Responde de manera conversacional, recomienda planes específicos basándote en lo que el usuario pide, y mantén un tono amigable y local de Medellín.`;
+Responde de manera conversacional, recomienda planes específicos basándote en lo que el usuario pide. Mantén un tono amigable y útil, mencionando Medellín cuando sea relevante pero evita usar demasiado slang regional.`;
 
       const response = await fetch('https://toolkit.rork.com/text/llm/', {
         method: 'POST',
@@ -93,7 +94,7 @@ Responde de manera conversacional, recomienda planes específicos basándote en 
       return data.completion || 'Lo siento, no pude procesar tu solicitud en este momento.';
     } catch (error) {
       console.error('AI Response Error:', error);
-      return 'Disculpa parcero, tengo problemas técnicos. ¿Podrías intentar de nuevo?';
+      return 'Disculpa, tengo problemas técnicos en este momento. ¿Podrías intentar de nuevo?';
     }
   };
 
@@ -162,10 +163,7 @@ Responde de manera conversacional, recomienda planes específicos basándote en 
   );
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
+    <View style={styles.container}>
       <Stack.Screen 
         options={{
           title: "Asistente IA",
@@ -182,21 +180,31 @@ Responde de manera conversacional, recomienda planes específicos basándote en 
         <Text style={styles.headerSubtitle}>Tu asistente para encontrar planes en Medellín</Text>
       </View>
 
-      <FlatList
-        ref={flatListRef}
-        data={messages}
-        renderItem={renderMessage}
-        keyExtractor={(item) => item.id}
-        style={styles.messagesList}
-        contentContainerStyle={styles.messagesContainer}
-        showsVerticalScrollIndicator={false}
-      />
+      <KeyboardAwareScrollView
+        style={styles.flex}
+        contentContainerStyle={styles.flex}
+        enableOnAndroid={true}
+        enableAutomaticScroll={Platform.OS === 'ios'}
+        extraScrollHeight={20}
+        keyboardShouldPersistTaps="handled"
+      >
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          renderItem={renderMessage}
+          keyExtractor={(item) => item.id}
+          style={styles.messagesList}
+          contentContainerStyle={styles.messagesContainer}
+          showsVerticalScrollIndicator={false}
+          scrollEnabled={false}
+        />
 
-      {isLoading && (
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Parche AI está escribiendo...</Text>
-        </View>
-      )}
+        {isLoading && (
+          <View style={styles.loadingContainer}>
+            <Text style={styles.loadingText}>Parche AI está escribiendo...</Text>
+          </View>
+        )}
+      </KeyboardAwareScrollView>
 
       <View style={styles.inputContainer}>
         <TextInput
@@ -220,7 +228,7 @@ Responde de manera conversacional, recomienda planes específicos basándote en 
           <Send size={20} color={Colors.light.background} />
         </TouchableOpacity>
       </View>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -228,6 +236,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.light.background,
+  },
+  flex: {
+    flex: 1,
   },
   header: {
     alignItems: 'center',

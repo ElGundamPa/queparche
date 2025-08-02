@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { memo } from "react";
 import {
   StyleSheet,
   Text,
@@ -21,7 +21,7 @@ interface PlanCardProps {
 
 const { width } = Dimensions.get("window");
 
-export default function PlanCard({ plan, horizontal = true }: PlanCardProps) {
+const PlanCard = memo(function PlanCard({ plan, horizontal = true }: PlanCardProps) {
   const router = useRouter();
 
   const handlePress = () => {
@@ -149,7 +149,9 @@ export default function PlanCard({ plan, horizontal = true }: PlanCardProps) {
       </View>
     </TouchableOpacity>
   );
-}
+});
+
+export default PlanCard;
 
 const styles = StyleSheet.create({
   horizontalCard: {

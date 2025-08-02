@@ -1,25 +1,111 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import createContextHook from "@nkzw/create-context-hook";
 
 import { Plan, Short, Event } from "@/types/plan";
 import { trpc } from "@/lib/trpc";
 import { mockEvents } from "@/mocks/events";
 
+const CACHE_KEYS = {
+  PLANS: 'cached_plans',
+  SHORTS: 'cached_shorts',
+  LAST_SYNC: 'last_sync_timestamp'
+};
+
 export const [PlansProvider, usePlansStore] = createContextHook(() => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [events] = useState<Event[]>(mockEvents);
+  const [cachedPlans, setCachedPlans] = useState<Plan[]>([]);
+  const [cachedShorts, setCachedShorts] = useState<Short[]>([]);
   const queryClient = useQueryClient();
 
+  // Load cached data on mount
+  useEffect(() => {
+    loadCachedData();
+  }, []);
+
+  const loadCachedData = async () => {
+    try {
+      const [plansData, shortsData] = await Promise.all([
+        AsyncStorage.getItem(CACHE_KEYS.PLANS),
+        AsyncStorage.getItem(CACHE_KEYS.SHORTS)
+      ]);
+      
+      if (plansData) {
+        setCachedPlans(JSON.parse(plansData));
+      }
+      if (shortsData) {
+        setCachedShorts(JSON.parse(shortsData));
+      }
+    } catch (error) {
+      console.error('Error loading cached data:', error);
+    }
+  };
+
+  const saveCachedData = async (plans: Plan[], shorts: Short[]) => {
+    try {
+      await Promise.all([
+        AsyncStorage.setItem(CACHE_KEYS.PLANS, JSON.stringify(plans)),
+        AsyncStorage.setItem(CACHE_KEYS.SHORTS, JSON.stringify(shorts)),
+        AsyncStorage.setItem(CACHE_KEYS.LAST_SYNC, Date.now().toString())
+      ]);
+    } catch (error) {
+      console.error('Error saving cached data:', error);
+    }
+  };
+
   // Fetch plans from backend
-  const plansQuery = trpc.plans.getAll.useQuery();
+  const plansQuery = trpc.plans.getAll.useQuery(undefined, {
+    onSuccess: (data) => {
+      setCachedPlans(data);
+      saveCachedData(data, cachedShorts);
+    }
+  });
   
   // Fetch shorts from backend
-  const shortsQuery = trpc.shorts.getAll.useQuery();
+  const shortsQuery = trpc.shorts.getAll.useQuery(undefined, {
+    onSuccess: (data) => {
+      setCachedShorts(data);
+      saveCachedData(cachedPlans, data);
+    }
+  });
 
-  // Create plan mutation
+  // Create plan mutation with optimistic updates
   const createPlanMutation = trpc.plans.create.useMutation({
-    onSuccess: () => {
+    onMutate: async (newPlan) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: [["plans", "getAll"]] });
+      
+      // Snapshot previous value
+      const previousPlans = queryClient.getQueryData([["plans", "getAll"]]);
+      
+      // Optimistically update cache
+      const optimisticPlan: Plan = {
+        id: `temp-${Date.now()}`,
+        ...newPlan,
+        currentPeople: 1,
+        likes: 0,
+        favorites: 0,
+        rating: 0,
+        reviewCount: 0,
+        createdAt: new Date().toISOString(),
+      };
+      
+      const updatedPlans = [...cachedPlans, optimisticPlan];
+      setCachedPlans(updatedPlans);
+      queryClient.setQueryData([["plans", "getAll"]], updatedPlans);
+      
+      return { previousPlans };
+    },
+    onError: (err, newPlan, context) => {
+      // Rollback on error
+      if (context?.previousPlans) {
+        queryClient.setQueryData([["plans", "getAll"]], context.previousPlans);
+        setCachedPlans(context.previousPlans as Plan[]);
+      }
+    },
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: [["plans", "getAll"]] });
     },
   });
@@ -31,15 +117,64 @@ export const [PlansProvider, usePlansStore] = createContextHook(() => {
     },
   });
 
-  // Like plan mutation
+  // Like plan mutation with optimistic updates
   const likePlanMutation = trpc.plans.like.useMutation({
+    onMutate: async ({ planId }) => {
+      await queryClient.cancelQueries({ queryKey: [["plans", "getAll"]] });
+      
+      const previousPlans = queryClient.getQueryData([["plans", "getAll"]]);
+      
+      // Optimistically update likes
+      const updatedPlans = cachedPlans.map(plan => 
+        plan.id === planId 
+          ? { ...plan, likes: plan.likes + 1 }
+          : plan
+      );
+      
+      setCachedPlans(updatedPlans);
+      queryClient.setQueryData([["plans", "getAll"]], updatedPlans);
+      
+      return { previousPlans };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousPlans) {
+        queryClient.setQueryData([["plans", "getAll"]], context.previousPlans);
+        setCachedPlans(context.previousPlans as Plan[]);
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [["plans", "getAll"]] });
     },
   });
 
-  // Create short mutation
+  // Create short mutation with optimistic updates
   const createShortMutation = trpc.shorts.create.useMutation({
+    onMutate: async (newShort) => {
+      await queryClient.cancelQueries({ queryKey: [["shorts", "getAll"]] });
+      
+      const previousShorts = queryClient.getQueryData([["shorts", "getAll"]]);
+      
+      const optimisticShort: Short = {
+        id: `temp-${Date.now()}`,
+        ...newShort,
+        likes: 0,
+        favorites: 0,
+        comments: 0,
+        createdAt: new Date().toISOString(),
+      };
+      
+      const updatedShorts = [optimisticShort, ...cachedShorts];
+      setCachedShorts(updatedShorts);
+      queryClient.setQueryData([["shorts", "getAll"]], updatedShorts);
+      
+      return { previousShorts };
+    },
+    onError: (err, newShort, context) => {
+      if (context?.previousShorts) {
+        queryClient.setQueryData([["shorts", "getAll"]], context.previousShorts);
+        setCachedShorts(context.previousShorts as Short[]);
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [["shorts", "getAll"]] });
     },
@@ -59,8 +194,9 @@ export const [PlansProvider, usePlansStore] = createContextHook(() => {
     },
   });
 
-  const plans = plansQuery.data || [];
-  const shorts = shortsQuery.data || [];
+  // Use cached data as fallback while loading
+  const plans = plansQuery.data || cachedPlans;
+  const shorts = shortsQuery.data || cachedShorts;
 
   // Add a new plan
   const addPlan = (planData: Omit<Plan, 'id' | 'currentPeople' | 'likes' | 'favorites' | 'createdAt' | 'rating' | 'reviewCount'>) => {
@@ -109,6 +245,7 @@ export const [PlansProvider, usePlansStore] = createContextHook(() => {
     shorts,
     events,
     isLoading: plansQuery.isLoading || shortsQuery.isLoading,
+    isOnline: !plansQuery.isError && !shortsQuery.isError,
     selectedCategory,
     setSelectedCategory,
     addPlan,
@@ -118,6 +255,10 @@ export const [PlansProvider, usePlansStore] = createContextHook(() => {
     likeShort,
     favoriteShort,
     getRandomPlan,
+    refreshData: () => {
+      plansQuery.refetch();
+      shortsQuery.refetch();
+    },
   };
 });
 

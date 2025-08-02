@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useState, memo, useCallback } from "react";
 import {
   StyleSheet,
   Text,
@@ -17,54 +17,59 @@ import CommentModal from "./CommentModal";
 
 interface ShortCardProps {
   short: Short;
+  isOverlay?: boolean;
 }
 
 const { width, height } = Dimensions.get("window");
 
-export default function ShortCard({ short }: ShortCardProps) {
+const ShortCard = memo(function ShortCard({ short, isOverlay = false }: ShortCardProps) {
   const router = useRouter();
   const { likeShort, favoriteShort } = usePlansStore();
   const [liked, setLiked] = useState(false);
   const [favorited, setFavorited] = useState(false);
   const [showComments, setShowComments] = useState(false);
 
-  const handlePress = () => {
+  const handlePress = useCallback(() => {
     router.push(`/short/${short.id}`);
-  };
+  }, [router, short.id]);
 
-  const handleLike = () => {
+  const handleLike = useCallback(() => {
     if (!liked) {
       likeShort(short.id);
       setLiked(true);
     }
-  };
+  }, [liked, likeShort, short.id]);
 
-  const handleFavorite = () => {
+  const handleFavorite = useCallback(() => {
     if (!favorited) {
       favoriteShort(short.id);
       setFavorited(true);
     }
-  };
+  }, [favorited, favoriteShort, short.id]);
 
-  const handleComments = () => {
+  const handleComments = useCallback(() => {
     setShowComments(true);
-  };
+  }, []);
 
   return (
     <>
       <TouchableOpacity
-        style={styles.card}
+        style={[styles.card, isOverlay && styles.overlayCard]}
         onPress={handlePress}
         testID={`short-card-${short.id}`}
       >
-        <Image
-          source={{ uri: short.thumbnailUrl }}
-          style={styles.image}
-          contentFit="cover"
-          transition={200}
-        />
-        <View style={styles.overlay} />
-        <View style={styles.content}>
+        {!isOverlay && (
+          <>
+            <Image
+              source={{ uri: short.thumbnailUrl }}
+              style={styles.image}
+              contentFit="cover"
+              transition={200}
+            />
+            <View style={styles.overlay} />
+          </>
+        )}
+        <View style={[styles.content, isOverlay && styles.overlayContent]}>
           <View style={styles.info}>
             <Text style={styles.name} numberOfLines={1}>
               {short.placeName}
@@ -123,7 +128,9 @@ export default function ShortCard({ short }: ShortCardProps) {
       />
     </>
   );
-}
+});
+
+export default ShortCard;
 
 const styles = StyleSheet.create({
   card: {
@@ -131,6 +138,20 @@ const styles = StyleSheet.create({
     height: height - 150,
     backgroundColor: Colors.light.background,
     position: "relative",
+  },
+  overlayCard: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'transparent',
+  },
+  overlayContent: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
   image: {
     width: "100%",

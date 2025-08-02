@@ -19,6 +19,7 @@ function RootLayoutNav() {
       <Stack.Screen name="plan/[id]" options={{ title: "Plan Details" }} />
       <Stack.Screen name="short/[id]" options={{ title: "Short" }} />
       <Stack.Screen name="create-short" options={{ title: "Create Short" }} />
+      <Stack.Screen name="ai-assistant" options={{ title: "AI Assistant" }} />
     </Stack>
   );
 }
