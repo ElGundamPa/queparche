@@ -54,7 +54,7 @@ const PlanCard = memo(function PlanCard({ plan, horizontal = true }: PlanCardPro
           )}
           <View style={styles.ratingBadge}>
             <Star size={10} color={Colors.light.premium} fill={Colors.light.premium} />
-            <Text style={styles.ratingText}>{plan.rating.toFixed(1)}</Text>
+            <Text style={styles.ratingText}>{plan.rating ? plan.rating.toFixed(1) : '0.0'}</Text>
           </View>
         </View>
         <View style={styles.horizontalContent}>
@@ -121,7 +121,7 @@ const PlanCard = memo(function PlanCard({ plan, horizontal = true }: PlanCardPro
           </Text>
           <View style={styles.ratingContainer}>
             <Star size={12} color={Colors.light.premium} fill={Colors.light.premium} />
-            <Text style={styles.verticalRating}>{plan.rating.toFixed(1)}</Text>
+            <Text style={styles.verticalRating}>{plan.rating ? plan.rating.toFixed(1) : '0.0'}</Text>
           </View>
         </View>
         <View style={styles.categoryContainer}>
