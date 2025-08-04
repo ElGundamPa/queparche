@@ -3,29 +3,28 @@ import {
   StyleSheet,
   Text,
   View,
-  TouchableOpacity,
   FlatList,
   Alert,
-  Dimensions,
   ListRenderItem,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as Haptics from "expo-haptics";
-import { Shuffle, MapPin, Calendar, Star, Crown } from "lucide-react-native";
+import { Calendar, Star, Crown } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
 import CategoryButton from "@/components/CategoryButton";
 import PlanCard from "@/components/PlanCard";
 import SearchBar from "@/components/SearchBar";
 import EventCard from "@/components/EventCard";
+import ExpandableFAB from "@/components/ExpandableFAB";
 import Colors from "@/constants/colors";
 import { categories } from "@/mocks/categories";
 import { useFilteredPlans, usePlansStore, useTopPlans } from "@/hooks/use-plans-store";
 import { useUserStore } from "@/hooks/use-user-store";
 import { useSearchStore } from "@/hooks/use-search-store";
 
-const { width } = Dimensions.get("window");
+
 
 type SectionType = 
   | { type: 'header' }
@@ -39,7 +38,7 @@ type SectionType =
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { selectedCategory, setSelectedCategory, getRandomPlan, events } = usePlansStore();
+  const { selectedCategory, setSelectedCategory, events } = usePlansStore();
   const { user } = useUserStore();
   const { searchQuery, performSearch, filteredPlans: searchFilteredPlans } = useSearchStore();
   const topPlans = useTopPlans();
@@ -51,19 +50,7 @@ export default function HomeScreen() {
     setSelectedCategory(selectedCategory === categoryName ? null : categoryName);
   };
 
-  const handleRandomPlan = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const randomPlan = getRandomPlan();
-    
-    if (randomPlan) {
-      router.push(`/plan/${randomPlan.id}`);
-    } else {
-      Alert.alert(
-        "No hay planes disponibles",
-        "No hay planes que coincidan con tus criterios. ¡Intenta cambiar tu filtro de categoría o crea un nuevo plan!"
-      );
-    }
-  };
+
 
   const todayEvents = events.filter(event => {
     const today = new Date().toDateString();
@@ -189,41 +176,54 @@ export default function HomeScreen() {
               <Star size={20} color={Colors.light.premium} />
               <Text style={styles.sectionTitle}>Más planes populares</Text>
             </View>
-            <View style={styles.topPlansContainer}>
-              {item.data.map((plan) => (
-                <PlanCard key={plan.id} plan={plan} />
-              ))}
-            </View>
+            <FlatList
+              data={item.data}
+              renderItem={({ item: plan }) => <PlanCard plan={plan} horizontal={true} />}
+              keyExtractor={(plan) => plan.id}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.horizontalListContent}
+              ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+            />
           </View>
         );
 
       case 'categories':
         return (
           <View>
-            <Text style={styles.sectionTitle}>Explorar por categoría</Text>
-            <View style={styles.categoriesContainer}>
-              {categories.map((category) => (
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Explorar por categoría</Text>
+            </View>
+            <FlatList
+              data={categories}
+              renderItem={({ item: category }) => (
                 <CategoryButton
-                  key={category.id}
                   category={category}
                   selected={selectedCategory === category.name}
                   onPress={() => handleCategoryPress(category.name)}
                 />
-              ))}
-            </View>
+              )}
+              keyExtractor={(category) => category.id}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.horizontalListContent}
+              ItemSeparatorComponent={() => <View style={{ width: 8 }} />}
+            />
           </View>
         );
 
       case 'filteredPlans':
         return (
-          <View>
-            <Text style={styles.sectionTitle}>
-              {searchQuery
-                ? "Resultados"
-                : selectedCategory
-                ? `Planes de ${selectedCategory}`
-                : "Todos los planes"}
-            </Text>
+          <View style={styles.filteredPlansSection}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>
+                {searchQuery
+                  ? "Resultados"
+                  : selectedCategory
+                  ? `Planes de ${selectedCategory}`
+                  : "Todos los planes"}
+              </Text>
+            </View>
             <View style={styles.filteredPlansContainer}>
               {item.data.map((plan) => (
                 <PlanCard key={plan.id} plan={plan} horizontal={false} />
@@ -251,34 +251,8 @@ export default function HomeScreen() {
         contentContainerStyle={styles.contentContainer}
       />
 
-      {/* Floating Action Buttons */}
-      <View style={styles.floatingButtons}>
-        {/* AI Assistant Button */}
-        <TouchableOpacity
-          style={styles.aiButton}
-          onPress={() => router.push('/ai-assistant')}
-          testID="ai-assistant-button"
-        >
-          <Text style={styles.aiButtonIcon}>🤖</Text>
-        </TouchableOpacity>
-        
-        {/* Random Parche Button - Minimalist */}
-        <TouchableOpacity
-          style={styles.randomButtonMinimal}
-          onPress={handleRandomPlan}
-          testID="random-plan-button"
-        >
-          <Shuffle size={18} color={Colors.light.primary} />
-        </TouchableOpacity>
-        
-        {/* Location Button */}
-        <TouchableOpacity
-          style={styles.locationButton}
-          onPress={() => router.push('/map')}
-        >
-          <MapPin size={18} color={Colors.light.primary} />
-        </TouchableOpacity>
-      </View>
+      {/* Expandable FAB */}
+      <ExpandableFAB position="bottom-right" />
     </View>
   );
 }
@@ -368,6 +342,13 @@ const styles = StyleSheet.create({
   },
   filteredPlansContainer: {
     paddingHorizontal: 20,
+    gap: 16,
+  },
+  filteredPlansSection: {
+    marginBottom: 20,
+  },
+  horizontalListContent: {
+    paddingHorizontal: 20,
   },
   featuredSection: {
     marginBottom: 20,
@@ -397,59 +378,5 @@ const styles = StyleSheet.create({
   bottomSpacing: {
     height: 20,
   },
-  floatingButtons: {
-    position: "absolute",
-    bottom: 100,
-    right: 20,
-    alignItems: "center",
-    gap: 12,
-  },
-  aiButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: Colors.light.card,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: Colors.light.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-  },
-  aiButtonIcon: {
-    fontSize: 20,
-  },
-  randomButtonMinimal: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: Colors.light.card,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: Colors.light.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-  },
-  locationButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: Colors.light.card,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: Colors.light.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-  },
+
 });

@@ -20,12 +20,8 @@ import {
   MapPin, 
   Edit3, 
   X,
-  Star,
   Crown,
-  Award,
-  Users,
-  Calendar,
-  TrendingUp
+  Plus
 } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
@@ -35,10 +31,12 @@ import PlanCard from "@/components/PlanCard";
 import { usePlansStore } from "@/hooks/use-plans-store";
 import { useUserStore } from "@/hooks/use-user-store";
 import { categories } from "@/mocks/categories";
+import { useRouter } from "expo-router";
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const { plans } = usePlansStore();
-  const { user, updateProfile, isUpdating, userStats } = useUserStore();
+  const { user, updateProfile, isUpdating } = useUserStore();
   const [showEditModal, setShowEditModal] = useState(false);
   const [editName, setEditName] = useState("");
   const [editBio, setEditBio] = useState("");
