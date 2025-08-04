@@ -55,9 +55,9 @@ const ShortItem: React.FC<ShortItemProps> = ({ item, index, activeIndex, isVisib
     if (status.isLoaded) {
       setIsLoading(false);
       setIsBuffering(status.isBuffering || false);
-    } else if (!status.isLoaded) {
+    } else {
       // Handle error case for unloaded status
-      const errorStatus = status as any;
+      const errorStatus = status as { error?: string };
       if (errorStatus.error) {
         console.error('Video playback error:', errorStatus.error);
         setVideoError(true);

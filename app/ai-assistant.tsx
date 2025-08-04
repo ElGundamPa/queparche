@@ -9,6 +9,7 @@ import {
   Platform,
   Alert,
   Image,
+  KeyboardAvoidingView,
 } from "react-native";
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useRouter, Stack } from "expo-router";
@@ -179,12 +180,8 @@ Response format: Provide a natural, conversational response that mentions specif
 
     // Throttle requests to prevent spam
     const now = Date.now();
-    if (now - lastRequestTime < 2000) {
-      Alert.alert(
-        "Espera un momento",
-        "Por favor espera antes de enviar otro mensaje."
-      );
-      return;
+    if (now - lastRequestTime < 1500) {
+      return; // Silent throttling instead of alert
     }
     setLastRequestTime(now);
 
@@ -338,72 +335,74 @@ Response format: Provide a natural, conversational response that mentions specif
         <Text style={styles.headerSubtitle}>Tu asistente para encontrar planes en Medellín</Text>
       </View>
 
-      <KeyboardAwareScrollView
-        style={styles.flex}
-        contentContainerStyle={styles.flex}
-        enableOnAndroid={true}
-        enableAutomaticScroll={Platform.OS === 'ios'}
-        extraScrollHeight={Platform.OS === 'ios' ? 20 : 40}
-        keyboardShouldPersistTaps="handled"
+      <FlatList
+        ref={flatListRef}
+        data={messages}
+        renderItem={renderMessage}
+        keyExtractor={(item) => item.id}
+        style={styles.messagesList}
+        contentContainerStyle={styles.messagesContainer}
         showsVerticalScrollIndicator={false}
-      >
-        <FlatList
-          ref={flatListRef}
-          data={messages}
-          renderItem={renderMessage}
-          keyExtractor={(item) => item.id}
-          style={styles.messagesList}
-          contentContainerStyle={styles.messagesContainer}
-          showsVerticalScrollIndicator={false}
-          scrollEnabled={true}
-          onContentSizeChange={() => {
-            // Ensure scroll to bottom when content changes
-            setTimeout(() => {
-              flatListRef.current?.scrollToEnd({ animated: true });
-            }, 100);
-          }}
-          onLayout={() => {
-            // Scroll to bottom on initial layout
-            setTimeout(() => {
-              flatListRef.current?.scrollToEnd({ animated: false });
-            }, 100);
-          }}
-        />
-
-        {isLoading && (
-          <View style={styles.loadingContainer}>
-            <View style={styles.loadingDots}>
-              <View style={[styles.loadingDot, styles.loadingDot1]} />
-              <View style={[styles.loadingDot, styles.loadingDot2]} />
-              <View style={[styles.loadingDot, styles.loadingDot3]} />
+        scrollEnabled={true}
+        onContentSizeChange={() => {
+          // Ensure scroll to bottom when content changes
+          setTimeout(() => {
+            flatListRef.current?.scrollToEnd({ animated: true });
+          }, 100);
+        }}
+        onLayout={() => {
+          // Scroll to bottom on initial layout
+          setTimeout(() => {
+            flatListRef.current?.scrollToEnd({ animated: false });
+          }, 100);
+        }}
+        ListFooterComponent={
+          isLoading ? (
+            <View style={styles.loadingContainer}>
+              <View style={styles.loadingDots}>
+                <View style={[styles.loadingDot, styles.loadingDot1]} />
+                <View style={[styles.loadingDot, styles.loadingDot2]} />
+                <View style={[styles.loadingDot, styles.loadingDot3]} />
+              </View>
+              <Text style={styles.loadingText}>Parche AI está escribiendo...</Text>
             </View>
-            <Text style={styles.loadingText}>Parche AI está escribiendo...</Text>
-          </View>
-        )}
-      </KeyboardAwareScrollView>
+          ) : null
+        }
+      />
 
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.textInput}
-          value={inputText}
-          onChangeText={setInputText}
-          placeholder="Pregúntame sobre planes en Medellín..."
-          placeholderTextColor={Colors.light.darkGray}
-          multiline
-          maxLength={500}
-          editable={!isLoading}
-        />
-        <TouchableOpacity
-          style={[
-            styles.sendButton,
-            (!inputText.trim() || isLoading) && styles.sendButtonDisabled
-          ]}
-          onPress={handleSendMessage}
-          disabled={!inputText.trim() || isLoading}
-        >
-          <Send size={20} color={Colors.light.background} />
-        </TouchableOpacity>
-      </View>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      >
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.textInput}
+            value={inputText}
+            onChangeText={setInputText}
+            placeholder="Pregúntame sobre planes en Medellín..."
+            placeholderTextColor={Colors.light.darkGray}
+            multiline
+            maxLength={500}
+            editable={!isLoading}
+            onFocus={() => {
+              // Scroll to bottom when input is focused
+              setTimeout(() => {
+                flatListRef.current?.scrollToEnd({ animated: true });
+              }, 300);
+            }}
+          />
+          <TouchableOpacity
+            style={[
+              styles.sendButton,
+              (!inputText.trim() || isLoading) && styles.sendButtonDisabled
+            ]}
+            onPress={handleSendMessage}
+            disabled={!inputText.trim() || isLoading}
+          >
+            <Send size={20} color={Colors.light.background} />
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
     </View>
   );
 }

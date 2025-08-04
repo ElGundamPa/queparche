@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   Text,
@@ -33,6 +33,8 @@ import Colors from "@/constants/colors";
 import { usePlansStore } from "@/hooks/use-plans-store";
 import { useUserStore } from "@/hooks/use-user-store";
 import { trpc } from "@/lib/trpc";
+import FallbackScreen from "@/components/FallbackScreen";
+import { storage } from "@/lib/storage";
 
 export default function PlanDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -47,9 +49,20 @@ export default function PlanDetailScreen() {
   
   const plan = plans.find((p) => p.id === id);
   
+  // Add to recent plans when viewing
+  useEffect(() => {
+    if (plan && id) {
+      storage.addToRecentPlans(id);
+    }
+  }, [plan, id]);
+  
   // Fetch reviews and comments
-  const reviewsQuery = trpc.reviews.getByPlan.useQuery({ planId: id || "" });
-  const commentsQuery = trpc.comments.getByPlan.useQuery({ planId: id || "" });
+  const reviewsQuery = trpc.reviews.getByPlan.useQuery({ planId: id || "" }, {
+    enabled: !!id && !!plan,
+  });
+  const commentsQuery = trpc.comments.getByPlan.useQuery({ planId: id || "" }, {
+    enabled: !!id && !!plan,
+  });
   const createCommentMutation = trpc.comments.createPlanComment.useMutation({
     onSuccess: () => {
       commentsQuery.refetch();
@@ -57,17 +70,29 @@ export default function PlanDetailScreen() {
     },
   });
 
+  if (!id) {
+    return (
+      <FallbackScreen
+        title="ID de plan inválido"
+        message="No se pudo identificar el plan solicitado."
+        showBackButton={true}
+        showHomeButton={true}
+      />
+    );
+  }
+
   if (!plan) {
     return (
-      <View style={styles.notFoundContainer}>
-        <Text style={styles.notFoundText}>Plan no encontrado</Text>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Text style={styles.backButtonText}>Volver</Text>
-        </TouchableOpacity>
-      </View>
+      <FallbackScreen
+        title="Plan no encontrado"
+        message="Este plan no existe o ha sido eliminado."
+        showBackButton={true}
+        showHomeButton={true}
+        onRetry={() => {
+          // Try to refresh plans data
+          router.replace('/(tabs)');
+        }}
+      />
     );
   }
 

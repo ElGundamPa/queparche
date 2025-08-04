@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useMemo } from "react";
 import {
   StyleSheet,
   Text,
@@ -23,6 +23,7 @@ import Colors from "@/constants/colors";
 import { categories } from "@/mocks/categories";
 import { useFilteredPlans, usePlansStore, useTopPlans } from "@/hooks/use-plans-store";
 import { useUserStore } from "@/hooks/use-user-store";
+import { useSearchStore } from "@/hooks/use-search-store";
 
 const { width } = Dimensions.get("window");
 
@@ -38,11 +39,12 @@ type SectionType =
 
 export default function HomeScreen() {
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState("");
-  const { selectedCategory, setSelectedCategory, getRandomPlan, events, isLoading } = usePlansStore();
+  const { selectedCategory, setSelectedCategory, getRandomPlan, events } = usePlansStore();
   const { user } = useUserStore();
+  const { searchQuery, performSearch, filteredPlans: searchFilteredPlans } = useSearchStore();
   const topPlans = useTopPlans();
-  const filteredPlans = useFilteredPlans(searchQuery);
+  const defaultFilteredPlans = useFilteredPlans();
+  const filteredPlans = searchQuery ? searchFilteredPlans : defaultFilteredPlans;
 
   const handleCategoryPress = (categoryName: string) => {
     Haptics.selectionAsync();
@@ -127,8 +129,14 @@ export default function HomeScreen() {
         return (
           <SearchBar
             value={searchQuery}
-            onChangeText={setSearchQuery}
+            onChangeText={performSearch}
             placeholder="Buscar planes, lugares, eventos..."
+            showSuggestions={true}
+            showFilter={true}
+            onFilterPress={() => {
+              // TODO: Implement filter modal
+              console.log('Filter pressed');
+            }}
           />
         );
 
@@ -139,14 +147,11 @@ export default function HomeScreen() {
               <Calendar size={20} color={Colors.light.primary} />
               <Text style={styles.sectionTitle}>Eventos de hoy</Text>
             </View>
-            <FlatList
-              data={item.data}
-              keyExtractor={(event) => event.id}
-              renderItem={({ item: event }) => <EventCard event={event} />}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.eventsContainer}
-            />
+            <View style={styles.eventsContainer}>
+              {item.data.map((event) => (
+                <EventCard key={event.id} event={event} />
+              ))}
+            </View>
           </View>
         );
 
@@ -184,15 +189,11 @@ export default function HomeScreen() {
               <Star size={20} color={Colors.light.premium} />
               <Text style={styles.sectionTitle}>Más planes populares</Text>
             </View>
-            <FlatList
-              data={item.data}
-              keyExtractor={(plan) => plan.id}
-              renderItem={({ item: plan }) => <PlanCard plan={plan} />}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.topPlansContainer}
-              testID="top-plans-list"
-            />
+            <View style={styles.topPlansContainer}>
+              {item.data.map((plan) => (
+                <PlanCard key={plan.id} plan={plan} />
+              ))}
+            </View>
           </View>
         );
 
@@ -200,20 +201,16 @@ export default function HomeScreen() {
         return (
           <View>
             <Text style={styles.sectionTitle}>Explorar por categoría</Text>
-            <FlatList
-              data={categories}
-              keyExtractor={(category) => category.id}
-              renderItem={({ item: category }) => (
+            <View style={styles.categoriesContainer}>
+              {categories.map((category) => (
                 <CategoryButton
+                  key={category.id}
                   category={category}
                   selected={selectedCategory === category.name}
                   onPress={() => handleCategoryPress(category.name)}
                 />
-              )}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.categoriesContainer}
-            />
+              ))}
+            </View>
           </View>
         );
 
@@ -354,13 +351,20 @@ const styles = StyleSheet.create({
   },
   eventsContainer: {
     paddingHorizontal: 20,
+    flexDirection: 'row',
+    gap: 12,
   },
   topPlansContainer: {
     paddingHorizontal: 20,
+    flexDirection: 'row',
+    gap: 12,
   },
   categoriesContainer: {
     paddingHorizontal: 20,
     paddingVertical: 8,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
   },
   filteredPlansContainer: {
     paddingHorizontal: 20,

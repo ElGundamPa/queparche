@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Image } from "expo-image";
 import { X, Send } from "lucide-react-native";
 
@@ -85,10 +86,7 @@ export default function CommentModal({ visible, onClose, shortId }: CommentModal
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
+      <View style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.title}>Comentarios</Text>
           <TouchableOpacity onPress={onClose} testID="close-comments">
@@ -96,50 +94,66 @@ export default function CommentModal({ visible, onClose, shortId }: CommentModal
           </TouchableOpacity>
         </View>
 
-        <FlatList
-          data={comments}
-          keyExtractor={(item) => item.id}
-          renderItem={renderComment}
-          style={styles.commentsList}
-          contentContainerStyle={styles.commentsContainer}
+        <KeyboardAwareScrollView
+          style={styles.flex}
+          contentContainerStyle={styles.flex}
+          enableOnAndroid={true}
+          enableAutomaticScroll={Platform.OS === 'ios'}
+          extraScrollHeight={Platform.OS === 'ios' ? 20 : 40}
+          keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No hay comentarios aún</Text>
-              <Text style={styles.emptySubtext}>¡Sé el primero en comentar!</Text>
-            </View>
-          }
-        />
+        >
+          <FlatList
+            data={comments}
+            keyExtractor={(item) => item.id}
+            renderItem={renderComment}
+            style={styles.commentsList}
+            contentContainerStyle={styles.commentsContainer}
+            showsVerticalScrollIndicator={false}
+            scrollEnabled={false}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>No hay comentarios aún</Text>
+                <Text style={styles.emptySubtext}>¡Sé el primero en comentar!</Text>
+              </View>
+            }
+          />
+        </KeyboardAwareScrollView>
 
-        <View style={styles.inputContainer}>
-          <Image
-            source={{ uri: user?.avatar || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1000" }}
-            style={styles.inputAvatar}
-            contentFit="cover"
-          />
-          <TextInput
-            style={styles.input}
-            value={newComment}
-            onChangeText={setNewComment}
-            placeholder="Escribe un comentario..."
-            placeholderTextColor={Colors.light.darkGray}
-            multiline
-            maxLength={500}
-            testID="comment-input"
-          />
-          <TouchableOpacity
-            style={[
-              styles.sendButton,
-              !newComment.trim() && styles.sendButtonDisabled
-            ]}
-            onPress={handleSendComment}
-            disabled={!newComment.trim() || createCommentMutation.isPending}
-            testID="send-comment"
-          >
-            <Send size={20} color={Colors.light.white} />
-          </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+        >
+          <View style={styles.inputContainer}>
+            <Image
+              source={{ uri: user?.avatar || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1000" }}
+              style={styles.inputAvatar}
+              contentFit="cover"
+            />
+            <TextInput
+              style={styles.input}
+              value={newComment}
+              onChangeText={setNewComment}
+              placeholder="Escribe un comentario..."
+              placeholderTextColor={Colors.light.darkGray}
+              multiline
+              maxLength={500}
+              testID="comment-input"
+            />
+            <TouchableOpacity
+              style={[
+                styles.sendButton,
+                !newComment.trim() && styles.sendButtonDisabled
+              ]}
+              onPress={handleSendComment}
+              disabled={!newComment.trim() || createCommentMutation.isPending}
+              testID="send-comment"
+            >
+              <Send size={20} color={Colors.light.white} />
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }
@@ -148,6 +162,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.light.background,
+  },
+  flex: {
+    flex: 1,
   },
   header: {
     flexDirection: "row",

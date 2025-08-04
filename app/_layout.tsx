@@ -6,6 +6,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { PlansProvider } from "@/hooks/use-plans-store";
 import { UserProvider } from "@/hooks/use-user-store";
+import { SearchProvider } from "@/hooks/use-search-store";
 import { trpc, trpcClient } from "@/lib/trpc";
 
 SplashScreen.preventAutoHideAsync();
@@ -34,9 +35,11 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <UserProvider>
           <PlansProvider>
-            <GestureHandlerRootView style={{ flex: 1 }}>
-              <RootLayoutNav />
-            </GestureHandlerRootView>
+            <SearchProvider>
+              <GestureHandlerRootView style={{ flex: 1 }}>
+                <RootLayoutNav />
+              </GestureHandlerRootView>
+            </SearchProvider>
           </PlansProvider>
         </UserProvider>
       </QueryClientProvider>
