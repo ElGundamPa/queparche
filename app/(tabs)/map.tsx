@@ -50,7 +50,7 @@ export default function MapScreen() {
   const [MapView, setMapView] = useState<any>(null);
   const [Marker, setMarker] = useState<any>(null);
   const [Location, setLocation] = useState<any>(null);
-  const filterButtonRef = useRef<TouchableOpacity | null>(null);
+  const filterButtonRef = useRef<TouchableOpacity>(null);
   const [filterButtonPosition, setFilterButtonPosition] = useState({ x: 0, y: 0 });
   
   // Animation values
@@ -110,7 +110,7 @@ export default function MapScreen() {
       setTimeout(() => setShowFilters(false), 200);
     } else {
       // Measure button position
-      filterButtonRef.current?.measure((x: number, y: number, width: number, height: number, pageX: number, pageY: number) => {
+      filterButtonRef.current?.measure((x: any, y: any, width: any, height: any, pageX: any, pageY: any) => {
         setFilterButtonPosition({ x: pageX, y: pageY });
       });
       
