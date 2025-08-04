@@ -40,12 +40,23 @@ export default function ProfileScreen() {
   const { plans } = usePlansStore();
   const { user, updateProfile, isUpdating, userStats } = useUserStore();
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editName, setEditName] = useState(user?.name || "");
-  const [editBio, setEditBio] = useState(user?.bio || "");
-  const [editLocation, setEditLocation] = useState(user?.location || "");
-  const [editAvatar, setEditAvatar] = useState(user?.avatar || "");
-  const [selectedPreferences, setSelectedPreferences] = useState<string[]>(user?.preferences || []);
+  const [editName, setEditName] = useState("");
+  const [editBio, setEditBio] = useState("");
+  const [editLocation, setEditLocation] = useState("");
+  const [editAvatar, setEditAvatar] = useState("");
+  const [selectedPreferences, setSelectedPreferences] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<'plans' | 'favorites' | 'history'>('plans');
+
+  // Update form fields when user data loads
+  React.useEffect(() => {
+    if (user) {
+      setEditName(user.name || "");
+      setEditBio(user.bio || "");
+      setEditLocation(user.location || "");
+      setEditAvatar(user.avatar || "");
+      setSelectedPreferences(user.preferences || []);
+    }
+  }, [user]);
 
   // Get user's created plans
   const userPlans = plans.filter(plan => plan.userId === user?.id);

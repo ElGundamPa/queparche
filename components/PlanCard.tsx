@@ -32,6 +32,11 @@ const PlanCard = memo(function PlanCard({ plan, horizontal = true }: PlanCardPro
     }
   };
 
+  // Early return if plan is not valid
+  if (!plan) {
+    return null;
+  }
+
   if (horizontal) {
     return (
       <TouchableOpacity
