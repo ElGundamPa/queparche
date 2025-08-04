@@ -19,10 +19,13 @@ import Animated, {
   useAnimatedGestureHandler,
   withSpring,
   runOnJS,
+  FadeInUp,
 } from "react-native-reanimated";
+import Toast from "react-native-toast-message";
 
 import Colors from "@/constants/colors";
 import ShortCard from "@/components/ShortCard";
+import EmptyState from "@/components/EmptyState";
 import { usePlansStore } from "@/hooks/use-plans-store";
 
 const { height, width } = Dimensions.get("window");
@@ -153,6 +156,13 @@ export default function ShortsScreen() {
   ]);
 
   const handleCreatePress = () => {
+    Toast.show({
+      type: 'info',
+      text1: 'Crear short ✨',
+      text2: 'Te llevamos al formulario',
+      position: 'bottom',
+      visibilityTime: 1500,
+    });
     router.push("/create-short");
   };
 
@@ -246,12 +256,22 @@ export default function ShortsScreen() {
           </Animated.View>
         </PanGestureHandler>
       ) : (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No hay shorts disponibles</Text>
-          <Text style={styles.emptySubtext}>
-            ¡Sé el primero en compartir un video corto de tu lugar favorito!
-          </Text>
-        </View>
+        <Animated.View entering={FadeInUp.delay(300)} style={styles.emptyContainer}>
+          <EmptyState
+            type="shorts"
+            onAction={handleCreatePress}
+            onRetry={() => {
+              Toast.show({
+                type: 'info',
+                text1: 'Recargando shorts...',
+                text2: 'Buscando nuevo contenido',
+                position: 'bottom',
+                visibilityTime: 1500,
+              });
+              // Here you could trigger a refetch if connected to backend
+            }}
+          />
+        </Animated.View>
       )}
 
       <TouchableOpacity
@@ -261,6 +281,8 @@ export default function ShortsScreen() {
       >
         <Plus size={24} color={Colors.light.background} />
       </TouchableOpacity>
+      
+      <Toast />
     </View>
   );
 }

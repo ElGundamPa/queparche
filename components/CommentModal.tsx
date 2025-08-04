@@ -13,6 +13,7 @@ import {
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Image } from "expo-image";
 import { X, Send } from "lucide-react-native";
+import Toast from "react-native-toast-message";
 
 import Colors from "@/constants/colors";
 import { Comment } from "@/types/user";
@@ -34,13 +35,39 @@ export default function CommentModal({ visible, onClose, shortId }: CommentModal
     onSuccess: () => {
       commentsQuery.refetch();
       setNewComment("");
+      Toast.show({
+        type: 'success',
+        text1: 'Comentario enviado ✅',
+        text2: '¡Gracias por participar!',
+        position: 'bottom',
+        visibilityTime: 2000,
+      });
+    },
+    onError: (error) => {
+      Toast.show({
+        type: 'error',
+        text1: 'Error al enviar',
+        text2: 'Intenta de nuevo en un momento',
+        position: 'bottom',
+        visibilityTime: 3000,
+      });
+      console.error('Comment creation error:', error);
     },
   });
 
   const comments = commentsQuery.data || [];
 
   const handleSendComment = () => {
-    if (!newComment.trim() || !user) return;
+    if (!newComment.trim() || !user) {
+      Toast.show({
+        type: 'error',
+        text1: 'Comentario vacío',
+        text2: 'Escribe algo antes de enviar',
+        position: 'bottom',
+        visibilityTime: 2000,
+      });
+      return;
+    }
 
     createCommentMutation.mutate({
       shortId,
@@ -153,6 +180,8 @@ export default function CommentModal({ visible, onClose, shortId }: CommentModal
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
+        
+        <Toast />
       </View>
     </Modal>
   );

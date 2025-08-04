@@ -6,10 +6,19 @@ import {
   TouchableOpacity,
   Dimensions,
   Platform,
+  Modal,
+  Pressable,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { Filter, Plus } from "lucide-react-native";
+import { Filter, Plus, X } from "lucide-react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+} from "react-native-reanimated";
+import Toast from "react-native-toast-message";
 
 import Colors from "@/constants/colors";
 import { categories } from "@/mocks/categories";
@@ -41,6 +50,12 @@ export default function MapScreen() {
   const [MapView, setMapView] = useState<any>(null);
   const [Marker, setMarker] = useState<any>(null);
   const [Location, setLocation] = useState<any>(null);
+  const filterButtonRef = useRef<TouchableOpacity>(null);
+  const [filterButtonPosition, setFilterButtonPosition] = useState({ x: 0, y: 0 });
+  
+  // Animation values
+  const dropdownScale = useSharedValue(0);
+  const dropdownOpacity = useSharedValue(0);
 
   useEffect(() => {
     if (Platform.OS !== "web") {
@@ -77,15 +92,60 @@ export default function MapScreen() {
   };
 
   const handleCreatePress = () => {
+    Toast.show({
+      type: 'info',
+      text1: 'Creando parche...',
+      text2: 'Te llevamos al formulario',
+      position: 'bottom',
+      visibilityTime: 1500,
+    });
     router.push("/create");
   };
 
   const toggleFilters = () => {
-    setShowFilters(!showFilters);
+    if (showFilters) {
+      // Close animation
+      dropdownScale.value = withSpring(0, { damping: 15 });
+      dropdownOpacity.value = withTiming(0, { duration: 200 });
+      setTimeout(() => setShowFilters(false), 200);
+    } else {
+      // Measure button position
+      filterButtonRef.current?.measure((x, y, width, height, pageX, pageY) => {
+        setFilterButtonPosition({ x: pageX, y: pageY });
+      });
+      
+      setShowFilters(true);
+      // Open animation
+      dropdownScale.value = withSpring(1, { damping: 15 });
+      dropdownOpacity.value = withTiming(1, { duration: 200 });
+    }
   };
 
   const handleCategoryPress = (categoryName: string) => {
-    setSelectedCategory(selectedCategory === categoryName ? null : categoryName);
+    const newCategory = selectedCategory === categoryName ? null : categoryName;
+    setSelectedCategory(newCategory);
+    
+    // Show toast feedback
+    if (newCategory) {
+      Toast.show({
+        type: 'success',
+        text1: 'Filtro aplicado ✅',
+        text2: `Mostrando planes de ${categoryName}`,
+        position: 'bottom',
+        visibilityTime: 2000,
+      });
+    } else {
+      Toast.show({
+        type: 'info',
+        text1: 'Filtro removido',
+        text2: 'Mostrando todos los planes',
+        position: 'bottom',
+        visibilityTime: 2000,
+      });
+    }
+    
+    // Close dropdown
+    toggleFilters();
   };
 
   const getCategoryColor = (category: string) => {
@@ -171,6 +231,7 @@ export default function MapScreen() {
 
       <View style={styles.buttonContainer}>
         <TouchableOpacity
+          ref={filterButtonRef}
           style={styles.filterButton}
           onPress={toggleFilters}
           testID="filter-button"
@@ -188,34 +249,61 @@ export default function MapScreen() {
         </TouchableOpacity>
       </View>
 
-      {showFilters && (
-        <View style={styles.filtersContainer}>
-          <Text style={styles.filtersTitle}>Filtrar por categoría</Text>
-          <View style={styles.categoriesContainer}>
-            {categories.map((category) => (
-              <TouchableOpacity
-                key={category.id}
-                style={[
-                  styles.categoryButton,
-                  selectedCategory === category.name && {
-                    backgroundColor: getCategoryColor(category.name),
-                  },
-                ]}
-                onPress={() => handleCategoryPress(category.name)}
-              >
-                <Text
-                  style={[
-                    styles.categoryText,
-                    selectedCategory === category.name && styles.selectedCategoryText,
-                  ]}
-                >
-                  {category.name}
-                </Text>
+      {/* Animated Filter Dropdown Modal */}
+      <Modal
+        visible={showFilters}
+        transparent
+        animationType="none"
+        onRequestClose={toggleFilters}
+      >
+        <Pressable style={styles.modalOverlay} onPress={toggleFilters}>
+          <Animated.View
+            style={[
+              styles.filtersDropdown,
+              {
+                top: filterButtonPosition.y - 280, // Position above button
+                left: Math.max(20, filterButtonPosition.x - 150),
+              },
+              useAnimatedStyle(() => ({
+                transform: [{ scale: dropdownScale.value }],
+                opacity: dropdownOpacity.value,
+              })),
+            ]}
+          >
+            <View style={styles.dropdownHeader}>
+              <Text style={styles.filtersTitle}>Filtrar por categoría</Text>
+              <TouchableOpacity onPress={toggleFilters} style={styles.closeButton}>
+                <X size={20} color={Colors.light.darkGray} />
               </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-      )}
+            </View>
+            <View style={styles.categoriesContainer}>
+              {categories.map((category) => (
+                <TouchableOpacity
+                  key={category.id}
+                  style={[
+                    styles.categoryButton,
+                    selectedCategory === category.name && {
+                      backgroundColor: getCategoryColor(category.name),
+                    },
+                  ]}
+                  onPress={() => handleCategoryPress(category.name)}
+                >
+                  <Text
+                    style={[
+                      styles.categoryText,
+                      selectedCategory === category.name && styles.selectedCategoryText,
+                    ]}
+                  >
+                    {category.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </Animated.View>
+        </Pressable>
+      </Modal>
+      
+      <Toast />
     </View>
   );
 }
@@ -317,21 +405,32 @@ const styles = StyleSheet.create({
     color: Colors.light.background,
     marginLeft: 8,
   },
-  filtersContainer: {
-    position: "absolute",
-    top: 60,
-    left: 20,
-    right: 20,
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+  },
+  filtersDropdown: {
+    position: 'absolute',
+    width: 300,
     backgroundColor: Colors.light.card,
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
     borderColor: Colors.light.border,
     shadowColor: Colors.light.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 12,
+  },
+  dropdownHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  closeButton: {
+    padding: 4,
   },
   filtersTitle: {
     fontSize: 16,

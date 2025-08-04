@@ -4,7 +4,6 @@ import {
   Text,
   View,
   FlatList,
-  Alert,
   ListRenderItem,
 } from "react-native";
 import { useRouter } from "expo-router";
@@ -12,12 +11,16 @@ import { StatusBar } from "expo-status-bar";
 import * as Haptics from "expo-haptics";
 import { Calendar, Star, Crown } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
+import Toast from "react-native-toast-message";
 
 import CategoryButton from "@/components/CategoryButton";
 import PlanCard from "@/components/PlanCard";
 import SearchBar from "@/components/SearchBar";
 import EventCard from "@/components/EventCard";
 import ExpandableFAB from "@/components/ExpandableFAB";
+import EmptyState from "@/components/EmptyState";
+import { PlanCardSkeleton } from "@/components/SkeletonLoader";
 import Colors from "@/constants/colors";
 import { categories } from "@/mocks/categories";
 import { useFilteredPlans, usePlansStore, useTopPlans } from "@/hooks/use-plans-store";
@@ -37,8 +40,7 @@ type SectionType =
   | { type: 'spacing' };
 
 export default function HomeScreen() {
-  const router = useRouter();
-  const { selectedCategory, setSelectedCategory, events } = usePlansStore();
+  const { selectedCategory, setSelectedCategory, events, isLoading } = usePlansStore();
   const { user } = useUserStore();
   const { searchQuery, performSearch, filteredPlans: searchFilteredPlans } = useSearchStore();
   const topPlans = useTopPlans();
@@ -47,7 +49,27 @@ export default function HomeScreen() {
 
   const handleCategoryPress = (categoryName: string) => {
     Haptics.selectionAsync();
-    setSelectedCategory(selectedCategory === categoryName ? null : categoryName);
+    const newCategory = selectedCategory === categoryName ? null : categoryName;
+    setSelectedCategory(newCategory);
+    
+    // Show toast feedback
+    if (newCategory) {
+      Toast.show({
+        type: 'success',
+        text1: 'Categoría seleccionada ✅',
+        text2: `Mostrando planes de ${categoryName}`,
+        position: 'bottom',
+        visibilityTime: 2000,
+      });
+    } else {
+      Toast.show({
+        type: 'info',
+        text1: 'Filtro removido',
+        text2: 'Mostrando todos los planes',
+        position: 'bottom',
+        visibilityTime: 2000,
+      });
+    }
   };
 
 
@@ -89,57 +111,68 @@ export default function HomeScreen() {
     switch (item.type) {
       case 'header':
         return (
-          <LinearGradient
-            colors={['rgba(0, 212, 170, 0.1)', 'transparent']}
-            style={styles.header}
-          >
-            <View style={styles.headerContent}>
-              <View>
-                <Text style={styles.greeting}>Hola {user?.name?.split(' ')[0] || 'Parcero'} 👋</Text>
-                <Text style={styles.title}>¿Qué parche hay hoy?</Text>
-                <Text style={styles.subtitle}>Encuentra tu parche ideal en Medellín</Text>
-              </View>
-              <View style={styles.userStats}>
-                <View style={styles.statItem}>
-                  <Star size={16} color={Colors.light.premium} />
-                  <Text style={styles.statText}>{user?.points || 0}</Text>
+          <Animated.View entering={FadeInDown.delay(100)}>
+            <LinearGradient
+              colors={['rgba(0, 212, 170, 0.1)', 'transparent']}
+              style={styles.header}
+            >
+              <View style={styles.headerContent}>
+                <View>
+                  <Text style={styles.greeting}>Hola {user?.name?.split(' ')[0] || 'Parcero'} 👋</Text>
+                  <Text style={styles.title}>¿Qué parche hay hoy?</Text>
+                  <Text style={styles.subtitle}>Encuentra tu parche ideal en Medellín</Text>
                 </View>
-                {user?.isPremium && (
-                  <Crown size={20} color={Colors.light.premium} />
-                )}
+                <View style={styles.userStats}>
+                  <View style={styles.statItem}>
+                    <Star size={16} color={Colors.light.premium} />
+                    <Text style={styles.statText}>{user?.points || 0}</Text>
+                  </View>
+                  {user?.isPremium && (
+                    <Crown size={20} color={Colors.light.premium} />
+                  )}
+                </View>
               </View>
-            </View>
-          </LinearGradient>
+            </LinearGradient>
+          </Animated.View>
         );
 
       case 'search':
         return (
-          <SearchBar
-            value={searchQuery}
-            onChangeText={performSearch}
-            placeholder="Buscar planes, lugares, eventos..."
-            showSuggestions={true}
-            showFilter={true}
-            onFilterPress={() => {
-              // TODO: Implement filter modal
-              console.log('Filter pressed');
-            }}
-          />
+          <Animated.View entering={FadeInDown.delay(200)}>
+            <SearchBar
+              value={searchQuery}
+              onChangeText={performSearch}
+              placeholder="Buscar planes, lugares, eventos..."
+              showSuggestions={true}
+              showFilter={true}
+              onFilterPress={() => {
+                Toast.show({
+                  type: 'info',
+                  text1: 'Filtros avanzados',
+                  text2: 'Próximamente disponible',
+                  position: 'bottom',
+                  visibilityTime: 2000,
+                });
+              }}
+            />
+          </Animated.View>
         );
 
       case 'events':
         return (
-          <View>
+          <Animated.View entering={FadeInUp.delay(300)}>
             <View style={styles.sectionHeader}>
               <Calendar size={20} color={Colors.light.primary} />
               <Text style={styles.sectionTitle}>Eventos de hoy</Text>
             </View>
             <View style={styles.eventsContainer}>
-              {item.data.map((event) => (
-                <EventCard key={event.id} event={event} />
+              {item.data.map((event, index) => (
+                <Animated.View key={event.id} entering={FadeInUp.delay(400 + index * 100)}>
+                  <EventCard event={event} />
+                </Animated.View>
               ))}
             </View>
-          </View>
+          </Animated.View>
         );
 
       case 'featured':
@@ -171,37 +204,71 @@ export default function HomeScreen() {
 
       case 'topPlans':
         return (
-          <View>
+          <Animated.View entering={FadeInUp.delay(500)}>
             <View style={styles.sectionHeader}>
               <Star size={20} color={Colors.light.premium} />
               <Text style={styles.sectionTitle}>Más planes populares</Text>
             </View>
-            <FlatList
-              data={item.data}
-              renderItem={({ item: plan }) => <PlanCard plan={plan} horizontal={true} />}
-              keyExtractor={(plan) => plan.id}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.horizontalListContent}
-              ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
-            />
-          </View>
+            {isLoading ? (
+              <FlatList
+                data={[1, 2, 3]}
+                renderItem={() => <PlanCardSkeleton horizontal={true} />}
+                keyExtractor={(item) => item.toString()}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.horizontalListContent}
+                ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+              />
+            ) : item.data.length > 0 ? (
+              <FlatList
+                data={item.data}
+                renderItem={({ item: plan, index }) => (
+                  <Animated.View entering={FadeInUp.delay(600 + index * 100)}>
+                    <PlanCard plan={plan} horizontal={true} />
+                  </Animated.View>
+                )}
+                keyExtractor={(plan) => plan.id}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.horizontalListContent}
+                ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+              />
+            ) : (
+              <EmptyState
+                type="plans"
+                title="No hay planes populares"
+                subtitle="¡Sé el primero en crear un parche que se vuelva popular!"
+                onAction={() => {
+                  Toast.show({
+                    type: 'info',
+                    text1: 'Crear parche',
+                    text2: 'Te llevamos al formulario',
+                    position: 'bottom',
+                    visibilityTime: 1500,
+                  });
+                }}
+                actionText="Crear parche"
+              />
+            )}
+          </Animated.View>
         );
 
       case 'categories':
         return (
-          <View>
+          <Animated.View entering={FadeInUp.delay(600)}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Explorar por categoría</Text>
             </View>
             <FlatList
               data={categories}
-              renderItem={({ item: category }) => (
-                <CategoryButton
-                  category={category}
-                  selected={selectedCategory === category.name}
-                  onPress={() => handleCategoryPress(category.name)}
-                />
+              renderItem={({ item: category, index }) => (
+                <Animated.View entering={FadeInUp.delay(700 + index * 50)}>
+                  <CategoryButton
+                    category={category}
+                    selected={selectedCategory === category.name}
+                    onPress={() => handleCategoryPress(category.name)}
+                  />
+                </Animated.View>
               )}
               keyExtractor={(category) => category.id}
               horizontal
@@ -209,12 +276,12 @@ export default function HomeScreen() {
               contentContainerStyle={styles.horizontalListContent}
               ItemSeparatorComponent={() => <View style={{ width: 8 }} />}
             />
-          </View>
+          </Animated.View>
         );
 
       case 'filteredPlans':
         return (
-          <View style={styles.filteredPlansSection}>
+          <Animated.View entering={FadeInUp.delay(800)} style={styles.filteredPlansSection}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>
                 {searchQuery
@@ -224,12 +291,50 @@ export default function HomeScreen() {
                   : "Todos los planes"}
               </Text>
             </View>
-            <View style={styles.filteredPlansContainer}>
-              {item.data.map((plan) => (
-                <PlanCard key={plan.id} plan={plan} horizontal={false} />
-              ))}
-            </View>
-          </View>
+            {isLoading ? (
+              <View style={styles.filteredPlansContainer}>
+                {[1, 2, 3].map((item) => (
+                  <PlanCardSkeleton key={item} horizontal={false} />
+                ))}
+              </View>
+            ) : item.data.length > 0 ? (
+              <View style={styles.filteredPlansContainer}>
+                {item.data.map((plan, index) => (
+                  <Animated.View key={plan.id} entering={FadeInUp.delay(900 + index * 100)}>
+                    <PlanCard plan={plan} horizontal={false} />
+                  </Animated.View>
+                ))}
+              </View>
+            ) : (
+              <EmptyState
+                type={searchQuery ? 'search' : selectedCategory ? 'category' : 'plans'}
+                category={selectedCategory || undefined}
+                onRetry={() => {
+                  if (searchQuery) {
+                    performSearch('');
+                  } else if (selectedCategory) {
+                    setSelectedCategory(null);
+                  }
+                  Toast.show({
+                    type: 'success',
+                    text1: 'Filtros limpiados ✅',
+                    text2: 'Mostrando todos los planes',
+                    position: 'bottom',
+                    visibilityTime: 2000,
+                  });
+                }}
+                onAction={() => {
+                  Toast.show({
+                    type: 'info',
+                    text1: 'Crear parche',
+                    text2: 'Te llevamos al formulario',
+                    position: 'bottom',
+                    visibilityTime: 1500,
+                  });
+                }}
+              />
+            )}
+          </Animated.View>
         );
 
       case 'spacing':
@@ -253,6 +358,8 @@ export default function HomeScreen() {
 
       {/* Expandable FAB */}
       <ExpandableFAB position="bottom-right" />
+      
+      <Toast />
     </View>
   );
 }

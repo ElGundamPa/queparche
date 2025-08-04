@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   FlatList,
   Platform,
-  Alert,
   Image,
   KeyboardAvoidingView,
 } from "react-native";
@@ -17,6 +16,7 @@ import { StatusBar } from "expo-status-bar";
 import { Send, Bot, User, Sparkles, Heart, Users } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { v4 as uuidv4 } from 'uuid';
+import Toast from "react-native-toast-message";
 
 import Colors from "@/constants/colors";
 import { usePlansStore } from "@/hooks/use-plans-store";
@@ -176,12 +176,30 @@ Response format: Provide a natural, conversational response that mentions specif
   };
 
   const handleSendMessage = useCallback(async () => {
-    if (!inputText.trim() || isLoading) return;
+    if (!inputText.trim() || isLoading) {
+      if (!inputText.trim()) {
+        Toast.show({
+          type: 'error',
+          text1: 'Mensaje vacío',
+          text2: 'Escribe algo antes de enviar',
+          position: 'bottom',
+          visibilityTime: 2000,
+        });
+      }
+      return;
+    }
 
     // Throttle requests to prevent spam
     const now = Date.now();
     if (now - lastRequestTime < 1500) {
-      return; // Silent throttling instead of alert
+      Toast.show({
+        type: 'info',
+        text1: 'Espera un momento',
+        text2: 'Por favor espera antes de enviar otro mensaje',
+        position: 'bottom',
+        visibilityTime: 2000,
+      });
+      return;
     }
     setLastRequestTime(now);
 
@@ -220,6 +238,13 @@ Response format: Provide a natural, conversational response that mentions specif
       setMessages(prev => [...prev, aiMessage]);
     } catch (error) {
       console.error('Send message error:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error de conexión',
+        text2: 'Verifica tu internet e intenta de nuevo',
+        position: 'bottom',
+        visibilityTime: 3000,
+      });
       const errorMessage: Message = {
         id: uuidv4(),
         content: "Disculpa, no pude procesar tu mensaje. Por favor verifica tu conexión e intenta de nuevo.",
@@ -273,7 +298,16 @@ Response format: Provide a natural, conversational response that mentions specif
             <PlanCard
               key={plan.id}
               plan={plan}
-              onPress={() => router.push(`/plan/${plan.id}`)}
+              onPress={() => {
+                Toast.show({
+                  type: 'info',
+                  text1: 'Abriendo parche...',
+                  text2: plan.name,
+                  position: 'bottom',
+                  visibilityTime: 1000,
+                });
+                router.push(`/plan/${plan.id}`);
+              }}
             />
           ))}
         </View>
@@ -403,6 +437,8 @@ Response format: Provide a natural, conversational response that mentions specif
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+      
+      <Toast />
     </View>
   );
 }

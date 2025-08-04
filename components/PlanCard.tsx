@@ -10,6 +10,8 @@ import {
 import { Image } from "expo-image";
 import { Star, Crown, MapPin, Users, Heart } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import Animated, { FadeInUp } from "react-native-reanimated";
+import Toast from "react-native-toast-message";
 
 import Colors from "@/constants/colors";
 import { Plan } from "@/types/plan";
@@ -17,18 +19,33 @@ import { Plan } from "@/types/plan";
 interface PlanCardProps {
   plan: Plan;
   horizontal?: boolean;
+  animationDelay?: number;
 }
 
 const { width } = Dimensions.get("window");
 
-const PlanCard = memo(function PlanCard({ plan, horizontal = true }: PlanCardProps) {
+const PlanCard = memo(function PlanCard({ plan, horizontal = true, animationDelay = 0 }: PlanCardProps) {
   const router = useRouter();
 
   const handlePress = () => {
     if (plan?.id) {
+      Toast.show({
+        type: 'info',
+        text1: 'Abriendo parche...',
+        text2: plan.name,
+        position: 'bottom',
+        visibilityTime: 1000,
+      });
       router.push(`/plan/${plan.id}`);
     } else {
       console.warn('Plan ID is missing:', plan);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'No se pudo abrir este parche',
+        position: 'bottom',
+        visibilityTime: 2000,
+      });
     }
   };
 
@@ -39,11 +56,12 @@ const PlanCard = memo(function PlanCard({ plan, horizontal = true }: PlanCardPro
 
   if (horizontal) {
     return (
-      <TouchableOpacity
-        style={styles.horizontalCard}
-        onPress={handlePress}
-        testID={`plan-card-${plan.id}`}
-      >
+      <Animated.View entering={animationDelay > 0 ? FadeInUp.delay(animationDelay) : undefined}>
+        <TouchableOpacity
+          style={styles.horizontalCard}
+          onPress={handlePress}
+          testID={`plan-card-${plan.id}`}
+        >
         <View style={styles.imageContainer}>
           <Image
             source={{ uri: plan.images[0] }}
@@ -91,16 +109,18 @@ const PlanCard = memo(function PlanCard({ plan, horizontal = true }: PlanCardPro
             </Text>
           )}
         </View>
-      </TouchableOpacity>
+        </TouchableOpacity>
+      </Animated.View>
     );
   }
 
   return (
-    <TouchableOpacity
-      style={styles.verticalCard}
-      onPress={handlePress}
-      testID={`plan-card-${plan.id}`}
-    >
+    <Animated.View entering={animationDelay > 0 ? FadeInUp.delay(animationDelay) : undefined}>
+      <TouchableOpacity
+        style={styles.verticalCard}
+        onPress={handlePress}
+        testID={`plan-card-${plan.id}`}
+      >
       <View style={styles.verticalImageContainer}>
         <Image
           source={{ uri: plan.images[0] }}
@@ -156,7 +176,8 @@ const PlanCard = memo(function PlanCard({ plan, horizontal = true }: PlanCardPro
           </Text>
         )}
       </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+    </Animated.View>
   );
 });
 
