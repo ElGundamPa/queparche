@@ -117,8 +117,7 @@ export const [SearchProvider, useSearchStore] = createContextHook(() => {
     if (filters.location) {
       const location = filters.location.toLowerCase();
       result = result.filter(plan =>
-        plan.location.address?.toLowerCase().includes(location) ||
-        plan.location.city?.toLowerCase().includes(location)
+        plan.location.address?.toLowerCase().includes(location)
       );
     }
 
@@ -136,8 +135,8 @@ export const [SearchProvider, useSearchStore] = createContextHook(() => {
     if (filters.dateRange) {
       const [startDate, endDate] = filters.dateRange;
       result = result.filter(plan => {
-        if (!plan.date) return true;
-        const planDate = new Date(plan.date);
+        if (!plan.eventDate) return true;
+        const planDate = new Date(plan.eventDate);
         return planDate >= startDate && planDate <= endDate;
       });
     }
@@ -152,10 +151,9 @@ export const [SearchProvider, useSearchStore] = createContextHook(() => {
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter(short =>
-        short.title.toLowerCase().includes(query) ||
+        short.placeName.toLowerCase().includes(query) ||
         short.description.toLowerCase().includes(query) ||
-        short.category.toLowerCase().includes(query) ||
-        short.location?.toLowerCase().includes(query)
+        short.category.toLowerCase().includes(query)
       );
     }
 
