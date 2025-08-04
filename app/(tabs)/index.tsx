@@ -1,13 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   StyleSheet,
   Text,
   View,
-  ScrollView,
   TouchableOpacity,
   FlatList,
   Alert,
   Dimensions,
+  ListRenderItem,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -25,6 +25,16 @@ import { useFilteredPlans, usePlansStore, useTopPlans } from "@/hooks/use-plans-
 import { useUserStore } from "@/hooks/use-user-store";
 
 const { width } = Dimensions.get("window");
+
+type SectionType = 
+  | { type: 'header' }
+  | { type: 'search' }
+  | { type: 'events'; data: any[] }
+  | { type: 'featured'; data: any[] }
+  | { type: 'topPlans'; data: any[] }
+  | { type: 'categories' }
+  | { type: 'filteredPlans'; data: any[] }
+  | { type: 'spacing' };
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -59,123 +69,157 @@ export default function HomeScreen() {
     return today === eventDate;
   });
 
-  return (
-    <View style={styles.container}>
-      <StatusBar style="light" />
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Header Premium */}
-        <LinearGradient
-          colors={['rgba(0, 212, 170, 0.1)', 'transparent']}
-          style={styles.header}
-        >
-          <View style={styles.headerContent}>
-            <View>
-              <Text style={styles.greeting}>Hola {user?.name?.split(' ')[0] || 'Parcero'} 👋</Text>
-              <Text style={styles.title}>¿Qué parche hay hoy?</Text>
-              <Text style={styles.subtitle}>Encuentra tu parche ideal en Medellín</Text>
-            </View>
-            <View style={styles.userStats}>
-              <View style={styles.statItem}>
-                <Star size={16} color={Colors.light.premium} />
-                <Text style={styles.statText}>{user?.points || 0}</Text>
+  const sections = useMemo((): SectionType[] => {
+    const sectionList: SectionType[] = [
+      { type: 'header' },
+      { type: 'search' },
+    ];
+
+    if (todayEvents.length > 0) {
+      sectionList.push({ type: 'events', data: todayEvents.slice(0, 3) });
+    }
+
+    if (topPlans.length > 0) {
+      sectionList.push({ type: 'featured', data: topPlans });
+      if (topPlans.length > 2) {
+        sectionList.push({ type: 'topPlans', data: topPlans.slice(2) });
+      }
+    }
+
+    sectionList.push({ type: 'categories' });
+
+    if (filteredPlans.length > 0) {
+      sectionList.push({ type: 'filteredPlans', data: filteredPlans.slice(0, 6) });
+    }
+
+    sectionList.push({ type: 'spacing' });
+    return sectionList;
+  }, [todayEvents, topPlans, filteredPlans]);
+
+  const renderSection: ListRenderItem<SectionType> = ({ item }) => {
+    switch (item.type) {
+      case 'header':
+        return (
+          <LinearGradient
+            colors={['rgba(0, 212, 170, 0.1)', 'transparent']}
+            style={styles.header}
+          >
+            <View style={styles.headerContent}>
+              <View>
+                <Text style={styles.greeting}>Hola {user?.name?.split(' ')[0] || 'Parcero'} 👋</Text>
+                <Text style={styles.title}>¿Qué parche hay hoy?</Text>
+                <Text style={styles.subtitle}>Encuentra tu parche ideal en Medellín</Text>
               </View>
-              {user?.isPremium && (
-                <Crown size={20} color={Colors.light.premium} />
-              )}
+              <View style={styles.userStats}>
+                <View style={styles.statItem}>
+                  <Star size={16} color={Colors.light.premium} />
+                  <Text style={styles.statText}>{user?.points || 0}</Text>
+                </View>
+                {user?.isPremium && (
+                  <Crown size={20} color={Colors.light.premium} />
+                )}
+              </View>
             </View>
-          </View>
-        </LinearGradient>
+          </LinearGradient>
+        );
 
-        <SearchBar
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholder="Buscar planes, lugares, eventos..."
-        />
+      case 'search':
+        return (
+          <SearchBar
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Buscar planes, lugares, eventos..."
+          />
+        );
 
-        {/* Eventos de Hoy */}
-        {todayEvents.length > 0 && (
-          <>
+      case 'events':
+        return (
+          <View>
             <View style={styles.sectionHeader}>
               <Calendar size={20} color={Colors.light.primary} />
               <Text style={styles.sectionTitle}>Eventos de hoy</Text>
             </View>
             <FlatList
-              data={todayEvents.slice(0, 3)}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => <EventCard event={item} />}
+              data={item.data}
+              keyExtractor={(event) => event.id}
+              renderItem={({ item: event }) => <EventCard event={event} />}
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.eventsContainer}
             />
-          </>
-        )}
-
-        {/* Featured Plan - 70% height with next plan hint */}
-        <View style={styles.featuredSection}>
-          <View style={styles.sectionHeader}>
-            <Star size={20} color={Colors.light.premium} />
-            <Text style={styles.sectionTitle}>Plan destacado</Text>
           </View>
-          
-          {topPlans.length > 0 && (
-            <View style={styles.featuredContainer}>
-              {/* Main featured plan - 70% */}
-              <View style={styles.mainPlanContainer}>
-                <PlanCard plan={topPlans[0]} horizontal={false} />
-              </View>
-              
-              {/* Next plan hint - 30% */}
-              {topPlans.length > 1 && (
-                <View style={styles.nextPlanHint}>
-                  <Text style={styles.nextPlanText}>Siguiente plan</Text>
-                  <View style={styles.nextPlanPreview}>
-                    <PlanCard plan={topPlans[1]} horizontal={false} />
-                  </View>
-                </View>
-              )}
+        );
+
+      case 'featured':
+        return (
+          <View style={styles.featuredSection}>
+            <View style={styles.sectionHeader}>
+              <Star size={20} color={Colors.light.premium} />
+              <Text style={styles.sectionTitle}>Plan destacado</Text>
             </View>
-          )}
-        </View>
-        
-        {/* Top 5 horizontal scroll */}
-        <View style={styles.sectionHeader}>
-          <Star size={20} color={Colors.light.premium} />
-          <Text style={styles.sectionTitle}>Más planes populares</Text>
-        </View>
-        <FlatList
-          data={topPlans.slice(2)}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <PlanCard plan={item} />}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.topPlansContainer}
-          testID="top-plans-list"
-        />
+            
+            {item.data.length > 0 && (
+              <View style={styles.featuredContainer}>
+                <View style={styles.mainPlanContainer}>
+                  <PlanCard plan={item.data[0]} horizontal={false} />
+                </View>
+                
+                {item.data.length > 1 && (
+                  <View style={styles.nextPlanHint}>
+                    <Text style={styles.nextPlanText}>Siguiente plan</Text>
+                    <View style={styles.nextPlanPreview}>
+                      <PlanCard plan={item.data[1]} horizontal={false} />
+                    </View>
+                  </View>
+                )}
+              </View>
+            )}
+          </View>
+        );
 
-        {/* Explorar por categoría */}
-        <Text style={styles.sectionTitle}>Explorar por categoría</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoriesContainer}
-        >
-          {categories.map((category) => (
-            <CategoryButton
-              key={category.id}
-              category={category}
-              selected={selectedCategory === category.name}
-              onPress={() => handleCategoryPress(category.name)}
+      case 'topPlans':
+        return (
+          <View>
+            <View style={styles.sectionHeader}>
+              <Star size={20} color={Colors.light.premium} />
+              <Text style={styles.sectionTitle}>Más planes populares</Text>
+            </View>
+            <FlatList
+              data={item.data}
+              keyExtractor={(plan) => plan.id}
+              renderItem={({ item: plan }) => <PlanCard plan={plan} />}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.topPlansContainer}
+              testID="top-plans-list"
             />
-          ))}
-        </ScrollView>
+          </View>
+        );
 
-        {/* Planes filtrados */}
-        {filteredPlans.length > 0 && (
-          <>
+      case 'categories':
+        return (
+          <View>
+            <Text style={styles.sectionTitle}>Explorar por categoría</Text>
+            <FlatList
+              data={categories}
+              keyExtractor={(category) => category.id}
+              renderItem={({ item: category }) => (
+                <CategoryButton
+                  category={category}
+                  selected={selectedCategory === category.name}
+                  onPress={() => handleCategoryPress(category.name)}
+                />
+              )}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.categoriesContainer}
+            />
+          </View>
+        );
+
+      case 'filteredPlans':
+        return (
+          <View>
             <Text style={styles.sectionTitle}>
               {searchQuery
                 ? "Resultados"
@@ -184,16 +228,31 @@ export default function HomeScreen() {
                 : "Todos los planes"}
             </Text>
             <View style={styles.filteredPlansContainer}>
-              {filteredPlans.slice(0, 6).map((plan) => (
+              {item.data.map((plan) => (
                 <PlanCard key={plan.id} plan={plan} horizontal={false} />
               ))}
             </View>
-          </>
-        )}
+          </View>
+        );
 
-        {/* Espaciado para el botón flotante */}
-        <View style={styles.bottomSpacing} />
-      </ScrollView>
+      case 'spacing':
+        return <View style={styles.bottomSpacing} />;
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <StatusBar style="light" />
+      <FlatList
+        data={sections}
+        keyExtractor={(item, index) => `${item.type}-${index}`}
+        renderItem={renderSection}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.contentContainer}
+      />
 
       {/* Floating Action Buttons */}
       <View style={styles.floatingButtons}>
@@ -232,9 +291,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.light.background,
   },
-  scrollView: {
-    flex: 1,
-  },
+
   contentContainer: {
     paddingBottom: 120,
   },
