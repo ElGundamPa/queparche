@@ -50,7 +50,7 @@ export default function MapScreen() {
   const [MapView, setMapView] = useState<any>(null);
   const [Marker, setMarker] = useState<any>(null);
   const [Location, setLocation] = useState<any>(null);
-  const filterButtonRef = useRef<TouchableOpacity>(null);
+  const filterButtonRef = useRef<TouchableOpacity | null>(null);
   const [filterButtonPosition, setFilterButtonPosition] = useState({ x: 0, y: 0 });
   
   // Animation values
