@@ -25,7 +25,11 @@ const PlanCard = memo(function PlanCard({ plan, horizontal = true }: PlanCardPro
   const router = useRouter();
 
   const handlePress = () => {
-    router.push(`/plan/${plan.id}`);
+    if (plan?.id) {
+      router.push(`/plan/${plan.id}`);
+    } else {
+      console.warn('Plan ID is missing:', plan);
+    }
   };
 
   if (horizontal) {

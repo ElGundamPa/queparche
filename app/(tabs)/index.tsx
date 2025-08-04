@@ -29,7 +29,7 @@ const { width } = Dimensions.get("window");
 export default function HomeScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
-  const { selectedCategory, setSelectedCategory, getRandomPlan, events } = usePlansStore();
+  const { selectedCategory, setSelectedCategory, getRandomPlan, events, isLoading } = usePlansStore();
   const { user } = useUserStore();
   const topPlans = useTopPlans();
   const filteredPlans = useFilteredPlans(searchQuery);
@@ -114,13 +114,40 @@ export default function HomeScreen() {
           </>
         )}
 
-        {/* Top 5 del día */}
+        {/* Featured Plan - 70% height with next plan hint */}
+        <View style={styles.featuredSection}>
+          <View style={styles.sectionHeader}>
+            <Star size={20} color={Colors.light.premium} />
+            <Text style={styles.sectionTitle}>Plan destacado</Text>
+          </View>
+          
+          {topPlans.length > 0 && (
+            <View style={styles.featuredContainer}>
+              {/* Main featured plan - 70% */}
+              <View style={styles.mainPlanContainer}>
+                <PlanCard plan={topPlans[0]} horizontal={false} />
+              </View>
+              
+              {/* Next plan hint - 30% */}
+              {topPlans.length > 1 && (
+                <View style={styles.nextPlanHint}>
+                  <Text style={styles.nextPlanText}>Siguiente plan</Text>
+                  <View style={styles.nextPlanPreview}>
+                    <PlanCard plan={topPlans[1]} horizontal={false} />
+                  </View>
+                </View>
+              )}
+            </View>
+          )}
+        </View>
+        
+        {/* Top 5 horizontal scroll */}
         <View style={styles.sectionHeader}>
           <Star size={20} color={Colors.light.premium} />
-          <Text style={styles.sectionTitle}>Top 5 del día</Text>
+          <Text style={styles.sectionTitle}>Más planes populares</Text>
         </View>
         <FlatList
-          data={topPlans}
+          data={topPlans.slice(2)}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => <PlanCard plan={item} />}
           horizontal
@@ -280,6 +307,31 @@ const styles = StyleSheet.create({
   },
   filteredPlansContainer: {
     paddingHorizontal: 20,
+  },
+  featuredSection: {
+    marginBottom: 20,
+  },
+  featuredContainer: {
+    height: 400,
+    paddingHorizontal: 20,
+  },
+  mainPlanContainer: {
+    height: '70%',
+    marginBottom: 8,
+  },
+  nextPlanHint: {
+    height: '30%',
+    opacity: 0.7,
+  },
+  nextPlanText: {
+    fontSize: 12,
+    color: Colors.light.darkGray,
+    marginBottom: 4,
+    paddingLeft: 4,
+  },
+  nextPlanPreview: {
+    flex: 1,
+    transform: [{ scale: 0.9 }],
   },
   bottomSpacing: {
     height: 20,

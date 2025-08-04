@@ -135,7 +135,7 @@ export default ShortCard;
 const styles = StyleSheet.create({
   card: {
     width: width,
-    height: height - 150,
+    height: height,
     backgroundColor: Colors.light.background,
     position: "relative",
   },

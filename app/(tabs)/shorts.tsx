@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import {
   StyleSheet,
   View,
@@ -7,31 +7,54 @@ import {
   FlatList,
   Dimensions,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Video, ResizeMode, AVPlaybackStatus } from "expo-av";
 import { Plus } from "lucide-react-native";
+import { PanGestureHandler } from "react-native-gesture-handler";
+import Animated, {
+  useSharedValue,
+  useAnimatedGestureHandler,
+  withSpring,
+  runOnJS,
+} from "react-native-reanimated";
 
 import Colors from "@/constants/colors";
 import ShortCard from "@/components/ShortCard";
 import { usePlansStore } from "@/hooks/use-plans-store";
 
-const { height } = Dimensions.get("window");
+const { height, width } = Dimensions.get("window");
+const ITEM_HEIGHT = height;
 
 interface ShortItemProps {
   item: any;
   index: number;
   activeIndex: number;
+  isVisible: boolean;
 }
 
-const ShortItem: React.FC<ShortItemProps> = ({ item, index, activeIndex }) => {
+const ShortItem: React.FC<ShortItemProps> = ({ item, index, activeIndex, isVisible }) => {
   const [videoError, setVideoError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isBuffering, setIsBuffering] = useState(false);
+  const videoRef = useRef<Video>(null);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      if (isVisible && index === activeIndex) {
+        videoRef.current.playAsync();
+      } else {
+        videoRef.current.pauseAsync();
+      }
+    }
+  }, [isVisible, activeIndex, index]);
 
   const handlePlaybackStatusUpdate = (status: AVPlaybackStatus) => {
     if (status.isLoaded) {
       setIsLoading(false);
+      setIsBuffering(status.isBuffering || false);
       if (status.error) {
         console.error('Video playback error:', status.error);
         setVideoError(true);
@@ -45,8 +68,16 @@ const ShortItem: React.FC<ShortItemProps> = ({ item, index, activeIndex }) => {
     setIsLoading(false);
   };
 
+  const handleRetry = () => {
+    setVideoError(false);
+    setIsLoading(true);
+    if (videoRef.current) {
+      videoRef.current.loadAsync({ uri: item.videoUrl }, {}, false);
+    }
+  };
+
   return (
-    <View style={styles.shortContainer}>
+    <Animated.View style={styles.shortContainer}>
       {Platform.OS !== "web" ? (
         <>
           {videoError ? (
@@ -54,10 +85,7 @@ const ShortItem: React.FC<ShortItemProps> = ({ item, index, activeIndex }) => {
               <Text style={styles.errorText}>Error al cargar el video</Text>
               <TouchableOpacity 
                 style={styles.retryButton}
-                onPress={() => {
-                  setVideoError(false);
-                  setIsLoading(true);
-                }}
+                onPress={handleRetry}
               >
                 <Text style={styles.retryText}>Reintentar</Text>
               </TouchableOpacity>
@@ -65,19 +93,23 @@ const ShortItem: React.FC<ShortItemProps> = ({ item, index, activeIndex }) => {
           ) : (
             <>
               <Video
+                ref={videoRef}
                 source={{ uri: item.videoUrl }}
                 style={styles.video}
                 resizeMode={ResizeMode.COVER}
-                shouldPlay={index === activeIndex && !videoError}
+                shouldPlay={false} // Control manually
                 isLooping
                 isMuted={false}
                 onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
                 onError={handleError}
                 useNativeControls={false}
               />
-              {isLoading && (
+              {(isLoading || isBuffering) && (
                 <View style={styles.loadingOverlay}>
-                  <Text style={styles.loadingText}>Cargando video...</Text>
+                  <ActivityIndicator size="large" color={Colors.light.primary} />
+                  <Text style={styles.loadingText}>
+                    {isLoading ? 'Cargando video...' : 'Buffering...'}
+                  </Text>
                 </View>
               )}
             </>
@@ -87,25 +119,31 @@ const ShortItem: React.FC<ShortItemProps> = ({ item, index, activeIndex }) => {
       ) : (
         <ShortCard short={item} />
       )}
-    </View>
+    </Animated.View>
   );
 };
 
 export default function ShortsScreen() {
   const router = useRouter();
-  const { shorts } = usePlansStore();
+  const { shorts, isLoading } = usePlansStore();
   const [activeIndex, setActiveIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
+  const translateY = useSharedValue(0);
+  const [isScrolling, setIsScrolling] = useState(false);
 
   const handleViewableItemsChanged = useCallback(({ viewableItems }: any) => {
-    if (viewableItems.length > 0) {
-      setActiveIndex(viewableItems[0].index);
+    if (viewableItems.length > 0 && !isScrolling) {
+      const newIndex = viewableItems[0].index || 0;
+      setActiveIndex(newIndex);
     }
-  }, []);
+  }, [isScrolling]);
 
   const viewabilityConfigCallbackPairs = useRef([
     {
-      viewabilityConfig: { itemVisiblePercentThreshold: 50 },
+      viewabilityConfig: { 
+        itemVisiblePercentThreshold: 80,
+        minimumViewTime: 300
+      },
       onViewableItemsChanged: handleViewableItemsChanged,
     },
   ]);
@@ -114,41 +152,95 @@ export default function ShortsScreen() {
     router.push("/create-short");
   };
 
+  const scrollToIndex = (index: number) => {
+    if (flatListRef.current && index >= 0 && index < shorts.length) {
+      flatListRef.current.scrollToIndex({ index, animated: true });
+      setActiveIndex(index);
+    }
+  };
+
+  const gestureHandler = useAnimatedGestureHandler({
+    onStart: () => {
+      runOnJS(setIsScrolling)(true);
+    },
+    onActive: (event) => {
+      translateY.value = event.translationY;
+    },
+    onEnd: (event) => {
+      const threshold = ITEM_HEIGHT * 0.3;
+      
+      if (event.translationY > threshold && activeIndex > 0) {
+        // Swipe down - go to previous
+        runOnJS(scrollToIndex)(activeIndex - 1);
+      } else if (event.translationY < -threshold && activeIndex < shorts.length - 1) {
+        // Swipe up - go to next
+        runOnJS(scrollToIndex)(activeIndex + 1);
+      }
+      
+      translateY.value = withSpring(0);
+      runOnJS(setIsScrolling)(false);
+    },
+  });
+
   const renderItem = useCallback(({ item, index }: { item: any; index: number }) => {
-    return <ShortItem item={item} index={index} activeIndex={activeIndex} />;
+    const isVisible = Math.abs(index - activeIndex) <= 1;
+    return (
+      <ShortItem 
+        item={item} 
+        index={index} 
+        activeIndex={activeIndex} 
+        isVisible={isVisible}
+      />
+    );
   }, [activeIndex]);
 
   const keyExtractor = useCallback((item: any) => item.id, []);
 
   const getItemLayout = useCallback(
     (_: any, index: number) => ({
-      length: height - 150,
-      offset: (height - 150) * index,
+      length: ITEM_HEIGHT,
+      offset: ITEM_HEIGHT * index,
       index,
     }),
     []
   );
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={Colors.light.primary} />
+        <Text style={styles.loadingText}>Cargando shorts...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
       
       {shorts.length > 0 ? (
-        <FlatList
-          ref={flatListRef}
-          data={shorts}
-          renderItem={renderItem}
-          keyExtractor={keyExtractor}
-          getItemLayout={getItemLayout}
-          pagingEnabled
-          showsVerticalScrollIndicator={false}
-          viewabilityConfigCallbackPairs={viewabilityConfigCallbackPairs.current}
-          removeClippedSubviews={true}
-          maxToRenderPerBatch={2}
-          windowSize={3}
-          initialNumToRender={1}
-          testID="shorts-list"
-        />
+        <PanGestureHandler onGestureEvent={gestureHandler}>
+          <Animated.View style={styles.container}>
+            <FlatList
+              ref={flatListRef}
+              data={shorts}
+              renderItem={renderItem}
+              keyExtractor={keyExtractor}
+              getItemLayout={getItemLayout}
+              pagingEnabled
+              showsVerticalScrollIndicator={false}
+              viewabilityConfigCallbackPairs={viewabilityConfigCallbackPairs.current}
+              removeClippedSubviews={Platform.OS === 'android'}
+              maxToRenderPerBatch={3}
+              windowSize={5}
+              initialNumToRender={2}
+              scrollEnabled={!isScrolling}
+              onScrollBeginDrag={() => setIsScrolling(true)}
+              onScrollEndDrag={() => setIsScrolling(false)}
+              testID="shorts-list"
+            />
+          </Animated.View>
+        </PanGestureHandler>
       ) : (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>No hay shorts disponibles</Text>
@@ -174,9 +266,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.light.background,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Colors.light.background,
+  },
   shortContainer: {
-    width: "100%",
-    height: height - 150,
+    width: width,
+    height: ITEM_HEIGHT,
     position: 'relative',
   },
   video: {

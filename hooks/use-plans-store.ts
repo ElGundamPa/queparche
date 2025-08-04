@@ -92,9 +92,10 @@ export const [PlansProvider, usePlansStore] = createContextHook(() => {
         createdAt: new Date().toISOString(),
       };
       
-      const updatedPlans = [...cachedPlans, optimisticPlan];
+      const updatedPlans = [optimisticPlan, ...cachedPlans];
       setCachedPlans(updatedPlans);
       queryClient.setQueryData([["plans", "getAll"]], updatedPlans);
+      saveCachedData(updatedPlans, cachedShorts);
       
       return { previousPlans };
     },
@@ -103,6 +104,7 @@ export const [PlansProvider, usePlansStore] = createContextHook(() => {
       if (context?.previousPlans) {
         queryClient.setQueryData([["plans", "getAll"]], context.previousPlans);
         setCachedPlans(context.previousPlans as Plan[]);
+        saveCachedData(context.previousPlans as Plan[], cachedShorts);
       }
     },
     onSuccess: (data) => {

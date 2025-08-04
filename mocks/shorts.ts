@@ -3,7 +3,7 @@ import { Short } from "@/types/plan";
 export const mockShorts: Short[] = [
   {
     id: "1",
-    videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-tree-with-yellow-flowers-1173-large.mp4",
+    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
     thumbnailUrl: "https://images.unsplash.com/photo-1635805737707-575885ab0820?q=80&w=1000",
     placeName: "Parque Arví",
     category: "Nature",
@@ -17,7 +17,7 @@ export const mockShorts: Short[] = [
   },
   {
     id: "2",
-    videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-young-woman-taking-a-picture-of-graffiti-art-4505-large.mp4",
+    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
     thumbnailUrl: "https://images.unsplash.com/photo-1593014109521-48ea0d373ef1?q=80&w=1000",
     placeName: "Comuna 13",
     category: "Culture",
@@ -31,7 +31,7 @@ export const mockShorts: Short[] = [
   },
   {
     id: "3",
-    videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-serving-tray-of-food-being-walked-through-a-restaurant-34668-large.mp4",
+    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
     thumbnailUrl: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1000",
     placeName: "El Poblado",
     category: "Restaurants",
@@ -45,7 +45,7 @@ export const mockShorts: Short[] = [
   },
   {
     id: "4",
-    videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-flowers-wildflowers-and-plants-in-a-botanical-garden-10389-large.mp4",
+    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
     thumbnailUrl: "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?q=80&w=1000",
     placeName: "Jardín Botánico",
     category: "Nature",
@@ -59,7 +59,7 @@ export const mockShorts: Short[] = [
   },
   {
     id: "5",
-    videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-people-dancing-at-a-nightclub-with-disco-lights-3052-large.mp4",
+    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
     thumbnailUrl: "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?q=80&w=1000",
     placeName: "Envy Rooftop",
     category: "Rooftops",
@@ -73,7 +73,7 @@ export const mockShorts: Short[] = [
   },
   {
     id: "6",
-    videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-multicolored-buildings-in-a-small-town-2045-large.mp4",
+    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
     thumbnailUrl: "https://images.unsplash.com/photo-1582719471384-894fbb16e074?q=80&w=1000",
     placeName: "Guatapé",
     category: "Nature",
@@ -87,7 +87,7 @@ export const mockShorts: Short[] = [
   },
   {
     id: "7",
-    videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-couple-dancing-salsa-in-a-nightclub-3053-large.mp4",
+    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
     thumbnailUrl: "https://images.unsplash.com/photo-1547036967-23d11aacaee0?q=80&w=1000",
     placeName: "Café Havana",
     category: "Nightlife",
@@ -101,7 +101,7 @@ export const mockShorts: Short[] = [
   },
   {
     id: "8",
-    videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-people-walking-in-a-busy-street-4063-large.mp4",
+    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
     thumbnailUrl: "https://images.unsplash.com/photo-1611273426858-450d8e3c9fce?q=80&w=1000",
     placeName: "Plaza Botero",
     category: "Culture",
@@ -115,7 +115,7 @@ export const mockShorts: Short[] = [
   },
   {
     id: "9",
-    videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-coffee-beans-being-roasted-in-a-machine-4064-large.mp4",
+    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
     thumbnailUrl: "https://images.unsplash.com/photo-1447933601403-0c6688de566e?q=80&w=1000",
     placeName: "Café San Alberto",
     category: "Restaurants",
@@ -129,7 +129,7 @@ export const mockShorts: Short[] = [
   },
   {
     id: "10",
-    videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-aerial-view-of-a-colorful-city-2046-large.mp4",
+    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
     thumbnailUrl: "https://images.unsplash.com/photo-1605106715994-18d3fecffb98?q=80&w=1000",
     placeName: "Medellín Centro",
     category: "Free plans",
