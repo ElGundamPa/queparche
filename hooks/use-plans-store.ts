@@ -56,20 +56,25 @@ export const [PlansProvider, usePlansStore] = createContextHook(() => {
   };
 
   // Fetch plans from backend
-  const plansQuery = trpc.plans.getAll.useQuery(undefined, {
-    onSuccess: (data) => {
-      setCachedPlans(data);
-      saveCachedData(data, cachedShorts);
-    }
-  });
+  const plansQuery = trpc.plans.getAll.useQuery();
   
   // Fetch shorts from backend
-  const shortsQuery = trpc.shorts.getAll.useQuery(undefined, {
-    onSuccess: (data) => {
-      setCachedShorts(data);
-      saveCachedData(cachedPlans, data);
+  const shortsQuery = trpc.shorts.getAll.useQuery();
+
+  // Update cached data when queries succeed
+  useEffect(() => {
+    if (plansQuery.data) {
+      setCachedPlans(plansQuery.data);
+      saveCachedData(plansQuery.data, cachedShorts);
     }
-  });
+  }, [plansQuery.data]);
+
+  useEffect(() => {
+    if (shortsQuery.data) {
+      setCachedShorts(shortsQuery.data);
+      saveCachedData(cachedPlans, shortsQuery.data);
+    }
+  }, [shortsQuery.data]);
 
   // Create plan mutation with optimistic updates
   const createPlanMutation = trpc.plans.create.useMutation({
