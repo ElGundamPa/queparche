@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   StyleSheet,
   Text,
@@ -6,26 +6,47 @@ import {
   TextInput,
   TouchableOpacity,
   FlatList,
-  KeyboardAvoidingView,
   Platform,
   Alert,
+  Image,
 } from "react-native";
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import { useRouter } from "expo-router";
+import { useRouter, Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { Stack } from "expo-router";
-import { Send, Bot, User, Sparkles } from "lucide-react-native";
+import { Send, Bot, User, Sparkles, Heart, Users } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
+import { v4 as uuidv4 } from 'uuid';
 
 import Colors from "@/constants/colors";
 import { usePlansStore } from "@/hooks/use-plans-store";
 import { useUserStore } from "@/hooks/use-user-store";
+import { Plan } from "@/types/plan";
+
+interface PlanReference {
+  planId: string;
+  matchName: string;
+  confidence: number;
+}
+
+interface AIResponse {
+  content: string;
+  planReferences?: PlanReference[];
+  typingDelay?: number;
+  confidenceScore?: number;
+}
 
 interface Message {
   id: string;
   content: string;
   isUser: boolean;
   timestamp: Date;
+  planReferences?: PlanReference[];
+  aiResponse?: AIResponse;
+}
+
+interface PlanCardProps {
+  plan: Plan;
+  onPress: () => void;
 }
 
 export default function AIAssistantScreen() {
@@ -42,6 +63,7 @@ export default function AIAssistantScreen() {
   ]);
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [lastRequestTime, setLastRequestTime] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
@@ -53,25 +75,32 @@ export default function AIAssistantScreen() {
     }
   }, [messages]);
 
-  const generateAIResponse = async (userMessage: string): Promise<string> => {
+  const generateAIResponse = useCallback(async (userMessage: string): Promise<AIResponse> => {
     try {
-      // Create context about available plans
+      // Create context about available plans with structured data
       const availablePlans = plans.map(plan => 
-        `${plan.name} (${plan.category}) - ${plan.description.substring(0, 100)}...`
+        `ID: ${plan.id} | Name: ${plan.name} | Category: ${plan.category} | Description: ${plan.description.substring(0, 150)}... | Rating: ${plan.rating} | Likes: ${plan.likes}`
       ).join('\n');
 
-      const systemPrompt = `Eres un asistente de IA especializado en recomendar planes y lugares en Medellín, Colombia. 
-Tu nombre es "Parche AI" y hablas de manera amigable pero profesional.
+      const systemPrompt = `You are "Parche AI", a friendly and professional AI assistant specialized in recommending plans and places in Medellín, Colombia.
 
-Planes disponibles actualmente:
+Available plans database:
 ${availablePlans}
 
-Categorías disponibles: ${Array.from(new Set(plans.map(p => p.category))).join(', ')}
+Available categories: ${Array.from(new Set(plans.map(p => p.category))).join(', ')}
 
-Usuario actual: ${user?.name || 'Usuario'}
-Categoría seleccionada: ${selectedCategory || 'Ninguna'}
+Current user: ${user?.name || 'User'}
+Selected category: ${selectedCategory || 'None'}
 
-Responde de manera conversacional, recomienda planes específicos basándote en lo que el usuario pide. Mantén un tono amigable y útil, mencionando Medellín cuando sea relevante pero evita usar demasiado slang regional.`;
+IMPORTANT INSTRUCTIONS:
+1. Respond in a conversational, friendly but professional tone
+2. When mentioning specific plans, use their EXACT names as they appear in the database
+3. Avoid excessive regional slang - keep it accessible to all users
+4. When recommending multiple plans, mention 2-4 relevant options
+5. Focus on being helpful and relevant to the user's request
+6. If asked about romantic spots, nightlife, food, etc., recommend appropriate plans from the database
+
+Response format: Provide a natural, conversational response that mentions specific plan names when relevant.`;
 
       const response = await fetch('https://toolkit.rork.com/text/llm/', {
         method: 'POST',
@@ -87,22 +116,80 @@ Responde de manera conversacional, recomienda planes específicos basándote en 
       });
 
       if (!response.ok) {
-        throw new Error('Failed to get AI response');
+        if (response.status === 429) {
+          throw new Error('Demasiadas solicitudes. Por favor espera un momento antes de intentar de nuevo.');
+        } else if (response.status >= 500) {
+          throw new Error('Problemas del servidor. Por favor intenta de nuevo en unos minutos.');
+        } else {
+          throw new Error('Error de conexión. Verifica tu conexión a internet.');
+        }
       }
 
       const data = await response.json();
-      return data.completion || 'Lo siento, no pude procesar tu solicitud en este momento.';
+      const content = data.completion || 'Lo siento, no pude procesar tu solicitud en este momento.';
+      
+      // Extract plan references from the AI response
+      const planReferences = extractPlanReferences(content, plans);
+      
+      return {
+        content,
+        planReferences,
+        typingDelay: Math.random() * 1000 + 500, // 500-1500ms
+        confidenceScore: planReferences.length > 0 ? 0.9 : 0.7
+      };
     } catch (error) {
       console.error('AI Response Error:', error);
-      return 'Disculpa, tengo problemas técnicos en este momento. ¿Podrías intentar de nuevo?';
+      const errorMessage = error instanceof Error ? error.message : 'Disculpa, tengo problemas técnicos en este momento. ¿Podrías intentar de nuevo?';
+      return {
+        content: errorMessage,
+        confidenceScore: 0.1
+      };
     }
+  }, [plans, user, selectedCategory]);
+
+  const extractPlanReferences = (content: string, availablePlans: Plan[]): PlanReference[] => {
+    const references: PlanReference[] = [];
+    
+    availablePlans.forEach(plan => {
+      // Check if plan name is mentioned in the response
+      const planNameLower = plan.name.toLowerCase();
+      const contentLower = content.toLowerCase();
+      
+      if (contentLower.includes(planNameLower)) {
+        // Calculate confidence based on exact match vs partial match
+        const exactMatch = contentLower.includes(planNameLower);
+        const confidence = exactMatch ? 0.95 : 0.75;
+        
+        references.push({
+          planId: plan.id,
+          matchName: plan.name,
+          confidence
+        });
+      }
+    });
+    
+    // Sort by confidence and limit to top 4 references
+    return references
+      .sort((a, b) => b.confidence - a.confidence)
+      .slice(0, 4);
   };
 
-  const handleSendMessage = async () => {
+  const handleSendMessage = useCallback(async () => {
     if (!inputText.trim() || isLoading) return;
 
+    // Throttle requests to prevent spam
+    const now = Date.now();
+    if (now - lastRequestTime < 2000) {
+      Alert.alert(
+        "Espera un momento",
+        "Por favor espera antes de enviar otro mensaje."
+      );
+      return;
+    }
+    setLastRequestTime(now);
+
     const userMessage: Message = {
-      id: Date.now().toString(),
+      id: uuidv4(),
       content: inputText.trim(),
       isUser: true,
       timestamp: new Date(),
@@ -119,22 +206,82 @@ Responde de manera conversacional, recomienda planes específicos basándote en 
     try {
       const aiResponse = await generateAIResponse(userMessage.content);
       
+      // Simulate typing delay for better UX
+      if (aiResponse.typingDelay) {
+        await new Promise(resolve => setTimeout(resolve, aiResponse.typingDelay));
+      }
+      
       const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: aiResponse,
+        id: uuidv4(),
+        content: aiResponse.content,
         isUser: false,
         timestamp: new Date(),
+        planReferences: aiResponse.planReferences,
+        aiResponse
       };
 
       setMessages(prev => [...prev, aiMessage]);
     } catch (error) {
-      Alert.alert(
-        "Error",
-        "No pude conectarme con el asistente. Intenta de nuevo."
-      );
+      console.error('Send message error:', error);
+      const errorMessage: Message = {
+        id: uuidv4(),
+        content: "Disculpa, no pude procesar tu mensaje. Por favor verifica tu conexión e intenta de nuevo.",
+        isUser: false,
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
+  }, [inputText, isLoading, lastRequestTime, generateAIResponse]);
+
+  const PlanCard = ({ plan, onPress }: PlanCardProps) => (
+    <TouchableOpacity style={styles.planCard} onPress={onPress}>
+      <Image 
+        source={{ uri: plan.images[0] || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400' }}
+        style={styles.planCardImage}
+        resizeMode="cover"
+      />
+      <View style={styles.planCardContent}>
+        <Text style={styles.planCardTitle} numberOfLines={1}>{plan.name}</Text>
+        <Text style={styles.planCardCategory}>{plan.category}</Text>
+        <View style={styles.planCardStats}>
+          <View style={styles.planCardStat}>
+            <Heart size={12} color={Colors.light.primary} />
+            <Text style={styles.planCardStatText}>{plan.likes}</Text>
+          </View>
+          <View style={styles.planCardStat}>
+            <Users size={12} color={Colors.light.darkGray} />
+            <Text style={styles.planCardStatText}>{plan.currentPeople}/{plan.maxPeople}</Text>
+          </View>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+
+  const renderPlanReferences = (planReferences: PlanReference[]) => {
+    if (!planReferences || planReferences.length === 0) return null;
+    
+    const referencedPlans = planReferences
+      .map(ref => plans.find(p => p.id === ref.planId))
+      .filter(Boolean) as Plan[];
+    
+    if (referencedPlans.length === 0) return null;
+    
+    return (
+      <View style={styles.planReferencesContainer}>
+        <Text style={styles.planReferencesTitle}>Planes recomendados:</Text>
+        <View style={styles.planReferencesGrid}>
+          {referencedPlans.map((plan) => (
+            <PlanCard
+              key={plan.id}
+              plan={plan}
+              onPress={() => router.push(`/plan/${plan.id}`)}
+            />
+          ))}
+        </View>
+      </View>
+    );
   };
 
   const renderMessage = ({ item }: { item: Message }) => (
@@ -151,8 +298,19 @@ Responde de manera conversacional, recomienda planes específicos basándote en 
         <Text style={styles.messageSender}>
           {item.isUser ? 'Tú' : 'Parche AI'}
         </Text>
+        {item.aiResponse?.confidenceScore && (
+          <View style={[
+            styles.confidenceBadge,
+            { backgroundColor: item.aiResponse.confidenceScore > 0.8 ? Colors.light.primary : Colors.light.darkGray }
+          ]}>
+            <Text style={styles.confidenceText}>
+              {Math.round(item.aiResponse.confidenceScore * 100)}%
+            </Text>
+          </View>
+        )}
       </View>
       <Text style={styles.messageText}>{item.content}</Text>
+      {renderPlanReferences(item.planReferences || [])}
       <Text style={styles.messageTime}>
         {item.timestamp.toLocaleTimeString('es-CO', { 
           hour: '2-digit', 
@@ -185,8 +343,9 @@ Responde de manera conversacional, recomienda planes específicos basándote en 
         contentContainerStyle={styles.flex}
         enableOnAndroid={true}
         enableAutomaticScroll={Platform.OS === 'ios'}
-        extraScrollHeight={20}
+        extraScrollHeight={Platform.OS === 'ios' ? 20 : 40}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
         <FlatList
           ref={flatListRef}
@@ -196,11 +355,28 @@ Responde de manera conversacional, recomienda planes específicos basándote en 
           style={styles.messagesList}
           contentContainerStyle={styles.messagesContainer}
           showsVerticalScrollIndicator={false}
-          scrollEnabled={false}
+          scrollEnabled={true}
+          onContentSizeChange={() => {
+            // Ensure scroll to bottom when content changes
+            setTimeout(() => {
+              flatListRef.current?.scrollToEnd({ animated: true });
+            }, 100);
+          }}
+          onLayout={() => {
+            // Scroll to bottom on initial layout
+            setTimeout(() => {
+              flatListRef.current?.scrollToEnd({ animated: false });
+            }, 100);
+          }}
         />
 
         {isLoading && (
           <View style={styles.loadingContainer}>
+            <View style={styles.loadingDots}>
+              <View style={[styles.loadingDot, styles.loadingDot1]} />
+              <View style={[styles.loadingDot, styles.loadingDot2]} />
+              <View style={[styles.loadingDot, styles.loadingDot3]} />
+            </View>
             <Text style={styles.loadingText}>Parche AI está escribiendo...</Text>
           </View>
         )}
@@ -342,5 +518,96 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     backgroundColor: Colors.light.darkGray,
+  },
+  planReferencesContainer: {
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: Colors.light.background,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  planReferencesTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.light.text,
+    marginBottom: 8,
+  },
+  planReferencesGrid: {
+    gap: 8,
+  },
+  planCard: {
+    flexDirection: 'row',
+    backgroundColor: Colors.light.card,
+    borderRadius: 12,
+    padding: 8,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    marginBottom: 6,
+  },
+  planCardImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+  },
+  planCardContent: {
+    flex: 1,
+    marginLeft: 12,
+    justifyContent: 'space-between',
+  },
+  planCardTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.light.text,
+  },
+  planCardCategory: {
+    fontSize: 12,
+    color: Colors.light.darkGray,
+    marginTop: 2,
+  },
+  planCardStats: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 4,
+  },
+  planCardStat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  planCardStatText: {
+    fontSize: 11,
+    color: Colors.light.darkGray,
+  },
+  confidenceBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    marginLeft: 'auto',
+  },
+  confidenceText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: Colors.light.background,
+  },
+  loadingDots: {
+    flexDirection: 'row',
+    gap: 4,
+    marginBottom: 8,
+  },
+  loadingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.light.primary,
+  },
+  loadingDot1: {
+    opacity: 0.4,
+  },
+  loadingDot2: {
+    opacity: 0.7,
+  },
+  loadingDot3: {
+    opacity: 1,
   },
 });
