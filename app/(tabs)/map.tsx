@@ -50,8 +50,8 @@ export default function MapScreen() {
   const [MapView, setMapView] = useState<any>(null);
   const [Marker, setMarker] = useState<any>(null);
   const [Location, setLocation] = useState<any>(null);
-  const filterButtonRef = useRef<View | null>(null);
-  const [filterButtonPosition, setFilterButtonPosition] = useState({ x: 0, y: 0 });
+  const filterButtonRef = useRef<React.ElementRef<typeof TouchableOpacity> | null>(null);
+  const [filterButtonPosition, setFilterButtonPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   
   // Animation values
   const dropdownScale = useSharedValue(0);
