@@ -50,7 +50,7 @@ export default function MapScreen() {
   const [MapView, setMapView] = useState<any>(null);
   const [Marker, setMarker] = useState<any>(null);
   const [Location, setLocation] = useState<any>(null);
-  const filterButtonRef = useRef<TouchableOpacity | null>(null);
+  const filterButtonRef = useRef<View | null>(null);
   const [filterButtonPosition, setFilterButtonPosition] = useState({ x: 0, y: 0 });
   
   // Animation values
@@ -104,18 +104,14 @@ export default function MapScreen() {
 
   const toggleFilters = () => {
     if (showFilters) {
-      // Close animation
       dropdownScale.value = withSpring(0, { damping: 15 });
       dropdownOpacity.value = withTiming(0, { duration: 200 });
       setTimeout(() => setShowFilters(false), 200);
     } else {
-      // Measure button position
       filterButtonRef.current?.measure((x: number, y: number, width: number, height: number, pageX: number, pageY: number) => {
         setFilterButtonPosition({ x: pageX, y: pageY });
       });
-      
       setShowFilters(true);
-      // Open animation
       dropdownScale.value = withSpring(1, { damping: 15 });
       dropdownOpacity.value = withTiming(1, { duration: 200 });
     }
@@ -257,18 +253,11 @@ export default function MapScreen() {
         onRequestClose={toggleFilters}
       >
         <Pressable style={styles.modalOverlay} onPress={toggleFilters}>
-          <Animated.View
-            style={[
-              styles.filtersDropdown,
-              {
-                top: filterButtonPosition.y - 280, // Position above button
-                left: Math.max(20, filterButtonPosition.x - 150),
-              },
-              useAnimatedStyle(() => ({
-                transform: [{ scale: dropdownScale.value }],
-                opacity: dropdownOpacity.value,
-              })),
-            ]}
+          <AnimatedDropdown
+            top={Math.max(60, filterButtonPosition.y - 300)}
+            left={Math.max(20, filterButtonPosition.x - 150)}
+            scale={dropdownScale.value}
+            opacity={dropdownOpacity.value}
           >
             <View style={styles.dropdownHeader}>
               <Text style={styles.filtersTitle}>Filtrar por categoría</Text>
@@ -299,7 +288,7 @@ export default function MapScreen() {
                 </TouchableOpacity>
               ))}
             </View>
-          </Animated.View>
+          </AnimatedDropdown>
         </Pressable>
       </Modal>
       
