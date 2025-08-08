@@ -56,6 +56,10 @@ export default function MapScreen() {
   // Animation values
   const dropdownScale = useSharedValue(0);
   const dropdownOpacity = useSharedValue(0);
+  const dropdownAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: dropdownScale.value }],
+    opacity: dropdownOpacity.value,
+  }));
 
   useEffect(() => {
     if (Platform.OS !== "web") {
@@ -253,11 +257,17 @@ export default function MapScreen() {
         onRequestClose={toggleFilters}
       >
         <Pressable style={styles.modalOverlay} onPress={toggleFilters}>
-          <AnimatedDropdown
-            top={Math.max(60, filterButtonPosition.y - 300)}
-            left={Math.max(20, filterButtonPosition.x - 150)}
-            scale={dropdownScale.value}
-            opacity={dropdownOpacity.value}
+          <Animated.View
+            style={[
+              styles.filtersDropdown,
+              {
+                top: Math.max(60, filterButtonPosition.y - 300),
+                left: Math.max(20, filterButtonPosition.x - 150),
+              },
+              dropdownAnimatedStyle,
+            ]}
+            testID="filter-dropdown"
+            onStartShouldSetResponder={() => true}
           >
             <View style={styles.dropdownHeader}>
               <Text style={styles.filtersTitle}>Filtrar por categoría</Text>
@@ -288,7 +298,7 @@ export default function MapScreen() {
                 </TouchableOpacity>
               ))}
             </View>
-          </AnimatedDropdown>
+          </Animated.View>
         </Pressable>
       </Modal>
       
