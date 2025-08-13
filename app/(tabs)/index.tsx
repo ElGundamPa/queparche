@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useCallback } from "react";
 import {
   StyleSheet,
   Text,
@@ -26,6 +26,7 @@ import { categories } from "@/mocks/categories";
 import { useFilteredPlans, usePlansStore, useTopPlans } from "@/hooks/use-plans-store";
 import { useUserStore } from "@/hooks/use-user-store";
 import { useSearchStore } from "@/hooks/use-search-store";
+import HorizontalCards from "@/components/HorizontalCards";
 
 
 
@@ -35,8 +36,8 @@ type SectionType =
   | { type: 'events'; data: any[] }
   | { type: 'featured'; data: any[] }
   | { type: 'topPlans'; data: any[] }
-  | { type: 'categories' }
   | { type: 'filteredPlans'; data: any[] }
+  | { type: 'categories' }
   | { type: 'spacing' };
 
 export default function HomeScreen() {
@@ -97,11 +98,11 @@ export default function HomeScreen() {
       }
     }
 
-    sectionList.push({ type: 'categories' });
-
     if (filteredPlans.length > 0) {
-      sectionList.push({ type: 'filteredPlans', data: filteredPlans.slice(0, 6) });
+      sectionList.push({ type: 'filteredPlans', data: filteredPlans.slice(0, 12) });
     }
+
+    sectionList.push({ type: 'categories' });
 
     sectionList.push({ type: 'spacing' });
     return sectionList;
@@ -165,18 +166,18 @@ export default function HomeScreen() {
               <Calendar size={20} color={Colors.light.primary} />
               <Text style={styles.sectionTitle}>Eventos de hoy</Text>
             </View>
-            <FlatList
+            <HorizontalCards
               data={item.data}
               keyExtractor={(ev) => ev.id}
+              itemWidth={280}
               renderItem={({ item: event, index }) => (
-                <Animated.View entering={FadeInUp.delay(400 + index * 100)} style={styles.eventCard}>
+                <Animated.View entering={FadeInUp.delay(400 + index * 100)}>
                   <EventCard event={event} />
                 </Animated.View>
               )}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.horizontalScrollContent}
-              ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+              gap={16}
+              contentPaddingHorizontal={20}
+              testID="events-horizontal"
             />
           </Animated.View>
         );
@@ -188,18 +189,18 @@ export default function HomeScreen() {
               <Star size={20} color={Colors.light.premium} />
               <Text style={styles.sectionTitle}>Plan destacado</Text>
             </View>
-            <FlatList
+            <HorizontalCards
               data={item.data}
               keyExtractor={(plan) => plan.id}
+              itemWidth={280}
               renderItem={({ item: plan, index }) => (
-                <Animated.View entering={FadeInUp.delay(500 + index * 100)} style={styles.horizontalPlanCard}>
+                <Animated.View entering={FadeInUp.delay(500 + index * 100)}>
                   <PlanCard plan={plan} horizontal={false} />
                 </Animated.View>
               )}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.horizontalScrollContent}
-              ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+              gap={16}
+              contentPaddingHorizontal={20}
+              testID="featured-horizontal"
             />
           </Animated.View>
         );
@@ -212,17 +213,17 @@ export default function HomeScreen() {
               <Text style={styles.sectionTitle}>Más planes populares</Text>
             </View>
             {isLoading ? (
-              <FlatList
+              <HorizontalCards
                 data={[1, 2, 3]}
                 renderItem={() => <PlanCardSkeleton horizontal={true} />}
                 keyExtractor={(item) => item.toString()}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.horizontalListContent}
-                ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+                itemWidth={280}
+                gap={16}
+                contentPaddingHorizontal={20}
+                testID="topplans-skeleton"
               />
             ) : item.data.length > 0 ? (
-              <FlatList
+              <HorizontalCards
                 data={item.data}
                 renderItem={({ item: plan, index }) => (
                   <Animated.View entering={FadeInUp.delay(600 + index * 100)}>
@@ -230,10 +231,10 @@ export default function HomeScreen() {
                   </Animated.View>
                 )}
                 keyExtractor={(plan) => plan.id}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.horizontalListContent}
-                ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+                itemWidth={280}
+                gap={16}
+                contentPaddingHorizontal={20}
+                testID="topplans-horizontal"
               />
             ) : (
               <EmptyState
@@ -261,23 +262,17 @@ export default function HomeScreen() {
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Explorar por categoría</Text>
             </View>
-            <FlatList
-              data={categories}
-              renderItem={({ item: category, index }) => (
-                <Animated.View entering={FadeInUp.delay(700 + index * 50)}>
+            <View style={styles.categoriesGrid}>
+              {categories.map((category, index) => (
+                <Animated.View key={category.id} entering={FadeInUp.delay(700 + index * 50)}>
                   <CategoryButton
                     category={category}
                     selected={selectedCategory === category.name}
                     onPress={() => handleCategoryPress(category.name)}
                   />
                 </Animated.View>
-              )}
-              keyExtractor={(category) => category.id}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.horizontalListContent}
-              ItemSeparatorComponent={() => <View style={{ width: 8 }} />}
-            />
+              ))}
+            </View>
           </Animated.View>
         );
 
@@ -294,33 +289,30 @@ export default function HomeScreen() {
               </Text>
             </View>
             {isLoading ? (
-              <FlatList
+              <HorizontalCards
                 data={[1, 2, 3, 4]}
                 renderItem={() => <PlanCardSkeleton horizontal={true} />}
                 keyExtractor={(item) => item.toString()}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.horizontalScrollContent}
-                ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+                itemWidth={280}
+                gap={16}
+                contentPaddingHorizontal={20}
+                testID="filtered-skeleton"
+                enableSnap
               />
             ) : item.data.length > 0 ? (
-              <FlatList
+              <HorizontalCards
                 data={item.data}
                 renderItem={({ item: plan, index }) => (
-                  <Animated.View 
-                    key={plan.id} 
-                    entering={FadeInUp.delay(900 + index * 100)}
-                    style={styles.horizontalPlanCard}
-                  >
+                  <Animated.View entering={FadeInUp.delay(900 + index * 100)}>
                     <PlanCard plan={plan} horizontal={true} />
                   </Animated.View>
                 )}
                 keyExtractor={(plan) => plan.id}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.horizontalScrollContent}
-                ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
-                style={styles.horizontalScrollContainer}
+                itemWidth={280}
+                gap={16}
+                contentPaddingHorizontal={20}
+                testID="filtered-horizontal"
+                enableSnap
               />
             ) : (
               <EmptyState
@@ -476,14 +468,14 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   
-  // Categories Section - Better responsive grid
-  categoriesContainer: {
+  // Categories Grid
+  categoriesGrid: {
     paddingHorizontal: 20,
-    paddingVertical: 8,
+    paddingBottom: 8,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-    justifyContent: 'flex-start',
+    gap: 12,
+    justifyContent: 'space-between',
   },
   
   // Filtered Plans Section - Horizontal scroll layout
