@@ -18,8 +18,9 @@ import Toast from "react-native-toast-message";
 import PlanCard from "@/components/PlanCard";
 import SearchBar from "@/components/SearchBar";
 import EventCard from "@/components/EventCard";
-import FAB from "@/components/FAB";
+import FABSpeedDial from "@/components/FABSpeedDial";
 import HorizontalCategories from "@/components/HorizontalCategories";
+import ZoneSection from "@/components/ZoneSection";
 import EmptyState from "@/components/EmptyState";
 import { PlanCardSkeleton } from "@/components/SkeletonLoader";
 import Colors from "@/constants/colors";
@@ -39,6 +40,7 @@ type SectionType =
   | { type: 'topPlans'; data: any[] }
   | { type: 'filteredPlans'; data: any[] }
   | { type: 'categories' }
+  | { type: 'zones' }
   | { type: 'spacing' };
 
 export default function HomeScreen() {
@@ -105,6 +107,7 @@ export default function HomeScreen() {
 
     sectionList.push({ type: 'categories' });
 
+    sectionList.push({ type: 'zones' });
     sectionList.push({ type: 'spacing' });
     return sectionList;
   }, [todayEvents, topPlans, filteredPlans]);
@@ -271,6 +274,16 @@ export default function HomeScreen() {
           </Animated.View>
         );
 
+      case 'zones':
+        return (
+          <Animated.View entering={FadeInUp.delay(700)}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Parches por zona</Text>
+            </View>
+            <ZoneSection />
+          </Animated.View>
+        );
+
       case 'filteredPlans':
         return (
           <Animated.View entering={FadeInUp.delay(800)} style={styles.filteredPlansSection}>
@@ -361,7 +374,7 @@ export default function HomeScreen() {
       />
 
       {/* Floating Action Button */}
-      <FAB />
+      <FABSpeedDial />
       
       <Toast />
     </View>
