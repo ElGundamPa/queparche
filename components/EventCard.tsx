@@ -24,7 +24,7 @@ export default function EventCard({ event }: EventCardProps) {
   const router = useRouter();
 
   const handlePress = () => {
-    router.push(`/event/${event.id}`);
+    router.push({ pathname: "/plan/[id]", params: { id: event.id } });
   };
 
   const formatTime = (dateString: string) => {
