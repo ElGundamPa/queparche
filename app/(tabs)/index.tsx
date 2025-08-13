@@ -373,55 +373,69 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingBottom: 120,
   },
+  
+  // Header Section - Improved spacing and responsiveness
   header: {
     paddingHorizontal: 20,
     paddingTop: 60,
-    paddingBottom: 20,
+    paddingBottom: 24,
+    marginBottom: 8,
   },
   headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    minHeight: 80, // Prevent content jumping
   },
   greeting: {
     fontSize: 16,
     color: Colors.light.darkGray,
-    marginBottom: 4,
+    marginBottom: 6,
+    lineHeight: 20,
   },
   title: {
     fontSize: 28,
     fontWeight: "800",
     color: Colors.light.text,
-    marginBottom: 4,
+    marginBottom: 6,
+    lineHeight: 34,
+    flexShrink: 1, // Allow text to wrap if needed
   },
   subtitle: {
     fontSize: 14,
     color: Colors.light.darkGray,
+    lineHeight: 18,
+    flexShrink: 1,
   },
   userStats: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    flexShrink: 0, // Prevent stats from shrinking
   },
   statItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
     backgroundColor: Colors.light.card,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
   },
   statText: {
     fontSize: 12,
     fontWeight: '600',
     color: Colors.light.text,
   },
+  
+  // Section Headers - Consistent spacing
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginTop: 24,
+    marginTop: 32, // Increased spacing between sections
     marginBottom: 16,
     paddingHorizontal: 20,
   },
@@ -429,61 +443,92 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     color: Colors.light.text,
+    lineHeight: 22,
   },
+  
+  // Events Section - Responsive layout
   eventsContainer: {
     paddingHorizontal: 20,
     flexDirection: 'row',
     gap: 12,
+    flexWrap: 'wrap', // Allow wrapping on smaller screens
+    justifyContent: 'space-between',
   },
+  
+  // Top Plans Section - Improved horizontal scrolling
   topPlansContainer: {
     paddingHorizontal: 20,
     flexDirection: 'row',
     gap: 12,
   },
+  
+  // Categories Section - Better responsive grid
   categoriesContainer: {
     paddingHorizontal: 20,
     paddingVertical: 8,
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+    justifyContent: 'flex-start',
   },
+  
+  // Filtered Plans Section - Grid layout with proper spacing
   filteredPlansContainer: {
     paddingHorizontal: 20,
     gap: 16,
+    flexDirection: 'column',
   },
   filteredPlansSection: {
-    marginBottom: 20,
+    marginBottom: 32, // Increased bottom spacing
   },
+  
+  // Horizontal Lists - Consistent padding
   horizontalListContent: {
     paddingHorizontal: 20,
+    paddingRight: 40, // Extra padding for last item
   },
+  
+  // Featured Section - Improved layout
   featuredSection: {
-    marginBottom: 20,
+    marginBottom: 32,
   },
   featuredContainer: {
-    height: 400,
+    minHeight: 400,
     paddingHorizontal: 20,
+    flexDirection: 'column',
   },
   mainPlanContainer: {
-    height: '70%',
-    marginBottom: 8,
+    flex: 1,
+    marginBottom: 12,
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: Colors.light.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   nextPlanHint: {
-    height: '30%',
-    opacity: 0.7,
+    height: 120,
+    opacity: 0.8,
+    marginTop: 8,
   },
   nextPlanText: {
     fontSize: 12,
     color: Colors.light.darkGray,
-    marginBottom: 4,
+    marginBottom: 6,
     paddingLeft: 4,
+    fontWeight: '500',
   },
   nextPlanPreview: {
     flex: 1,
-    transform: [{ scale: 0.9 }],
+    transform: [{ scale: 0.95 }],
+    borderRadius: 12,
+    overflow: 'hidden',
   },
+  
+  // Bottom spacing for FAB
   bottomSpacing: {
-    height: 20,
+    height: 40,
   },
-
 });
