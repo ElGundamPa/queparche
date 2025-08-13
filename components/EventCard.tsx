@@ -89,7 +89,7 @@ export default function EventCard({ event }: EventCardProps) {
               {event.currentAttendees}/{event.maxAttendees || '∞'}
             </Text>
           </View>
-          {event.price && event.price > 0 && (
+          {(typeof event.price === 'number' && event.price > 0) && (
             <Text style={styles.price}>
               ${event.price.toLocaleString()}
             </Text>

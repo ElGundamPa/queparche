@@ -103,7 +103,7 @@ const PlanCard = memo(function PlanCard({ plan, horizontal = true, animationDela
               <Text style={styles.infoText}>{plan.likes}</Text>
             </View>
           </View>
-          {plan.price && plan.price > 0 && (
+          {(typeof plan.price === 'number' && plan.price > 0) && (
             <Text style={styles.price}>{`${plan.price.toLocaleString()} COP`}</Text>
           )}
         </View>
@@ -168,7 +168,7 @@ const PlanCard = memo(function PlanCard({ plan, horizontal = true, animationDela
             </Text>
           </View>
         </View>
-        {plan.price && plan.price > 0 && (
+        {(typeof plan.price === 'number' && plan.price > 0) && (
           <Text style={styles.verticalPrice}>{`${plan.price.toLocaleString()} COP`}</Text>
         )}
       </View>
