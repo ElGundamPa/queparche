@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback } from "react";
+import React, { useMemo } from "react";
 import {
   StyleSheet,
   Text,
@@ -6,7 +6,7 @@ import {
   FlatList,
   ListRenderItem,
 } from "react-native";
-import { useRouter } from "expo-router";
+
 import { StatusBar } from "expo-status-bar";
 import * as Haptics from "expo-haptics";
 import { Calendar, Star, Crown } from "lucide-react-native";
@@ -14,11 +14,12 @@ import { LinearGradient } from "expo-linear-gradient";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import Toast from "react-native-toast-message";
 
-import CategoryButton from "@/components/CategoryButton";
+
 import PlanCard from "@/components/PlanCard";
 import SearchBar from "@/components/SearchBar";
 import EventCard from "@/components/EventCard";
-import ExpandableFAB from "@/components/ExpandableFAB";
+import FAB from "@/components/FAB";
+import HorizontalCategories from "@/components/HorizontalCategories";
 import EmptyState from "@/components/EmptyState";
 import { PlanCardSkeleton } from "@/components/SkeletonLoader";
 import Colors from "@/constants/colors";
@@ -262,17 +263,11 @@ export default function HomeScreen() {
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Explorar por categoría</Text>
             </View>
-            <View style={styles.categoriesGrid}>
-              {categories.map((category, index) => (
-                <Animated.View key={category.id} entering={FadeInUp.delay(700 + index * 50)}>
-                  <CategoryButton
-                    category={category}
-                    selected={selectedCategory === category.name}
-                    onPress={() => handleCategoryPress(category.name)}
-                  />
-                </Animated.View>
-              ))}
-            </View>
+            <HorizontalCategories
+              data={categories}
+              selectedCategory={selectedCategory}
+              onCategoryPress={handleCategoryPress}
+            />
           </Animated.View>
         );
 
@@ -365,8 +360,8 @@ export default function HomeScreen() {
         contentContainerStyle={styles.contentContainer}
       />
 
-      {/* Expandable FAB */}
-      <ExpandableFAB position="bottom-right" />
+      {/* Floating Action Button */}
+      <FAB />
       
       <Toast />
     </View>
@@ -380,7 +375,7 @@ const styles = StyleSheet.create({
   },
 
   contentContainer: {
-    paddingBottom: 120,
+    paddingBottom: 100,
   },
   
   // Header Section - Improved spacing and responsiveness
@@ -468,14 +463,9 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   
-  // Categories Grid
-  categoriesGrid: {
-    paddingHorizontal: 20,
-    paddingBottom: 8,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    justifyContent: 'space-between',
+  // Categories section - now horizontal
+  categoriesSection: {
+    marginBottom: 16,
   },
   
   // Filtered Plans Section - Horizontal scroll layout
@@ -507,6 +497,6 @@ const styles = StyleSheet.create({
   
   // Bottom spacing for FAB
   bottomSpacing: {
-    height: 40,
+    height: 20,
   },
 });
