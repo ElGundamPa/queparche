@@ -165,41 +165,43 @@ export default function HomeScreen() {
               <Calendar size={20} color={Colors.light.primary} />
               <Text style={styles.sectionTitle}>Eventos de hoy</Text>
             </View>
-            <View style={styles.eventsContainer}>
-              {item.data.map((event, index) => (
-                <Animated.View key={event.id} entering={FadeInUp.delay(400 + index * 100)}>
+            <FlatList
+              data={item.data}
+              keyExtractor={(ev) => ev.id}
+              renderItem={({ item: event, index }) => (
+                <Animated.View entering={FadeInUp.delay(400 + index * 100)} style={styles.eventCard}>
                   <EventCard event={event} />
                 </Animated.View>
-              ))}
-            </View>
+              )}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.horizontalScrollContent}
+              ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+            />
           </Animated.View>
         );
 
       case 'featured':
         return (
-          <View style={styles.featuredSection}>
+          <Animated.View entering={FadeInUp.delay(400)}>
             <View style={styles.sectionHeader}>
               <Star size={20} color={Colors.light.premium} />
               <Text style={styles.sectionTitle}>Plan destacado</Text>
             </View>
-            
-            {item.data.length > 0 && (
-              <View style={styles.featuredContainer}>
-                <View style={styles.mainPlanContainer}>
-                  <PlanCard plan={item.data[0]} horizontal={false} />
-                </View>
-                
-                {item.data.length > 1 && (
-                  <View style={styles.nextPlanHint}>
-                    <Text style={styles.nextPlanText}>Siguiente plan</Text>
-                    <View style={styles.nextPlanPreview}>
-                      <PlanCard plan={item.data[1]} horizontal={false} />
-                    </View>
-                  </View>
-                )}
-              </View>
-            )}
-          </View>
+            <FlatList
+              data={item.data}
+              keyExtractor={(plan) => plan.id}
+              renderItem={({ item: plan, index }) => (
+                <Animated.View entering={FadeInUp.delay(500 + index * 100)} style={styles.horizontalPlanCard}>
+                  <PlanCard plan={plan} horizontal={false} />
+                </Animated.View>
+              )}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.horizontalScrollContent}
+              ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+            />
+          </Animated.View>
         );
 
       case 'topPlans':
@@ -461,13 +463,10 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   
-  // Events Section - Responsive layout
-  eventsContainer: {
-    paddingHorizontal: 20,
-    flexDirection: 'row',
-    gap: 12,
-    flexWrap: 'wrap', // Allow wrapping on smaller screens
-    justifyContent: 'space-between',
+  // Events Section - Horizontal scroll
+  eventCard: {
+    width: 260,
+    minWidth: 260,
   },
   
   // Top Plans Section - Improved horizontal scrolling
@@ -509,43 +508,9 @@ const styles = StyleSheet.create({
     paddingRight: 40, // Extra padding for last item
   },
   
-  // Featured Section - Improved layout
+  // Featured Section - Horizontal scroll
   featuredSection: {
     marginBottom: 32,
-  },
-  featuredContainer: {
-    minHeight: 400,
-    paddingHorizontal: 20,
-    flexDirection: 'column',
-  },
-  mainPlanContainer: {
-    flex: 1,
-    marginBottom: 12,
-    borderRadius: 16,
-    overflow: 'hidden',
-    shadowColor: Colors.light.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  nextPlanHint: {
-    height: 120,
-    opacity: 0.8,
-    marginTop: 8,
-  },
-  nextPlanText: {
-    fontSize: 12,
-    color: Colors.light.darkGray,
-    marginBottom: 6,
-    paddingLeft: 4,
-    fontWeight: '500',
-  },
-  nextPlanPreview: {
-    flex: 1,
-    transform: [{ scale: 0.95 }],
-    borderRadius: 12,
-    overflow: 'hidden',
   },
   
   // Bottom spacing for FAB
