@@ -292,19 +292,34 @@ export default function HomeScreen() {
               </Text>
             </View>
             {isLoading ? (
-              <View style={styles.filteredPlansContainer}>
-                {[1, 2, 3].map((item) => (
-                  <PlanCardSkeleton key={item} horizontal={false} />
-                ))}
-              </View>
+              <FlatList
+                data={[1, 2, 3, 4]}
+                renderItem={() => <PlanCardSkeleton horizontal={true} />}
+                keyExtractor={(item) => item.toString()}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.horizontalScrollContent}
+                ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+              />
             ) : item.data.length > 0 ? (
-              <View style={styles.filteredPlansContainer}>
-                {item.data.map((plan, index) => (
-                  <Animated.View key={plan.id} entering={FadeInUp.delay(900 + index * 100)}>
-                    <PlanCard plan={plan} horizontal={false} />
+              <FlatList
+                data={item.data}
+                renderItem={({ item: plan, index }) => (
+                  <Animated.View 
+                    key={plan.id} 
+                    entering={FadeInUp.delay(900 + index * 100)}
+                    style={styles.horizontalPlanCard}
+                  >
+                    <PlanCard plan={plan} horizontal={true} />
                   </Animated.View>
-                ))}
-              </View>
+                )}
+                keyExtractor={(plan) => plan.id}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.horizontalScrollContent}
+                ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+                style={styles.horizontalScrollContainer}
+              />
             ) : (
               <EmptyState
                 type={searchQuery ? 'search' : selectedCategory ? 'category' : 'plans'}
@@ -472,14 +487,20 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   
-  // Filtered Plans Section - Grid layout with proper spacing
-  filteredPlansContainer: {
-    paddingHorizontal: 20,
-    gap: 16,
-    flexDirection: 'column',
-  },
+  // Filtered Plans Section - Horizontal scroll layout
   filteredPlansSection: {
     marginBottom: 32, // Increased bottom spacing
+  },
+  horizontalScrollContainer: {
+    flexGrow: 0, // Prevent container from growing
+  },
+  horizontalScrollContent: {
+    paddingHorizontal: 20,
+    paddingRight: 40, // Extra padding for last item
+  },
+  horizontalPlanCard: {
+    width: 280, // Fixed width for consistent card sizing
+    minWidth: 280, // Ensure minimum width
   },
   
   // Horizontal Lists - Consistent padding
