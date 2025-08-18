@@ -4,8 +4,9 @@ import {
   StyleSheet,
   Text,
   View,
-  TouchableOpacity,
+  Pressable,
   Dimensions,
+  AccessibilityRole,
 } from "react-native";
 import { Image } from "expo-image";
 import { Star, Crown, MapPin, Users, Heart } from "lucide-react-native";
@@ -36,7 +37,7 @@ const PlanCard = memo(function PlanCard({ plan, horizontal = true, animationDela
         position: 'bottom',
         visibilityTime: 1000,
       });
-      router.push(`/plan/${plan.id}`);
+      router.push({ pathname: "/plan/[id]", params: { id: plan.id } });
     } else {
       console.warn('Plan ID is missing:', plan);
       Toast.show({
@@ -49,7 +50,6 @@ const PlanCard = memo(function PlanCard({ plan, horizontal = true, animationDela
     }
   };
 
-  // Early return if plan is not valid
   if (!plan) {
     return null;
   }
@@ -57,122 +57,126 @@ const PlanCard = memo(function PlanCard({ plan, horizontal = true, animationDela
   if (horizontal) {
     return (
       <Animated.View entering={animationDelay > 0 ? FadeInUp.delay(animationDelay) : undefined}>
-        <TouchableOpacity
+        <Pressable
           style={styles.horizontalCard}
           onPress={handlePress}
           testID={`plan-card-${plan.id}`}
+          accessibilityRole={"button" as AccessibilityRole}
+          accessibilityLabel={`Abrir parche ${plan.name}`}
         >
-        <View style={styles.imageContainer}>
-          <Image
-            source={{ uri: plan.images[0] }}
-            style={styles.horizontalImage}
-            contentFit="cover"
-            transition={200}
-          />
-          {plan.isPremium && (
-            <View style={styles.premiumBadge}>
-              <Crown size={12} color={Colors.light.premium} />
-            </View>
-          )}
-          {plan.isSponsored && (
-            <View style={styles.sponsoredBadge}>
-              <Text style={styles.sponsoredText}>Patrocinado</Text>
-            </View>
-          )}
-          <View style={styles.ratingBadge}>
-            <Star size={10} color={Colors.light.premium} fill={Colors.light.premium} />
-            <Text style={styles.ratingText}>{plan.rating ? plan.rating.toFixed(1) : '0.0'}</Text>
-          </View>
-        </View>
-        <View style={styles.horizontalContent}>
-          <Text style={styles.name} numberOfLines={1}>
-            {plan.name}
-          </Text>
-          <View style={styles.categoryContainer}>
-            <Text style={styles.category}>{plan.category}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <View style={styles.infoItem}>
-              <Users size={12} color={Colors.light.darkGray} />
-              <Text style={styles.infoText}>
-                {plan.currentPeople}/{plan.maxPeople}
-              </Text>
-            </View>
-            <View style={styles.infoItem}>
-              <Heart size={12} color={Colors.light.darkGray} />
-              <Text style={styles.infoText}>{plan.likes}</Text>
+          <View style={styles.imageContainer}>
+            <Image
+              source={{ uri: plan.images[0] }}
+              style={styles.horizontalImage}
+              contentFit="cover"
+              transition={200}
+            />
+            {plan.isPremium && (
+              <View style={styles.premiumBadge}>
+                <Crown size={12} color={Colors.light.premium} />
+              </View>
+            )}
+            {plan.isSponsored && (
+              <View style={styles.sponsoredBadge}>
+                <Text style={styles.sponsoredText}>Patrocinado</Text>
+              </View>
+            )}
+            <View style={styles.ratingBadge}>
+              <Star size={10} color={Colors.light.premium} fill={Colors.light.premium} />
+              <Text style={styles.ratingText}>{plan.rating ? plan.rating.toFixed(1) : '0.0'}</Text>
             </View>
           </View>
-          {(typeof plan.price === 'number' && plan.price > 0) && (
-            <Text style={styles.price}>{`${plan.price.toLocaleString()} COP`}</Text>
-          )}
-        </View>
-        </TouchableOpacity>
+          <View style={styles.horizontalContent}>
+            <Text style={styles.name} numberOfLines={1}>
+              {plan.name}
+            </Text>
+            <View style={styles.categoryContainer}>
+              <Text style={styles.category}>{plan.category}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <View style={styles.infoItem}>
+                <Users size={12} color={Colors.light.darkGray} />
+                <Text style={styles.infoText}>
+                  {plan.currentPeople}/{plan.maxPeople}
+                </Text>
+              </View>
+              <View style={styles.infoItem}>
+                <Heart size={12} color={Colors.light.darkGray} />
+                <Text style={styles.infoText}>{plan.likes}</Text>
+              </View>
+            </View>
+            {(typeof plan.price === 'number' && plan.price > 0) && (
+              <Text style={styles.price}>{`${plan.price.toLocaleString()} COP`}</Text>
+            )}
+          </View>
+        </Pressable>
       </Animated.View>
     );
   }
 
   return (
     <Animated.View entering={animationDelay > 0 ? FadeInUp.delay(animationDelay) : undefined}>
-      <TouchableOpacity
+      <Pressable
         style={styles.verticalCard}
         onPress={handlePress}
         testID={`plan-card-${plan.id}`}
+        accessibilityRole={"button" as AccessibilityRole}
+        accessibilityLabel={`Abrir parche ${plan.name}`}
       >
-      <View style={styles.verticalImageContainer}>
-        <Image
-          source={{ uri: plan.images[0] }}
-          style={styles.verticalImage}
-          contentFit="cover"
-          transition={200}
-        />
-        <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.8)']}
-          style={styles.gradient}
-        />
-        {plan.isPremium && (
-          <View style={[styles.premiumBadge, styles.verticalPremiumBadge]}>
-            <Crown size={14} color={Colors.light.premium} />
-          </View>
-        )}
-        {plan.isSponsored && (
-          <View style={[styles.sponsoredBadge, styles.verticalSponsoredBadge]}>
-            <Text style={styles.sponsoredText}>Patrocinado</Text>
-          </View>
-        )}
-      </View>
-      <View style={styles.verticalContent}>
-        <View style={styles.verticalHeader}>
-          <Text style={styles.verticalName} numberOfLines={1}>
-            {plan.name}
-          </Text>
-          <View style={styles.ratingContainer}>
-            <Star size={12} color={Colors.light.premium} fill={Colors.light.premium} />
-            <Text style={styles.verticalRating}>{plan.rating ? plan.rating.toFixed(1) : '0.0'}</Text>
-          </View>
+        <View style={styles.verticalImageContainer}>
+          <Image
+            source={{ uri: plan.images[0] }}
+            style={styles.verticalImage}
+            contentFit="cover"
+            transition={200}
+          />
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.8)']}
+            style={styles.gradient}
+          />
+          {plan.isPremium && (
+            <View style={[styles.premiumBadge, styles.verticalPremiumBadge]}>
+              <Crown size={14} color={Colors.light.premium} />
+            </View>
+          )}
+          {plan.isSponsored && (
+            <View style={[styles.sponsoredBadge, styles.verticalSponsoredBadge]}>
+              <Text style={styles.sponsoredText}>Patrocinado</Text>
+            </View>
+          )}
         </View>
-        <View style={styles.categoryContainer}>
-          <Text style={styles.category}>{plan.category}</Text>
-        </View>
-        <View style={styles.verticalInfoRow}>
-          <View style={styles.infoItem}>
-            <MapPin size={12} color={Colors.light.darkGray} />
-            <Text style={styles.verticalInfoText} numberOfLines={1}>
-              {plan.location.address?.split(',')[0] || 'Medellín'}
+        <View style={styles.verticalContent}>
+          <View style={styles.verticalHeader}>
+            <Text style={styles.verticalName} numberOfLines={1}>
+              {plan.name}
             </Text>
+            <View style={styles.ratingContainer}>
+              <Star size={12} color={Colors.light.premium} fill={Colors.light.premium} />
+              <Text style={styles.verticalRating}>{plan.rating ? plan.rating.toFixed(1) : '0.0'}</Text>
+            </View>
           </View>
-          <View style={styles.infoItem}>
-            <Users size={12} color={Colors.light.darkGray} />
-            <Text style={styles.verticalInfoText}>
-              {plan.currentPeople}/{plan.maxPeople}
-            </Text>
+          <View style={styles.categoryContainer}>
+            <Text style={styles.category}>{plan.category}</Text>
           </View>
+          <View style={styles.verticalInfoRow}>
+            <View style={styles.infoItem}>
+              <MapPin size={12} color={Colors.light.darkGray} />
+              <Text style={styles.verticalInfoText} numberOfLines={1}>
+                {plan.location.address?.split(',')[0] || 'Medellín'}
+              </Text>
+            </View>
+            <View style={styles.infoItem}>
+              <Users size={12} color={Colors.light.darkGray} />
+              <Text style={styles.verticalInfoText}>
+                {plan.currentPeople}/{plan.maxPeople}
+              </Text>
+            </View>
+          </View>
+          {(typeof plan.price === 'number' && plan.price > 0) && (
+            <Text style={styles.verticalPrice}>{`${plan.price.toLocaleString()} COP`}</Text>
+          )}
         </View>
-        {(typeof plan.price === 'number' && plan.price > 0) && (
-          <Text style={styles.verticalPrice}>{`${plan.price.toLocaleString()} COP`}</Text>
-        )}
-      </View>
-      </TouchableOpacity>
+      </Pressable>
     </Animated.View>
   );
 });
@@ -198,6 +202,7 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     position: 'relative',
+    overflow: 'hidden',
   },
   horizontalImage: {
     width: 140,
@@ -223,7 +228,7 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   verticalImageContainer: {
-    height: 170,
+    height: 200,
     position: 'relative',
     overflow: 'hidden',
   },

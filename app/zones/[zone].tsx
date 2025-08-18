@@ -54,6 +54,10 @@ export default function ZoneDetail() {
           keyExtractor={([comuna]) => comuna}
           renderItem={renderComuna}
           contentContainerStyle={{ paddingBottom: 24 }}
+          nestedScrollEnabled
+          initialNumToRender={4}
+          windowSize={7}
+          removeClippedSubviews
         />
       ) : zoneContent.type === 'other' && Array.isArray(zoneContent.data) ? (
         <FlatList
@@ -75,6 +79,10 @@ export default function ZoneDetail() {
             </View>
           )}
           contentContainerStyle={{ paddingBottom: 24 }}
+          nestedScrollEnabled
+          initialNumToRender={1}
+          windowSize={5}
+          removeClippedSubviews
         />
       ) : (
         <View style={{ padding: 20 }}>
