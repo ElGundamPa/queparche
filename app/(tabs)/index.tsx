@@ -124,8 +124,8 @@ export default function HomeScreen() {
               <View style={styles.headerContent}>
                 <View>
                   <Text style={styles.greeting}>Hola {user?.name?.split(' ')[0] || 'Parcero'} 👋</Text>
-                  <Text style={styles.title}>¿Qué parche hay hoy?</Text>
-                  <Text style={styles.subtitle}>Encuentra tu parche ideal en Medellín</Text>
+                  <Text style={styles.title}>¿Qué parche hay hoy en Medellín? 🔥</Text>
+                  <Text style={styles.subtitle}>Encuentra planes en segundos.</Text>
                 </View>
                 <View style={styles.userStats}>
                   <View style={styles.statItem}>
