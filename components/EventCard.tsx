@@ -1,18 +1,22 @@
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { memo, useMemo } from "react";
 import {
   StyleSheet,
   Text,
   View,
   TouchableOpacity,
   Dimensions,
+  Pressable,
+  AccessibilityRole,
 } from "react-native";
 import { Image } from "expo-image";
-import { Calendar, MapPin, Users, Clock } from "lucide-react-native";
+import { MapPin, Users, Clock, Share2, Star } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
 import Colors from "@/constants/colors";
 import { Event } from "@/types/plan";
+import { formatCOP, formatDateTimeCO, formatDistanceKm } from "@/lib/format";
+import useLocation from "@/hooks/useLocation";
 
 interface EventCardProps {
   event: Event;
@@ -20,27 +24,35 @@ interface EventCardProps {
 
 const { width } = Dimensions.get("window");
 
-export default function EventCard({ event }: EventCardProps) {
+const EventCard = memo(function EventCard({ event }: EventCardProps) {
   const router = useRouter();
+  const { coords, distanceFrom } = useLocation();
+
+  const distanceMeters = useMemo(() => {
+    if (!event.location || !coords) return null;
+    return distanceFrom({ latitude: event.location.latitude, longitude: event.location.longitude });
+  }, [coords, event.location, distanceFrom]);
 
   const handlePress = () => {
     router.push({ pathname: "/plan/[id]", params: { id: event.id } });
   };
 
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('es-ES', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      hour12: false 
-    });
+  const handleShare = () => {
+    console.log("share_click", { id: event.id });
   };
+
+  const dateLabel = formatDateTimeCO(event.startDate);
+  const priceLabel = formatCOP(event.price);
+  const distanceLabel = formatDistanceKm(distanceMeters ?? undefined);
 
   return (
     <TouchableOpacity
+      accessibilityRole={"button" as AccessibilityRole}
+      accessibilityLabel={`Ver detalle del evento ${event.title}`}
       style={styles.card}
       onPress={handlePress}
       testID={`event-card-${event.id}`}
+      activeOpacity={0.85}
     >
       <View style={styles.imageContainer}>
         <Image
@@ -60,7 +72,7 @@ export default function EventCard({ event }: EventCardProps) {
         )}
         <View style={styles.timeContainer}>
           <Clock size={12} color={Colors.light.white} />
-          <Text style={styles.timeText}>{formatTime(event.startDate)}</Text>
+          <Text style={styles.timeText} numberOfLines={1}>{dateLabel}</Text>
         </View>
       </View>
       
@@ -69,8 +81,16 @@ export default function EventCard({ event }: EventCardProps) {
           {event.title}
         </Text>
         
-        <View style={styles.categoryContainer}>
-          <Text style={styles.category}>{event.category}</Text>
+        <View style={styles.metaRow}>
+          <View style={styles.categoryContainer}>
+            <Text style={styles.category}>{event.category}</Text>
+          </View>
+          {distanceLabel ? (
+            <View style={styles.distancePill} accessibilityLabel={`A ${distanceLabel}`}>
+              <MapPin size={12} color={Colors.light.background} />
+              <Text style={styles.distanceText}>{distanceLabel}</Text>
+            </View>
+          ) : null}
         </View>
         
         <View style={styles.infoRow}>
@@ -89,16 +109,29 @@ export default function EventCard({ event }: EventCardProps) {
               {event.currentAttendees}/{event.maxAttendees || '∞'}
             </Text>
           </View>
-          {(typeof event.price === 'number' && event.price > 0) && (
-            <Text style={styles.price}>
-              ${event.price.toLocaleString()}
-            </Text>
-          )}
+          {typeof event.rating === 'number' ? (
+            <View style={styles.rating}>
+              <Star size={12} color={Colors.light.premium} />
+              <Text style={styles.ratingText}>{event.rating.toFixed(1)}</Text>
+            </View>
+          ) : null}
+          <Text style={styles.price}>{priceLabel}</Text>
+        </View>
+
+        <View style={styles.ctaRow}>
+          <Pressable onPress={handlePress} style={styles.primaryCta} accessibilityRole={"button"}>
+            <Text style={styles.primaryCtaText}>Ver detalle</Text>
+          </Pressable>
+          <Pressable onPress={handleShare} style={styles.secondaryCta} accessibilityRole={"button"}>
+            <Share2 size={16} color={Colors.light.primary} />
+          </Pressable>
         </View>
       </View>
     </TouchableOpacity>
   );
-}
+});
+
+export default EventCard;
 
 const styles = StyleSheet.create({
   card: {
@@ -184,6 +217,26 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: Colors.light.white,
   },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  distancePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: Colors.light.primary,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  distanceText: {
+    color: Colors.light.background,
+    fontSize: 11,
+    fontWeight: '700',
+  },
   infoRow: {
     marginBottom: 8,
   },
@@ -204,9 +257,44 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     flex: 1,
   },
+  rating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginRight: 8,
+  },
+  ratingText: {
+    fontSize: 12,
+    color: Colors.light.premium,
+    fontWeight: '700',
+  },
   price: {
     fontSize: 14,
     fontWeight: '700',
     color: Colors.light.primary,
+  },
+  ctaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 12,
+  },
+  primaryCta: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: Colors.light.primary,
+    borderRadius: 12,
+  },
+  primaryCtaText: {
+    color: Colors.light.background,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  secondaryCta: {
+    padding: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.light.primary,
+    backgroundColor: Colors.light.background,
   },
 });

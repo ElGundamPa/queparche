@@ -86,6 +86,7 @@ export interface Event {
   organizerName: string;
   tags: string[];
   isPremium?: boolean;
+  rating?: number;
 }
 
 export type Category = {
