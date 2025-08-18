@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ListRenderItem } from 'react-native';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import Colors from '@/constants/colors';
 import HorizontalCards from '@/components/HorizontalCards';
@@ -21,39 +21,61 @@ export default function ZoneDetail() {
     return { type: 'none' } as const;
   }, [decoded]);
 
+  const medSections = useMemo(() => {
+    if (zoneContent.type !== 'med') return [] as Array<[string, typeof plansByZone.Medellín[keyof typeof plansByZone.Medellín]]>;
+    return Object.entries(zoneContent.data);
+  }, [zoneContent]);
+
+  const renderComuna: ListRenderItem<[string, any[]]> = ({ item }) => {
+    const [comuna, plans] = item;
+    return (
+      <View style={{ marginTop: 24 }}>
+        <Text style={styles.sectionTitle}>{comuna}</Text>
+        <HorizontalCards
+          data={plans}
+          keyExtractor={(p) => p.id}
+          itemWidth={280}
+          renderItem={({ item: plan }) => <PlanCard plan={plan} horizontal={true} />}
+          gap={16}
+          contentPaddingHorizontal={20}
+          enableSnap
+          testID={`zone-${comuna}`}
+        />
+      </View>
+    );
+  };
+
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ title: decoded || 'Zona', headerStyle: { backgroundColor: Colors.light.background }, headerTintColor: Colors.light.text }} />
       {zoneContent.type === 'med' ? (
-        Object.entries(zoneContent.data).map(([comuna, plans]) => (
-          <View key={comuna} style={{ marginTop: 24 }}>
-            <Text style={styles.sectionTitle}>{comuna}</Text>
-            <HorizontalCards
-              data={plans}
-              keyExtractor={(p) => p.id}
-              itemWidth={280}
-              renderItem={({ item }) => <PlanCard plan={item} horizontal={true} />}
-              gap={16}
-              contentPaddingHorizontal={20}
-              enableSnap
-              testID={`zone-${comuna}`}
-            />
-          </View>
-        ))
+        <FlatList
+          data={medSections}
+          keyExtractor={([comuna]) => comuna}
+          renderItem={renderComuna}
+          contentContainerStyle={{ paddingBottom: 24 }}
+        />
       ) : zoneContent.type === 'other' && Array.isArray(zoneContent.data) ? (
-        <View style={{ marginTop: 24 }}>
-          <Text style={styles.sectionTitle}>{decoded}</Text>
-          <HorizontalCards
-            data={zoneContent.data}
-            keyExtractor={(p) => p.id}
-            itemWidth={280}
-            renderItem={({ item }) => <PlanCard plan={item} horizontal={true} />}
-            gap={16}
-            contentPaddingHorizontal={20}
-            enableSnap
-            testID={`zone-${decoded}`}
-          />
-        </View>
+        <FlatList
+          data={[{ key: decoded }]}
+          keyExtractor={(i) => String(i.key)}
+          renderItem={() => (
+            <View style={{ marginTop: 24 }}>
+              <Text style={styles.sectionTitle}>{decoded}</Text>
+              <HorizontalCards
+                data={zoneContent.data as any[]}
+                keyExtractor={(p) => p.id}
+                itemWidth={280}
+                renderItem={({ item }) => <PlanCard plan={item} horizontal={true} />}
+                gap={16}
+                contentPaddingHorizontal={20}
+                enableSnap
+                testID={`zone-${decoded}`}
+              />
+            </View>
+          )}
+          contentContainerStyle={{ paddingBottom: 24 }}
+        />
       ) : (
         <View style={{ padding: 20 }}>
           <Text style={styles.empty}>No encontramos datos para esta zona.</Text>

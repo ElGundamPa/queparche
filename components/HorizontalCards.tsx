@@ -37,13 +37,22 @@ function HorizontalCardsComponent<ItemT>({
     [itemWidth, gap],
   );
 
-  const contentContainerStyle = useMemo(() => [{ paddingHorizontal: contentPaddingHorizontal, gap }, contentStyle] as const, [contentPaddingHorizontal, gap, contentStyle]);
+  const contentContainerStyle = useMemo(() => [{ paddingHorizontal: contentPaddingHorizontal }, contentStyle] as const, [contentPaddingHorizontal, contentStyle]);
+
+  const wrappedRenderItem = useCallback<NonNullable<typeof renderItem>>(
+    (args) => (
+      <View style={{ width: itemWidth }}>
+        {renderItem(args)}
+      </View>
+    ),
+    [renderItem, itemWidth],
+  );
 
   return (
     <FlatList
       horizontal
       data={data}
-      renderItem={renderItem}
+      renderItem={wrappedRenderItem}
       keyExtractor={keyExtractor}
       getItemLayout={getItemLayout}
       showsHorizontalScrollIndicator={Platform.OS === 'web' ? false : false}
@@ -53,6 +62,9 @@ function HorizontalCardsComponent<ItemT>({
       snapToInterval={enableSnap ? getSnapInterval(itemWidth, gap) : undefined}
       decelerationRate={enableSnap ? 'fast' : undefined}
       testID={testID}
+      removeClippedSubviews
+      initialNumToRender={3}
+      windowSize={5}
     />
   );
 }

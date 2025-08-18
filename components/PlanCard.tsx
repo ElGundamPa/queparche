@@ -223,8 +223,9 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   verticalImageContainer: {
-    height: 200,
+    height: 170,
     position: 'relative',
+    overflow: 'hidden',
   },
   verticalImage: {
     width: "100%",
