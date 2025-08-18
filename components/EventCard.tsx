@@ -4,7 +4,6 @@ import {
   StyleSheet,
   Text,
   View,
-  TouchableOpacity,
   Dimensions,
   Pressable,
   AccessibilityRole,
@@ -46,88 +45,89 @@ const EventCard = memo(function EventCard({ event }: EventCardProps) {
   const distanceLabel = formatDistanceKm(distanceMeters ?? undefined);
 
   return (
-    <TouchableOpacity
-      accessibilityRole={"button" as AccessibilityRole}
-      accessibilityLabel={`Ver detalle del evento ${event.title}`}
-      style={styles.card}
-      onPress={handlePress}
-      testID={`event-card-${event.id}`}
-      activeOpacity={0.85}
-    >
-      <View style={styles.imageContainer}>
-        <Image
-          source={{ uri: event.image }}
-          style={styles.image}
-          contentFit="cover"
-          transition={200}
-        />
-        <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.8)']}
-          style={styles.gradient}
-        />
-        {event.isPremium && (
-          <View style={styles.premiumBadge}>
-            <Text style={styles.premiumText}>PREMIUM</Text>
-          </View>
-        )}
-        <View style={styles.timeContainer}>
-          <Clock size={12} color={Colors.light.white} />
-          <Text style={styles.timeText} numberOfLines={1}>{dateLabel}</Text>
-        </View>
-      </View>
-      
-      <View style={styles.content}>
-        <Text style={styles.title} numberOfLines={2}>
-          {event.title}
-        </Text>
-        
-        <View style={styles.metaRow}>
-          <View style={styles.categoryContainer}>
-            <Text style={styles.category}>{event.category}</Text>
-          </View>
-          {distanceLabel ? (
-            <View style={styles.distancePill} accessibilityLabel={`A ${distanceLabel}`}>
-              <MapPin size={12} color={Colors.light.background} />
-              <Text style={styles.distanceText}>{distanceLabel}</Text>
+    <View style={styles.card}>
+      <Pressable
+        accessibilityRole={"button" as AccessibilityRole}
+        accessibilityLabel={`Ver detalle del evento ${event.title}`}
+        onPress={handlePress}
+        testID={`event-card-${event.id}`}
+        style={{ flexGrow: 1 }}
+      >
+        <View style={styles.imageContainer}>
+          <Image
+            source={{ uri: event.image }}
+            style={styles.image}
+            contentFit="cover"
+            transition={200}
+          />
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.8)']}
+            style={styles.gradient}
+          />
+          {event.isPremium && (
+            <View style={styles.premiumBadge}>
+              <Text style={styles.premiumText}>PREMIUM</Text>
             </View>
-          ) : null}
-        </View>
-        
-        <View style={styles.infoRow}>
-          <View style={styles.infoItem}>
-            <MapPin size={12} color={Colors.light.darkGray} />
-            <Text style={styles.infoText} numberOfLines={1}>
-              {event.location.address?.split(',')[0] || 'Medellín'}
-            </Text>
+          )}
+          <View style={styles.timeContainer}>
+            <Clock size={12} color={Colors.light.white} />
+            <Text style={styles.timeText} numberOfLines={1}>{dateLabel}</Text>
           </View>
         </View>
         
-        <View style={styles.bottomRow}>
-          <View style={styles.infoItem}>
-            <Users size={12} color={Colors.light.darkGray} />
-            <Text style={styles.infoText}>
-              {event.currentAttendees}/{event.maxAttendees || '∞'}
-            </Text>
-          </View>
-          {typeof event.rating === 'number' ? (
-            <View style={styles.rating}>
-              <Star size={12} color={Colors.light.premium} />
-              <Text style={styles.ratingText}>{event.rating.toFixed(1)}</Text>
+        <View style={styles.contentNoCta}>
+          <Text style={styles.title} numberOfLines={2}>
+            {event.title}
+          </Text>
+          
+          <View style={styles.metaRow}>
+            <View style={styles.categoryContainer}>
+              <Text style={styles.category}>{event.category}</Text>
             </View>
-          ) : null}
-          <Text style={styles.price}>{priceLabel}</Text>
+            {distanceLabel ? (
+              <View style={styles.distancePill} accessibilityLabel={`A ${distanceLabel}`}>
+                <MapPin size={12} color={Colors.light.background} />
+                <Text style={styles.distanceText}>{distanceLabel}</Text>
+              </View>
+            ) : null}
+          </View>
+          
+          <View style={styles.infoRow}>
+            <View style={styles.infoItem}>
+              <MapPin size={12} color={Colors.light.darkGray} />
+              <Text style={styles.infoText} numberOfLines={1}>
+                {event.location.address?.split(',')[0] || 'Medellín'}
+              </Text>
+            </View>
+          </View>
+          
+          <View style={styles.bottomRow}>
+            <View style={styles.infoItem}>
+              <Users size={12} color={Colors.light.darkGray} />
+              <Text style={styles.infoText}>
+                {event.currentAttendees}/{event.maxAttendees || '∞'}
+              </Text>
+            </View>
+            {typeof event.rating === 'number' ? (
+              <View style={styles.rating}>
+                <Star size={12} color={Colors.light.premium} />
+                <Text style={styles.ratingText}>{event.rating.toFixed(1)}</Text>
+              </View>
+            ) : null}
+            <Text style={styles.price}>{priceLabel}</Text>
+          </View>
         </View>
+      </Pressable>
 
-        <View style={styles.ctaRow}>
-          <Pressable onPress={handlePress} style={styles.primaryCta} accessibilityRole={"button"}>
-            <Text style={styles.primaryCtaText}>Ver detalle</Text>
-          </Pressable>
-          <Pressable onPress={handleShare} style={styles.secondaryCta} accessibilityRole={"button"}>
-            <Share2 size={16} color={Colors.light.primary} />
-          </Pressable>
-        </View>
+      <View style={[styles.content, styles.ctaRow]}>
+        <Pressable onPress={handlePress} style={styles.primaryCta} hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}>
+          <Text style={styles.primaryCtaText}>Ver detalle</Text>
+        </Pressable>
+        <Pressable onPress={handleShare} style={styles.secondaryCta} hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}>
+          <Share2 size={16} color={Colors.light.primary} />
+        </Pressable>
       </View>
-    </TouchableOpacity>
+    </View>
   );
 });
 
@@ -196,6 +196,10 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
+  },
+  contentNoCta: {
+    padding: 16,
+    paddingBottom: 8,
   },
   title: {
     fontSize: 16,
