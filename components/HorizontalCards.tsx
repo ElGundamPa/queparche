@@ -1,5 +1,6 @@
 import React, { memo, useCallback, useMemo } from 'react';
-import { FlatList, ListRenderItem, Platform, StyleSheet, ViewStyle, View } from 'react-native';
+import { ListRenderItem, StyleSheet, ViewStyle, View } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 
 interface HorizontalCardsProps<ItemT> {
   data: ItemT[];
@@ -8,13 +9,9 @@ interface HorizontalCardsProps<ItemT> {
   itemWidth: number;
   gap?: number;
   contentPaddingHorizontal?: number;
-  enableSnap?: boolean;
   testID?: string;
   contentStyle?: ViewStyle;
-}
-
-function getSnapInterval(itemWidth: number, gap: number) {
-  return itemWidth + gap;
+  estimatedItemSize?: number;
 }
 
 function HorizontalCardsComponent<ItemT>({
@@ -24,19 +21,10 @@ function HorizontalCardsComponent<ItemT>({
   itemWidth,
   gap = 16,
   contentPaddingHorizontal = 20,
-  enableSnap = false,
   testID,
   contentStyle,
+  estimatedItemSize = 280,
 }: HorizontalCardsProps<ItemT>) {
-  const getItemLayout = useCallback(
-    (_: ArrayLike<ItemT> | null | undefined, index: number) => ({
-      length: itemWidth + gap,
-      offset: (itemWidth + gap) * index,
-      index,
-    }),
-    [itemWidth, gap],
-  );
-
   const contentContainerStyle = useMemo(() => [{ paddingHorizontal: contentPaddingHorizontal }, contentStyle] as const, [contentPaddingHorizontal, contentStyle]);
 
   const wrappedRenderItem = useCallback<NonNullable<typeof renderItem>>(
@@ -49,22 +37,19 @@ function HorizontalCardsComponent<ItemT>({
   );
 
   return (
-    <FlatList
+    <FlashList
       horizontal
+      pagingEnabled={false}
+      showsHorizontalScrollIndicator={false}
+      decelerationRate="normal"
       data={data}
-      renderItem={wrappedRenderItem}
-      keyExtractor={keyExtractor}
-      getItemLayout={getItemLayout}
-      showsHorizontalScrollIndicator={Platform.OS === 'web' ? false : false}
+      renderItem={wrappedRenderItem as any}
+      keyExtractor={keyExtractor as any}
       contentContainerStyle={contentContainerStyle as any}
       ItemSeparatorComponent={() => <View style={{ width: gap }} />}
-      snapToAlignment={enableSnap ? 'start' : undefined}
-      snapToInterval={enableSnap ? getSnapInterval(itemWidth, gap) : undefined}
-      decelerationRate={enableSnap ? 'fast' : undefined}
       testID={testID}
+      estimatedItemSize={estimatedItemSize}
       removeClippedSubviews
-      initialNumToRender={3}
-      windowSize={5}
     />
   );
 }

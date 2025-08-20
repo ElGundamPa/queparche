@@ -305,7 +305,6 @@ export default function HomeScreen() {
                 gap={16}
                 contentPaddingHorizontal={20}
                 testID="filtered-skeleton"
-                enableSnap
               />
             ) : item.data.length > 0 ? (
               <HorizontalCards
@@ -320,7 +319,6 @@ export default function HomeScreen() {
                 gap={16}
                 contentPaddingHorizontal={20}
                 testID="filtered-horizontal"
-                enableSnap
               />
             ) : (
               <EmptyState

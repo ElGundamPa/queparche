@@ -70,6 +70,7 @@ const PlanCard = memo(function PlanCard({ plan, horizontal = true, animationDela
               style={styles.horizontalImage}
               contentFit="cover"
               transition={200}
+              cachePolicy="memory-disk"
             />
             {plan.isPremium && (
               <View style={styles.premiumBadge}>
@@ -129,6 +130,7 @@ const PlanCard = memo(function PlanCard({ plan, horizontal = true, animationDela
             style={styles.verticalImage}
             contentFit="cover"
             transition={200}
+            cachePolicy="memory-disk"
           />
           <LinearGradient
             colors={['transparent', 'rgba(0,0,0,0.8)']}
