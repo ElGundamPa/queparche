@@ -12,7 +12,6 @@ import * as Haptics from "expo-haptics";
 import { Calendar, Star, Crown } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
-import Toast from "react-native-toast-message";
 
 
 import PlanCard from "@/components/PlanCard";
@@ -55,25 +54,6 @@ export default function HomeScreen() {
     Haptics.selectionAsync();
     const newCategory = selectedCategory === categoryName ? null : categoryName;
     setSelectedCategory(newCategory);
-    
-    // Show toast feedback
-    if (newCategory) {
-      Toast.show({
-        type: 'success',
-        text1: 'Categoría seleccionada ✅',
-        text2: `Mostrando planes de ${categoryName}`,
-        position: 'bottom',
-        visibilityTime: 2000,
-      });
-    } else {
-      Toast.show({
-        type: 'info',
-        text1: 'Filtro removido',
-        text2: 'Mostrando todos los planes',
-        position: 'bottom',
-        visibilityTime: 2000,
-      });
-    }
   };
 
 
@@ -150,15 +130,7 @@ export default function HomeScreen() {
               placeholder="Buscar planes, lugares, eventos..."
               showSuggestions={true}
               showFilter={true}
-              onFilterPress={() => {
-                Toast.show({
-                  type: 'info',
-                  text1: 'Filtros avanzados',
-                  text2: 'Próximamente disponible',
-                  position: 'bottom',
-                  visibilityTime: 2000,
-                });
-              }}
+              onFilterPress={() => {}}
             />
           </Animated.View>
         );
@@ -246,13 +218,6 @@ export default function HomeScreen() {
                 title="No hay planes populares"
                 subtitle="¡Sé el primero en crear un parche que se vuelva popular!"
                 onAction={() => {
-                  Toast.show({
-                    type: 'info',
-                    text1: 'Crear parche',
-                    text2: 'Te llevamos al formulario',
-                    position: 'bottom',
-                    visibilityTime: 1500,
-                  });
                 }}
                 actionText="Crear parche"
               />
@@ -330,22 +295,8 @@ export default function HomeScreen() {
                   } else if (selectedCategory) {
                     setSelectedCategory(null);
                   }
-                  Toast.show({
-                    type: 'success',
-                    text1: 'Filtros limpiados ✅',
-                    text2: 'Mostrando todos los planes',
-                    position: 'bottom',
-                    visibilityTime: 2000,
-                  });
                 }}
                 onAction={() => {
-                  Toast.show({
-                    type: 'info',
-                    text1: 'Crear parche',
-                    text2: 'Te llevamos al formulario',
-                    position: 'bottom',
-                    visibilityTime: 1500,
-                  });
                 }}
               />
             )}
@@ -374,7 +325,6 @@ export default function HomeScreen() {
       {/* Floating Action Button */}
       <FABSpeedDial />
       
-      <Toast />
     </View>
   );
 }
