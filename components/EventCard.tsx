@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import React, { memo, useMemo } from "react";
+import React, { memo, useMemo, useEffect, useRef } from "react";
 import {
   StyleSheet,
   Text,
@@ -7,6 +7,9 @@ import {
   Dimensions,
   Pressable,
   AccessibilityRole,
+  Animated as RNAnimated,
+  Easing,
+  Platform,
 } from "react-native";
 import { Image } from "expo-image";
 import { MapPin, Users, Clock, Share2, Star } from "lucide-react-native";
@@ -27,6 +30,29 @@ const EventCard = memo(function EventCard({ event }: EventCardProps) {
   const router = useRouter();
   const { coords, distanceFrom } = useLocation();
 
+  const glowOpacity = useRef<RNAnimated.Value>(new RNAnimated.Value(0.35)).current;
+
+  useEffect(() => {
+    const loop = RNAnimated.loop(
+      RNAnimated.sequence([
+        RNAnimated.timing(glowOpacity, {
+          toValue: 0.7,
+          duration: 1200,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: Platform.OS !== 'web',
+        }),
+        RNAnimated.timing(glowOpacity, {
+          toValue: 0.25,
+          duration: 1200,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: Platform.OS !== 'web',
+        }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [glowOpacity]);
+
   const distanceMeters = useMemo(() => {
     if (!event.location || !coords) return null;
     return distanceFrom({ latitude: event.location.latitude, longitude: event.location.longitude });
@@ -45,87 +71,96 @@ const EventCard = memo(function EventCard({ event }: EventCardProps) {
   const distanceLabel = formatDistanceKm(distanceMeters ?? undefined);
 
   return (
-    <View style={styles.card}>
-      <Pressable
-        accessibilityRole={"button" as AccessibilityRole}
-        accessibilityLabel={`Ver detalle del evento ${event.title}`}
-        onPress={handlePress}
-        testID={`event-card-${event.id}`}
-        style={{ flexGrow: 1 }}
-      >
-        <View style={styles.imageContainer}>
-          <Image
-            source={{ uri: event.image }}
-            style={styles.image}
-            contentFit="cover"
-            transition={200}
-          />
-          <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.8)']}
-            style={styles.gradient}
-          />
-          {event.isPremium && (
-            <View style={styles.premiumBadge}>
-              <Text style={styles.premiumText}>PREMIUM</Text>
-            </View>
-          )}
-          <View style={styles.timeContainer}>
-            <Clock size={12} color={Colors.light.white} />
-            <Text style={styles.timeText} numberOfLines={1}>{dateLabel}</Text>
-          </View>
-        </View>
-        
-        <View style={styles.contentNoCta}>
-          <Text style={styles.title} numberOfLines={2}>
-            {event.title}
-          </Text>
-          
-          <View style={styles.metaRow}>
-            <View style={styles.categoryContainer}>
-              <Text style={styles.category}>{event.category}</Text>
-            </View>
-            {distanceLabel ? (
-              <View style={styles.distancePill} accessibilityLabel={`A ${distanceLabel}`}>
-                <MapPin size={12} color={Colors.light.background} />
-                <Text style={styles.distanceText}>{distanceLabel}</Text>
+    <View style={styles.cardWrapper}>
+      <RNAnimated.View
+        pointerEvents="none"
+        style={[styles.glow, { opacity: glowOpacity }]}
+        testID={`event-card-glow-${event.id}`}
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+      />
+      <View style={styles.card}>
+        <Pressable
+          accessibilityRole={"button" as AccessibilityRole}
+          accessibilityLabel={`Ver detalle del evento ${event.title}`}
+          onPress={handlePress}
+          testID={`event-card-${event.id}`}
+          style={{ flexGrow: 1 }}
+        >
+          <View style={styles.imageContainer}>
+            <Image
+              source={{ uri: event.image }}
+              style={styles.image}
+              contentFit="cover"
+              transition={200}
+            />
+            <LinearGradient
+              colors={['transparent', 'rgba(0,0,0,0.8)']}
+              style={styles.gradient}
+            />
+            {event.isPremium && (
+              <View style={styles.premiumBadge}>
+                <Text style={styles.premiumText}>PREMIUM</Text>
               </View>
-            ) : null}
-          </View>
-          
-          <View style={styles.infoRow}>
-            <View style={styles.infoItem}>
-              <MapPin size={12} color={Colors.light.darkGray} />
-              <Text style={styles.infoText} numberOfLines={1}>
-                {event.location.address?.split(',')[0] || 'Medellín'}
-              </Text>
+            )}
+            <View style={styles.timeContainer}>
+              <Clock size={12} color={Colors.light.white} />
+              <Text style={styles.timeText} numberOfLines={1}>{dateLabel}</Text>
             </View>
           </View>
           
-          <View style={styles.bottomRow}>
-            <View style={styles.infoItem}>
-              <Users size={12} color={Colors.light.darkGray} />
-              <Text style={styles.infoText}>
-                {event.currentAttendees}/{event.maxAttendees || '∞'}
-              </Text>
-            </View>
-            {typeof event.rating === 'number' ? (
-              <View style={styles.rating}>
-                <Star size={12} color={Colors.light.premium} />
-                <Text style={styles.ratingText}>{event.rating.toFixed(1)}</Text>
+          <View style={styles.contentNoCta}>
+            <Text style={styles.title} numberOfLines={2}>
+              {event.title}
+            </Text>
+            
+            <View style={styles.metaRow}>
+              <View style={styles.categoryContainer}>
+                <Text style={styles.category}>{event.category}</Text>
               </View>
-            ) : null}
-            <Text style={styles.price}>{priceLabel}</Text>
+              {distanceLabel ? (
+                <View style={styles.distancePill} accessibilityLabel={`A ${distanceLabel}`}>
+                  <MapPin size={12} color={Colors.light.background} />
+                  <Text style={styles.distanceText}>{distanceLabel}</Text>
+                </View>
+              ) : null}
+            </View>
+            
+            <View style={styles.infoRow}>
+              <View style={styles.infoItem}>
+                <MapPin size={12} color={Colors.light.darkGray} />
+                <Text style={styles.infoText} numberOfLines={1}>
+                  {event.location.address?.split(',')[0] || 'Medellín'}
+                </Text>
+              </View>
+            </View>
+            
+            <View style={styles.bottomRow}>
+              <View style={styles.infoItem}>
+                <Users size={12} color={Colors.light.darkGray} />
+                <Text style={styles.infoText}>
+                  {event.currentAttendees}/{event.maxAttendees || '∞'}
+                </Text>
+              </View>
+              {typeof event.rating === 'number' ? (
+                <View style={styles.rating}>
+                  <Star size={12} color={Colors.light.premium} />
+                  <Text style={styles.ratingText}>{event.rating.toFixed(1)}</Text>
+                </View>
+              ) : null}
+              <Text style={styles.price}>{priceLabel}</Text>
+            </View>
           </View>
-        </View>
-      </Pressable>
+        </Pressable>
 
-      <View style={[styles.content, styles.ctaRow]}>
-        <Pressable onPress={handlePress} style={styles.primaryCta} hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}>
-          <Text style={styles.primaryCtaText}>Ver detalle</Text>
-        </Pressable>
-        <Pressable onPress={handleShare} style={styles.secondaryCta} hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}>
-          <Share2 size={16} color={Colors.light.primary} />
-        </Pressable>
+        <View style={[styles.content, styles.ctaRow]}>
+          <Pressable onPress={handlePress} style={styles.primaryCta} hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}>
+            <Text style={styles.primaryCtaText}>Ver detalle</Text>
+          </Pressable>
+          <Pressable onPress={handleShare} style={styles.secondaryCta} hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}>
+            <Share2 size={16} color={Colors.light.primary} />
+          </Pressable>
+        </View>
       </View>
     </View>
   );
@@ -134,6 +169,25 @@ const EventCard = memo(function EventCard({ event }: EventCardProps) {
 export default EventCard;
 
 const styles = StyleSheet.create({
+  cardWrapper: {
+    position: 'relative',
+    marginBottom: 8,
+  },
+  glow: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: 4,
+    height: 18,
+    borderRadius: 12,
+    backgroundColor: Colors.light.primary,
+    shadowColor: Colors.light.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.75,
+    shadowRadius: 16,
+    elevation: 0,
+    zIndex: -1,
+  },
   card: {
     width: width * 0.7,
     backgroundColor: Colors.light.card,

@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import React, { memo } from "react";
+import React, { memo, useEffect, useRef } from "react";
 import {
   StyleSheet,
   Text,
@@ -7,6 +7,9 @@ import {
   Pressable,
   Dimensions,
   AccessibilityRole,
+  Animated as RNAnimated,
+  Easing,
+  Platform,
 } from "react-native";
 import { Image } from "expo-image";
 import { Star, Crown, MapPin, Users, Heart } from "lucide-react-native";
@@ -27,6 +30,31 @@ const { width } = Dimensions.get("window");
 
 const PlanCard = memo(function PlanCard({ plan, horizontal = true, animationDelay = 0 }: PlanCardProps) {
   const router = useRouter();
+
+  const glowOpacity = useRef<RNAnimated.Value>(new RNAnimated.Value(0.35)).current;
+
+  useEffect(() => {
+    const loop = RNAnimated.loop(
+      RNAnimated.sequence([
+        RNAnimated.timing(glowOpacity, {
+          toValue: 0.7,
+          duration: 1200,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: Platform.OS !== 'web',
+        }),
+        RNAnimated.timing(glowOpacity, {
+          toValue: 0.25,
+          duration: 1200,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: Platform.OS !== 'web',
+        }),
+      ])
+    );
+    loop.start();
+    return () => {
+      loop.stop();
+    };
+  }, [glowOpacity]);
 
   const handlePress = () => {
     if (plan?.id) {
@@ -50,142 +78,179 @@ const PlanCard = memo(function PlanCard({ plan, horizontal = true, animationDela
     }
   };
 
+  // Keep hooks before any early returns
   if (!plan) {
     return null;
   }
 
   if (horizontal) {
     return (
+      <View style={styles.cardWrapper}>
+        <RNAnimated.View
+          pointerEvents="none"
+          style={[styles.glow, { opacity: glowOpacity }]}
+          testID={`plan-card-glow-${plan?.id ?? 'unknown'}`}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        />
+        <Animated.View entering={animationDelay > 0 ? FadeInUp.delay(animationDelay) : undefined}>
+          <Pressable
+            style={styles.horizontalCard}
+            onPress={handlePress}
+            testID={`plan-card-${plan.id}`}
+            accessibilityRole={"button" as AccessibilityRole}
+            accessibilityLabel={`Abrir parche ${plan.name}`}
+          >
+            <View style={styles.imageContainer}>
+              <Image
+                source={{ uri: plan.images[0] }}
+                style={styles.horizontalImage}
+                contentFit="cover"
+                transition={200}
+                cachePolicy="memory-disk"
+              />
+              {plan.isPremium && (
+                <View style={styles.premiumBadge}>
+                  <Crown size={12} color={Colors.light.premium} />
+                </View>
+              )}
+              {plan.isSponsored && (
+                <View style={styles.sponsoredBadge}>
+                  <Text style={styles.sponsoredText}>Patrocinado</Text>
+                </View>
+              )}
+              <View style={styles.ratingBadge}>
+                <Star size={10} color={Colors.light.premium} fill={Colors.light.premium} />
+                <Text style={styles.ratingText}>{plan.rating ? plan.rating.toFixed(1) : '0.0'}</Text>
+              </View>
+            </View>
+            <View style={styles.horizontalContent}>
+              <Text style={styles.name} numberOfLines={1}>
+                {plan.name}
+              </Text>
+              <View style={styles.categoryContainer}>
+                <Text style={styles.category}>{plan.category}</Text>
+              </View>
+              <View style={styles.infoRow}>
+                <View style={styles.infoItem}>
+                  <Users size={12} color={Colors.light.darkGray} />
+                  <Text style={styles.infoText}>
+                    {plan.currentPeople}/{plan.maxPeople}
+                  </Text>
+                </View>
+                <View style={styles.infoItem}>
+                  <Heart size={12} color={Colors.light.darkGray} />
+                  <Text style={styles.infoText}>{plan.likes}</Text>
+                </View>
+              </View>
+              {(typeof plan.price === 'number' && plan.price > 0) && (
+                <Text style={styles.price}>{`${plan.price.toLocaleString()} COP`}</Text>
+              )}
+            </View>
+          </Pressable>
+        </Animated.View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.cardWrapper}>
+      <RNAnimated.View
+        pointerEvents="none"
+        style={[styles.glow, { opacity: glowOpacity }]}
+        testID={`plan-card-glow-${plan?.id ?? 'unknown'}`}
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+      />
       <Animated.View entering={animationDelay > 0 ? FadeInUp.delay(animationDelay) : undefined}>
         <Pressable
-          style={styles.horizontalCard}
+          style={styles.verticalCard}
           onPress={handlePress}
           testID={`plan-card-${plan.id}`}
           accessibilityRole={"button" as AccessibilityRole}
           accessibilityLabel={`Abrir parche ${plan.name}`}
         >
-          <View style={styles.imageContainer}>
+          <View style={styles.verticalImageContainer}>
             <Image
               source={{ uri: plan.images[0] }}
-              style={styles.horizontalImage}
+              style={styles.verticalImage}
               contentFit="cover"
               transition={200}
               cachePolicy="memory-disk"
             />
+            <LinearGradient
+              colors={['transparent', 'rgba(0,0,0,0.8)']}
+              style={styles.gradient}
+            />
             {plan.isPremium && (
-              <View style={styles.premiumBadge}>
-                <Crown size={12} color={Colors.light.premium} />
+              <View style={[styles.premiumBadge, styles.verticalPremiumBadge]}>
+                <Crown size={14} color={Colors.light.premium} />
               </View>
             )}
             {plan.isSponsored && (
-              <View style={styles.sponsoredBadge}>
+              <View style={[styles.sponsoredBadge, styles.verticalSponsoredBadge]}>
                 <Text style={styles.sponsoredText}>Patrocinado</Text>
               </View>
             )}
-            <View style={styles.ratingBadge}>
-              <Star size={10} color={Colors.light.premium} fill={Colors.light.premium} />
-              <Text style={styles.ratingText}>{plan.rating ? plan.rating.toFixed(1) : '0.0'}</Text>
-            </View>
           </View>
-          <View style={styles.horizontalContent}>
-            <Text style={styles.name} numberOfLines={1}>
-              {plan.name}
-            </Text>
+          <View style={styles.verticalContent}>
+            <View style={styles.verticalHeader}>
+              <Text style={styles.verticalName} numberOfLines={1}>
+                {plan.name}
+              </Text>
+              <View style={styles.ratingContainer}>
+                <Star size={12} color={Colors.light.premium} fill={Colors.light.premium} />
+                <Text style={styles.verticalRating}>{plan.rating ? plan.rating.toFixed(1) : '0.0'}</Text>
+              </View>
+            </View>
             <View style={styles.categoryContainer}>
               <Text style={styles.category}>{plan.category}</Text>
             </View>
-            <View style={styles.infoRow}>
+            <View style={styles.verticalInfoRow}>
               <View style={styles.infoItem}>
-                <Users size={12} color={Colors.light.darkGray} />
-                <Text style={styles.infoText}>
-                  {plan.currentPeople}/{plan.maxPeople}
+                <MapPin size={12} color={Colors.light.darkGray} />
+                <Text style={styles.verticalInfoText} numberOfLines={1}>
+                  {plan.location.address?.split(',')[0] || 'Medellín'}
                 </Text>
               </View>
               <View style={styles.infoItem}>
-                <Heart size={12} color={Colors.light.darkGray} />
-                <Text style={styles.infoText}>{plan.likes}</Text>
+                <Users size={12} color={Colors.light.darkGray} />
+                <Text style={styles.verticalInfoText}>
+                  {plan.currentPeople}/{plan.maxPeople}
+                </Text>
               </View>
             </View>
             {(typeof plan.price === 'number' && plan.price > 0) && (
-              <Text style={styles.price}>{`${plan.price.toLocaleString()} COP`}</Text>
+              <Text style={styles.verticalPrice}>{`${plan.price.toLocaleString()} COP`}</Text>
             )}
           </View>
         </Pressable>
       </Animated.View>
-    );
-  }
-
-  return (
-    <Animated.View entering={animationDelay > 0 ? FadeInUp.delay(animationDelay) : undefined}>
-      <Pressable
-        style={styles.verticalCard}
-        onPress={handlePress}
-        testID={`plan-card-${plan.id}`}
-        accessibilityRole={"button" as AccessibilityRole}
-        accessibilityLabel={`Abrir parche ${plan.name}`}
-      >
-        <View style={styles.verticalImageContainer}>
-          <Image
-            source={{ uri: plan.images[0] }}
-            style={styles.verticalImage}
-            contentFit="cover"
-            transition={200}
-            cachePolicy="memory-disk"
-          />
-          <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.8)']}
-            style={styles.gradient}
-          />
-          {plan.isPremium && (
-            <View style={[styles.premiumBadge, styles.verticalPremiumBadge]}>
-              <Crown size={14} color={Colors.light.premium} />
-            </View>
-          )}
-          {plan.isSponsored && (
-            <View style={[styles.sponsoredBadge, styles.verticalSponsoredBadge]}>
-              <Text style={styles.sponsoredText}>Patrocinado</Text>
-            </View>
-          )}
-        </View>
-        <View style={styles.verticalContent}>
-          <View style={styles.verticalHeader}>
-            <Text style={styles.verticalName} numberOfLines={1}>
-              {plan.name}
-            </Text>
-            <View style={styles.ratingContainer}>
-              <Star size={12} color={Colors.light.premium} fill={Colors.light.premium} />
-              <Text style={styles.verticalRating}>{plan.rating ? plan.rating.toFixed(1) : '0.0'}</Text>
-            </View>
-          </View>
-          <View style={styles.categoryContainer}>
-            <Text style={styles.category}>{plan.category}</Text>
-          </View>
-          <View style={styles.verticalInfoRow}>
-            <View style={styles.infoItem}>
-              <MapPin size={12} color={Colors.light.darkGray} />
-              <Text style={styles.verticalInfoText} numberOfLines={1}>
-                {plan.location.address?.split(',')[0] || 'Medellín'}
-              </Text>
-            </View>
-            <View style={styles.infoItem}>
-              <Users size={12} color={Colors.light.darkGray} />
-              <Text style={styles.verticalInfoText}>
-                {plan.currentPeople}/{plan.maxPeople}
-              </Text>
-            </View>
-          </View>
-          {(typeof plan.price === 'number' && plan.price > 0) && (
-            <Text style={styles.verticalPrice}>{`${plan.price.toLocaleString()} COP`}</Text>
-          )}
-        </View>
-      </Pressable>
-    </Animated.View>
+    </View>
   );
 });
 
 export default PlanCard;
 
 const styles = StyleSheet.create({
+  cardWrapper: {
+    position: 'relative',
+  },
+  glow: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: 6,
+    height: 18,
+    borderRadius: 12,
+    backgroundColor: Colors.light.primary,
+    shadowColor: Colors.light.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.75,
+    shadowRadius: 16,
+    elevation: 0,
+    zIndex: -1,
+  },
   horizontalCard: {
     width: width * 0.75,
     height: 140,
