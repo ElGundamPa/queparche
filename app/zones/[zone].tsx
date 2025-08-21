@@ -1,100 +1,62 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, ListRenderItem } from 'react-native';
-import { useLocalSearchParams, Stack } from 'expo-router';
+import React, { useMemo, useCallback } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import Colors from '@/constants/colors';
-import HorizontalCards from '@/components/HorizontalCards';
-import PlanCard from '@/components/PlanCard';
-import { plansByZone } from '@/data/parches';
+import { ZONES, MEDELLIN_COMUNAS } from '@/data/zones';
+import { FlashList } from '@shopify/flash-list';
+import AreaCard from '@/components/AreaCard';
 
 export default function ZoneDetail() {
   const { zone } = useLocalSearchParams<{ zone: string }>();
-  const decoded = useMemo(() => decodeURIComponent(zone || ''), [zone]);
+  const router = useRouter();
 
-  const zoneContent = useMemo(() => {
-    if (decoded === 'Medellín') {
-      return { type: 'med', data: plansByZone.Medellín } as const;
-    }
-    const key = decoded as keyof typeof plansByZone;
-    if (key in plansByZone) {
-      return { type: 'other', data: plansByZone[key] } as const;
-    }
-    return { type: 'none' } as const;
-  }, [decoded]);
+  const zoneKey = useMemo(() => String(zone || ''), [zone]);
+  const zoneItem = useMemo(() => ZONES.find((z) => z.key === zoneKey), [zoneKey]);
 
-  const medSections = useMemo(() => {
-    if (zoneContent.type !== 'med') return [] as Array<[string, typeof plansByZone.Medellín[keyof typeof plansByZone.Medellín]]>;
-    return Object.entries(zoneContent.data);
-  }, [zoneContent]);
+  const areas = useMemo(() => {
+    if (zoneKey === 'medellin') return MEDELLIN_COMUNAS;
+    return [];
+  }, [zoneKey]);
 
-  const renderComuna: ListRenderItem<[string, any[]]> = ({ item }) => {
-    const [comuna, plans] = item;
-    return (
-      <View style={{ marginTop: 24 }}>
-        <Text style={styles.sectionTitle}>{comuna}</Text>
-        <HorizontalCards
-          data={plans}
-          keyExtractor={(p) => p.id}
-          itemWidth={280}
-          renderItem={({ item: plan }) => <PlanCard plan={plan} horizontal={true} />}
-          gap={16}
-          contentPaddingHorizontal={20}
-          enableSnap
-          testID={`zone-${comuna}`}
-        />
-      </View>
-    );
-  };
+  const onAreaPress = useCallback((slug: string) => {
+    router.push({ pathname: '/zones/[zone]', params: { zone: zoneKey } });
+    // Navigate to patches filtered by comuna
+    router.push({ pathname: '/(tabs)', params: {} });
+  }, [router, zoneKey]);
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ title: decoded || 'Zona', headerStyle: { backgroundColor: Colors.light.background }, headerTintColor: Colors.light.text }} />
-      {zoneContent.type === 'med' ? (
-        <FlatList
-          data={medSections}
-          keyExtractor={([comuna]) => comuna}
-          renderItem={renderComuna}
-          contentContainerStyle={{ paddingBottom: 24 }}
-          nestedScrollEnabled
-          initialNumToRender={4}
-          windowSize={7}
-          removeClippedSubviews
-        />
-      ) : zoneContent.type === 'other' && Array.isArray(zoneContent.data) ? (
-        <FlatList
-          data={[{ key: decoded }]}
-          keyExtractor={(i) => String(i.key)}
-          renderItem={() => (
-            <View style={{ marginTop: 24 }}>
-              <Text style={styles.sectionTitle}>{decoded}</Text>
-              <HorizontalCards
-                data={zoneContent.data as any[]}
-                keyExtractor={(p) => p.id}
-                itemWidth={280}
-                renderItem={({ item }) => <PlanCard plan={item} horizontal={true} />}
-                gap={16}
-                contentPaddingHorizontal={20}
-                enableSnap
-                testID={`zone-${decoded}`}
-              />
-            </View>
-          )}
-          contentContainerStyle={{ paddingBottom: 24 }}
-          nestedScrollEnabled
-          initialNumToRender={1}
-          windowSize={5}
-          removeClippedSubviews
-        />
-      ) : (
-        <View style={{ padding: 20 }}>
-          <Text style={styles.empty}>No encontramos datos para esta zona.</Text>
-        </View>
-      )}
+      <Stack.Screen options={{ title: zoneItem?.name ?? 'Zona' }} />
+
+      <FlashList
+        data={areas}
+        numColumns={2}
+        estimatedItemSize={150}
+        keyExtractor={(i) => i.key}
+        contentContainerStyle={styles.listContent}
+        renderItem={({ item }) => (
+          <View style={styles.col}>
+            <AreaCard
+              title={item.name}
+              image={item.image}
+              onPress={() => onAreaPress(item.key)}
+              testID={`area-${item.key}`}
+            />
+          </View>
+        )}
+        ListEmptyComponent={() => (
+          <View style={{ padding: 20 }}>
+            <Text style={styles.empty}>Pronto verás los barrios y sectores de {zoneItem?.name ?? 'esta zona'}.</Text>
+          </View>
+        )}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.light.background },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: Colors.light.text, paddingHorizontal: 20, marginBottom: 12 },
+  listContent: { padding: 16, gap: 12 },
+  col: { width: '50%', padding: 6 },
   empty: { color: Colors.light.darkGray, fontSize: 14 },
 });
