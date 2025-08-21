@@ -1,5 +1,5 @@
 import React, { memo, useCallback, useMemo } from 'react';
-import { ListRenderItem, StyleSheet, ViewStyle, View } from 'react-native';
+import { ListRenderItem, ViewStyle, View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 
 interface HorizontalCardsProps<ItemT> {
@@ -12,6 +12,9 @@ interface HorizontalCardsProps<ItemT> {
   testID?: string;
   contentStyle?: ViewStyle;
   estimatedItemSize?: number;
+  onEndReached?: () => void;
+  onEndReachedThreshold?: number;
+  decelerationRate?: 'fast' | 'normal' | number;
 }
 
 function HorizontalCardsComponent<ItemT>({
@@ -24,6 +27,9 @@ function HorizontalCardsComponent<ItemT>({
   testID,
   contentStyle,
   estimatedItemSize = 280,
+  onEndReached,
+  onEndReachedThreshold = 0.4,
+  decelerationRate = 'normal',
 }: HorizontalCardsProps<ItemT>) {
   const contentContainerStyle = useMemo(() => [{ paddingHorizontal: contentPaddingHorizontal }, contentStyle] as const, [contentPaddingHorizontal, contentStyle]);
 
@@ -41,7 +47,8 @@ function HorizontalCardsComponent<ItemT>({
       horizontal
       pagingEnabled={false}
       showsHorizontalScrollIndicator={false}
-      decelerationRate="normal"
+      decelerationRate={decelerationRate}
+      scrollEventThrottle={16}
       data={data}
       renderItem={wrappedRenderItem as any}
       keyExtractor={keyExtractor as any}
@@ -49,12 +56,11 @@ function HorizontalCardsComponent<ItemT>({
       ItemSeparatorComponent={() => <View style={{ width: gap }} />}
       testID={testID}
       estimatedItemSize={estimatedItemSize}
-      removeClippedSubviews
+      onEndReached={onEndReached}
+      onEndReachedThreshold={onEndReachedThreshold}
     />
   );
 }
 
 const HorizontalCards = memo(HorizontalCardsComponent) as typeof HorizontalCardsComponent;
 export default HorizontalCards;
-
-const styles = StyleSheet.create({});

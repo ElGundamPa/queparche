@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useCallback } from "react";
 import {
   StyleSheet,
   Text,
@@ -28,6 +28,7 @@ import { useFilteredPlans, usePlansStore, useTopPlans } from "@/hooks/use-plans-
 import { useUserStore } from "@/hooks/use-user-store";
 import { useSearchStore } from "@/hooks/use-search-store";
 import HorizontalCards from "@/components/HorizontalCards";
+import { Image as ExpoImage } from "expo-image";
 
 
 
@@ -63,6 +64,20 @@ export default function HomeScreen() {
     const eventDate = new Date(event.startDate).toDateString();
     return today === eventDate;
   });
+
+  const prefetchNextImages = useCallback((items: any[], startIndex: number, batch: number = 6) => {
+    try {
+      const slice = items.slice(startIndex, startIndex + batch);
+      slice.forEach((it) => {
+        const url = it?.images?.[0] || it?.image;
+        if (typeof url === 'string' && url.length > 0) {
+          ExpoImage.prefetch(url).catch((e) => console.log('prefetch error', e?.message));
+        }
+      });
+    } catch (e: any) {
+      console.log('prefetchNextImages error', e?.message);
+    }
+  }, []);
 
   const sections = useMemo((): SectionType[] => {
     const sectionList: SectionType[] = [
@@ -154,6 +169,7 @@ export default function HomeScreen() {
               gap={16}
               contentPaddingHorizontal={20}
               testID="events-horizontal"
+              onEndReached={() => prefetchNextImages(item.data, 6)}
             />
           </Animated.View>
         );
@@ -177,6 +193,7 @@ export default function HomeScreen() {
               gap={16}
               contentPaddingHorizontal={20}
               testID="featured-horizontal"
+              onEndReached={() => prefetchNextImages(item.data, 6)}
             />
           </Animated.View>
         );
@@ -211,6 +228,7 @@ export default function HomeScreen() {
                 gap={16}
                 contentPaddingHorizontal={20}
                 testID="topplans-horizontal"
+                onEndReached={() => prefetchNextImages(item.data, 6)}
               />
             ) : (
               <EmptyState
@@ -284,6 +302,7 @@ export default function HomeScreen() {
                 gap={16}
                 contentPaddingHorizontal={20}
                 testID="filtered-horizontal"
+                onEndReached={() => prefetchNextImages(item.data, 6)}
               />
             ) : (
               <EmptyState
