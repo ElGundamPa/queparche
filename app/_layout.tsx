@@ -8,6 +8,7 @@ import { PlansProvider } from "@/hooks/use-plans-store";
 import { UserProvider } from "@/hooks/use-user-store";
 import { SearchProvider } from "@/hooks/use-search-store";
 import { trpc, trpcClient } from "@/lib/trpc";
+import { FiltersProvider } from "@/store/filters";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -36,9 +37,11 @@ export default function RootLayout() {
         <UserProvider>
           <PlansProvider>
             <SearchProvider>
-              <GestureHandlerRootView style={{ flex: 1 }}>
-                <RootLayoutNav />
-              </GestureHandlerRootView>
+              <FiltersProvider>
+                <GestureHandlerRootView style={{ flex: 1 }}>
+                  <RootLayoutNav />
+                </GestureHandlerRootView>
+              </FiltersProvider>
             </SearchProvider>
           </PlansProvider>
         </UserProvider>

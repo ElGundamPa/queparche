@@ -5,6 +5,7 @@ import Colors from '@/constants/colors';
 import { ZONES, MEDELLIN_COMUNAS } from '@/data/zones';
 import { FlashList } from '@shopify/flash-list';
 import AreaCard from '@/components/AreaCard';
+import { useFilters } from '@/store/filters';
 
 export default function ZoneDetail() {
   const { zone } = useLocalSearchParams<{ zone: string }>();
@@ -18,10 +19,14 @@ export default function ZoneDetail() {
     return [];
   }, [zoneKey]);
 
+  const { setZone, setComuna } = useFilters();
+
   const onAreaPress = useCallback((slug: string) => {
     if (!zoneItem) return;
-    router.push({ pathname: '/(tabs)', params: { zone: zoneItem.key, comuna: slug } });
-  }, [router, zoneItem]);
+    setZone(zoneItem.key);
+    setComuna(slug);
+    router.push('/(tabs)');
+  }, [router, zoneItem, setZone, setComuna]);
 
   if (!zoneItem) {
     return (
