@@ -15,6 +15,7 @@ interface HorizontalCardsProps<ItemT> {
   onEndReached?: () => void;
   onEndReachedThreshold?: number;
   decelerationRate?: 'fast' | 'normal' | number;
+  drawDistance?: number;
 }
 
 function HorizontalCardsComponent<ItemT>({
@@ -30,6 +31,7 @@ function HorizontalCardsComponent<ItemT>({
   onEndReached,
   onEndReachedThreshold = 0.4,
   decelerationRate = 'normal',
+  drawDistance = 800,
 }: HorizontalCardsProps<ItemT>) {
   const contentContainerStyle = useMemo(() => [{ paddingHorizontal: contentPaddingHorizontal }, contentStyle] as const, [contentPaddingHorizontal, contentStyle]);
 
@@ -58,6 +60,7 @@ function HorizontalCardsComponent<ItemT>({
       estimatedItemSize={estimatedItemSize}
       onEndReached={onEndReached}
       onEndReachedThreshold={onEndReachedThreshold}
+      drawDistance={drawDistance}
     />
   );
 }
