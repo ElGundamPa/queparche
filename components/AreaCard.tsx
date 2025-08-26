@@ -1,15 +1,24 @@
-import React, { memo } from 'react';
+import React, { memo, useCallback, useState } from 'react';
 import { Pressable, View, Text, StyleSheet } from 'react-native';
-import { Image } from 'expo-image';
+import { Image, type ImageSource } from 'expo-image';
+import { PLACEHOLDER_IMAGE } from '@/constants/images';
 
 interface Props {
   title: string;
-  image: any;
+  image?: ImageSource;
   onPress?: () => void;
   testID?: string;
 }
 
 function AreaCardBase({ title, image, onPress, testID }: Props) {
+  const [failed, setFailed] = useState<boolean>(false);
+  const onError = useCallback(() => {
+    setFailed(true);
+    console.log('AreaCard image failed, using placeholder', { title });
+  }, [title]);
+
+  const src: ImageSource = failed ? PLACEHOLDER_IMAGE : (image ?? PLACEHOLDER_IMAGE);
+
   return (
     <Pressable
       onPress={onPress}
@@ -19,7 +28,14 @@ function AreaCardBase({ title, image, onPress, testID }: Props) {
       style={styles.card}
     >
       <View style={styles.mediaWrap}>
-        <Image source={image} contentFit="cover" style={styles.media} transition={150} cachePolicy="memory-disk" />
+        <Image
+          source={src}
+          onError={onError}
+          contentFit="cover"
+          style={styles.media}
+          transition={150}
+          cachePolicy="memory-disk"
+        />
       </View>
       <View style={styles.meta}>
         <Text style={styles.title}>{title}</Text>
@@ -36,8 +52,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: 'rgba(255,255,255,0.9)',
   },
-  mediaWrap: { width: '100%', height: 112 },
+  mediaWrap: { width: '100%', height: 120 },
   media: { width: '100%', height: '100%' },
   meta: { padding: 8 },
-  title: { fontSize: 16, fontWeight: '600', color: '#111827' },
+  title: { fontSize: 16, fontWeight: '600' as const, color: '#111827' } as const,
 });
