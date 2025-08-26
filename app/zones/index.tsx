@@ -1,14 +1,37 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { ZONES } from '@/data/zones';
 import ZoneCard from '@/components/ZoneCard';
 import Colors from '@/constants/colors';
+import { Image as ExpoImage, type ImageSource } from 'expo-image';
+
+function extractUri(src?: ImageSource): string | undefined {
+  if (!src) return undefined;
+  if (typeof src === 'string') return src;
+  const anySrc = src as unknown as { uri?: string };
+  return anySrc?.uri;
+}
 
 export default function ZonesIndexScreen() {
   const router = useRouter();
 
   const zones = useMemo(() => ZONES, []);
+
+  useEffect(() => {
+    try {
+      const first = zones.slice(0, 6);
+      console.log('[ZonesIndex] prefetch zone images', first.map((z) => z.key));
+      first.forEach((z) => {
+        const uri = extractUri(z.image);
+        if (uri) {
+          ExpoImage.prefetch(uri).catch((e) => console.log('Zones prefetch error', e?.message));
+        }
+      });
+    } catch (e: any) {
+      console.log('Zones prefetch failed', e?.message);
+    }
+  }, [zones]);
 
   const onPressZone = useCallback(
     (zKey: string) => {
