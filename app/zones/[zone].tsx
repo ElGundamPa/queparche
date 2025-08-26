@@ -19,14 +19,24 @@ export default function ZoneDetail() {
   }, [zoneKey]);
 
   const onAreaPress = useCallback((slug: string) => {
-    router.push({ pathname: '/zones/[zone]', params: { zone: zoneKey } });
-    // Navigate to patches filtered by comuna
-    router.push({ pathname: '/(tabs)', params: {} });
-  }, [router, zoneKey]);
+    if (!zoneItem) return;
+    router.push({ pathname: '/(tabs)', params: { zone: zoneItem.key, comuna: slug } });
+  }, [router, zoneItem]);
+
+  if (!zoneItem) {
+    return (
+      <View style={styles.container}>
+        <Stack.Screen options={{ title: 'Zona no encontrada' }} />
+        <View style={{ padding: 20 }}>
+          <Text style={styles.empty}>Zona no encontrada</Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ title: zoneItem?.name ?? 'Zona' }} />
+      <Stack.Screen options={{ title: zoneItem.name }} />
 
       <FlashList
         data={areas}
