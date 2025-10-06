@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { Video, ResizeMode, AVPlaybackStatus } from "expo-av";
+import { VideoView, useVideoPlayer } from "expo-video";
 import { Plus } from "lucide-react-native";
 import { PanGestureHandler } from "react-native-gesture-handler";
 import Animated, {
@@ -42,32 +42,19 @@ const ShortItem: React.FC<ShortItemProps> = ({ item, index, activeIndex, isVisib
   const [videoError, setVideoError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isBuffering, setIsBuffering] = useState(false);
-  const videoRef = useRef<Video>(null);
-
-  useEffect(() => {
-    if (videoRef.current) {
-      if (isVisible && index === activeIndex) {
-        videoRef.current.playAsync();
-      } else {
-        videoRef.current.pauseAsync();
-      }
-    }
-  }, [isVisible, activeIndex, index]);
-
-  const handlePlaybackStatusUpdate = (status: AVPlaybackStatus) => {
-    if (status.isLoaded) {
-      setIsLoading(false);
-      setIsBuffering(status.isBuffering || false);
+  const player = useVideoPlayer(item.videoUrl, (player) => {
+    player.loop = true;
+    if (isVisible && index === activeIndex) {
+      player.play();
     } else {
-      // Handle error case for unloaded status
-      const errorStatus = status as { error?: string };
-      if (errorStatus.error) {
-        console.error('Video playback error:', errorStatus.error);
-        setVideoError(true);
-        setIsLoading(false);
-      }
+      player.pause();
     }
-  };
+  });
+
+  // Video status handling is now managed by the player
+  useEffect(() => {
+    setIsLoading(false);
+  }, []);
 
   const handleError = (error: any) => {
     console.error('Video load error:', error);
@@ -99,17 +86,11 @@ const ShortItem: React.FC<ShortItemProps> = ({ item, index, activeIndex, isVisib
             </View>
           ) : (
             <>
-              <Video
-                ref={videoRef}
-                source={{ uri: item.videoUrl }}
+              <VideoView
+                player={player}
                 style={styles.video}
-                resizeMode={ResizeMode.COVER}
-                shouldPlay={false} // Control manually
-                isLooping
-                isMuted={false}
-                onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
-                onError={handleError}
-                useNativeControls={false}
+                allowsFullscreen
+                allowsPictureInPicture
               />
               {(isLoading || isBuffering) && (
                 <View style={styles.loadingOverlay}>

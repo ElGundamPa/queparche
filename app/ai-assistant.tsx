@@ -103,7 +103,9 @@ IMPORTANT INSTRUCTIONS:
 
 Response format: Provide a natural, conversational response that mentions specific plan names when relevant.`;
 
-      const response = await fetch('https://toolkit.rork.com/text/llm/', {
+      // Simulación de respuesta de IA local
+      // En producción, reemplaza con tu propio servicio de IA
+      const response = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

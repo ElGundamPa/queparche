@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { useLocalSearchParams, Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { Video, ResizeMode } from "expo-av";
+import { VideoView, useVideoPlayer } from "expo-video";
 import { Image } from "expo-image";
 import { Heart, Bookmark, X, Share2, MessageCircle } from "lucide-react-native";
 
@@ -75,12 +75,14 @@ export default function ShortDetailScreen() {
       <StatusBar style="light" />
       <View style={styles.container} testID={`short-detail-${short.id}`}>
         {Platform.OS !== "web" ? (
-          <Video
-            source={{ uri: short.videoUrl }}
+          <VideoView
+            player={useVideoPlayer(short.videoUrl, (player) => {
+              player.loop = true;
+              player.play();
+            })}
             style={styles.video}
-            resizeMode={ResizeMode.COVER}
-            shouldPlay
-            isLooping
+            allowsFullscreen
+            allowsPictureInPicture
             isMuted={false}
           />
         ) : (

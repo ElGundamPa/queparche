@@ -22,6 +22,7 @@ import HorizontalCategories from "@/components/HorizontalCategories";
 import ZoneSection from "@/components/ZoneSection";
 import EmptyState from "@/components/EmptyState";
 import { PlanCardSkeleton } from "@/components/SkeletonLoader";
+import Logo3VB from "@/components/Logo3VB";
 import Colors from "@/constants/colors";
 import { categories } from "@/mocks/categories";
 import { useFilteredPlans, usePlansStore, useTopPlans } from "@/hooks/use-plans-store";
@@ -116,9 +117,14 @@ export default function HomeScreen() {
               colors={['rgba(0, 212, 170, 0.1)', 'transparent']}
               style={styles.header}
             >
+              {/* Logo 3VB en la parte superior */}
+              <View style={styles.logoContainer}>
+                <Logo3VB size={50} showText={false} />
+              </View>
+              
               <View style={styles.headerContent}>
                 <View>
-                  <Text style={styles.greeting}>Hola {user?.name?.split(' ')[0] || 'Parcero'} 👋</Text>
+                  <Text style={styles.greeting}>¿Que Parche {user?.name?.split(' ')[0] || 'Hay para hoy?'} 👋</Text>
                   <Text style={styles.title}>¿Qué parche hay hoy en Medellín? 🔥</Text>
                   <Text style={styles.subtitle}>Encuentra planes en segundos.</Text>
                 </View>
@@ -364,6 +370,10 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 24,
     marginBottom: 8,
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
   },
   headerContent: {
     flexDirection: 'row',
