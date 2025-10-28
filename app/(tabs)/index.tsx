@@ -1,17 +1,32 @@
-import React, { useMemo, useCallback } from "react";
+import React, { useMemo, useCallback, useState, useEffect } from "react";
 import {
   StyleSheet,
   Text,
   View,
   FlatList,
   ListRenderItem,
+  TouchableOpacity,
+  Dimensions,
+  Platform,
+  Image,
+  ScrollView,
 } from "react-native";
 
 import { StatusBar } from "expo-status-bar";
 import * as Haptics from "expo-haptics";
-import { Calendar, Star, Crown } from "lucide-react-native";
+import { Calendar, Star, Crown, Search, Bell } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
+import Animated, { 
+  FadeInDown, 
+  FadeInUp,
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  withDelay,
+  Easing,
+} from "react-native-reanimated";
+import { BlurView } from "expo-blur";
 
 
 import PlanCard from "@/components/PlanCard";
@@ -23,6 +38,8 @@ import ZoneSection from "@/components/ZoneSection";
 import EmptyState from "@/components/EmptyState";
 import { PlanCardSkeleton } from "@/components/SkeletonLoader";
 import Logo3VB from "@/components/Logo3VB";
+import PatchCard from "@/components/PatchCard";
+import PatchDetailModal from "@/components/PatchDetailModal";
 import Colors from "@/constants/colors";
 import { categories } from "@/mocks/categories";
 import { useFilteredPlans, usePlansStore, useTopPlans } from "@/hooks/use-plans-store";
@@ -31,11 +48,30 @@ import { useSearchStore } from "@/hooks/use-search-store";
 import HorizontalCards from "@/components/HorizontalCards";
 import { Image as ExpoImage } from "expo-image";
 
+const { width, height } = Dimensions.get('window');
 
+
+
+interface Patch {
+  id: string;
+  name: string;
+  location: string;
+  rating: number;
+  price: string;
+  description: string;
+  category: string;
+  image: string;
+  images?: string[];
+  amenities: string[];
+  isFavorite?: boolean;
+  latitude?: number;
+  longitude?: number;
+}
 
 type SectionType = 
   | { type: 'header' }
   | { type: 'search' }
+  | { type: 'patches'; data: Patch[] }
   | { type: 'events'; data: any[] }
   | { type: 'featured'; data: any[] }
   | { type: 'topPlans'; data: any[] }
@@ -51,12 +87,180 @@ export default function HomeScreen() {
   const topPlans = useTopPlans();
   const defaultFilteredPlans = useFilteredPlans();
   const filteredPlans = searchQuery ? searchFilteredPlans : defaultFilteredPlans;
+  
+  // Estado para parches y modal
+  const [selectedPatch, setSelectedPatch] = useState<Patch | null>(null);
+  const [isDetailVisible, setIsDetailVisible] = useState(false);
+  
+  // Animaciones de entrada
+  const headerOpacity = useSharedValue(0);
+  const headerTranslateY = useSharedValue(-30);
+  const searchOpacity = useSharedValue(0);
+  const searchTranslateY = useSharedValue(20);
+  
+  // Animación de blur de fondo
+  const blurIntensity = useSharedValue(0);
+  const modalScale = useSharedValue(0.8);
+  const modalOpacity = useSharedValue(0);
+
+  // Datos de parches de ejemplo - Más parches para mejor experiencia
+  const patches: Patch[] = [
+    {
+      id: '1',
+      name: 'La Taquería Urbana',
+      location: 'El Poblado, Medellín',
+      rating: 4.8,
+      price: '$$',
+      description: 'Comida mexicana moderna con ingredientes frescos y auténticos sabores. Ambiente casual y acogedor perfecto para una cena con amigos.',
+      category: 'Restaurantes',
+      image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=800',
+      amenities: ['WiFi', 'Reservas', 'Terraza'],
+      latitude: 6.2088,
+      longitude: -75.5656,
+    },
+    {
+      id: '2',
+      name: 'Skyline Rooftop Bar',
+      location: 'Laureles',
+      rating: 4.9,
+      price: '$$',
+      description: 'Cócteles artesanales y vistas panorámicas de la ciudad. El lugar perfecto para disfrutar de un atardecer inolvidable con música en vivo.',
+      category: 'Rooftops',
+      image: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800',
+      images: [
+        'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800',
+        'https://images.unsplash.com/photo-1572116469696-31de0f17cc34?w=800',
+        'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=800',
+      ],
+      amenities: ['Música en vivo', 'Terraza', 'Vista panorámica'],
+      latitude: 6.2442,
+      longitude: -75.5812,
+    },
+    {
+      id: '3',
+      name: 'Picnic en el Jardín Botánico',
+      location: 'Centro',
+      rating: 4.6,
+      price: 'Gratis',
+      description: 'Disfruta de un día familiar rodeado de naturaleza. Perfecto para relajarse, hacer ejercicio o simplemente disfrutar del aire libre.',
+      category: 'Planes Gratis',
+      image: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800',
+      amenities: ['Aire libre', 'Familiar', 'Naturaleza'],
+      latitude: 6.2442,
+      longitude: -75.5812,
+    },
+    {
+      id: '4',
+      name: 'Museo de Arte Moderno MAMM',
+      location: 'Ciudad del Río',
+      rating: 4.7,
+      price: '$$',
+      description: 'Arte contemporáneo, exposiciones temporales y un café cultural único. Un espacio para la creatividad y la reflexión en el corazón de la ciudad.',
+      category: 'Cultura',
+      image: 'https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=800',
+      amenities: ['Exposiciones', 'Café', 'Cultura'],
+      latitude: 6.2442,
+      longitude: -75.5812,
+    },
+    {
+      id: '5',
+      name: 'Sendero de La Miel',
+      location: 'Envigado',
+      rating: 4.6,
+      price: '$$',
+      description: 'Caminata ecológica guiada por senderos naturales. Conecta con la naturaleza y descubre la biodiversidad de la región.',
+      category: 'Naturaleza',
+      image: 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=800',
+      amenities: ['Ecológico', 'Guía', 'Naturaleza'],
+      latitude: 6.1667,
+      longitude: -75.5833,
+    },
+    {
+      id: '6',
+      name: 'Bar El Social',
+      location: 'Provenza',
+      rating: 4.9,
+      price: '$$$',
+      description: 'DJ sets exclusivos y cócteles de autor en el corazón de la vida nocturna de Medellín. El lugar perfecto para una noche inolvidable.',
+      category: 'Vida Nocturna',
+      image: 'https://images.unsplash.com/photo-1572116469696-31de0f17cc34?w=800',
+      amenities: ['DJ', 'Cocteles', 'Música'],
+      latitude: 6.2088,
+      longitude: -75.5656,
+    },
+    {
+      id: '7',
+      name: 'Centro Comercial Santafé',
+      location: 'El Poblado',
+      rating: 4.5,
+      price: '$$',
+      description: 'El centro comercial más exclusivo de Medellín con las mejores marcas internacionales, restaurantes gourmet y entretenimiento.',
+      category: 'Shopping',
+      image: 'https://images.unsplash.com/photo-1555529902-1a0a2a0a0a0a?w=800',
+      amenities: ['Parking', 'WiFi', 'Restaurantes'],
+      latitude: 6.2088,
+      longitude: -75.5656,
+    },
+  ];
 
   const handleCategoryPress = (categoryName: string) => {
     Haptics.selectionAsync();
     const newCategory = selectedCategory === categoryName ? null : categoryName;
     setSelectedCategory(newCategory);
   };
+
+  const handlePatchPress = (patch: Patch) => {
+    setSelectedPatch(patch);
+    
+    // Fade in rápido sin rebote
+    blurIntensity.value = withTiming(5, { duration: 150, easing: Easing.out(Easing.ease) });
+    modalScale.value = withTiming(1, { duration: 150, easing: Easing.out(Easing.ease) });
+    modalOpacity.value = withTiming(1, { duration: 150, easing: Easing.out(Easing.ease) });
+    
+    // Mostrar modal inmediatamente
+    setIsDetailVisible(true);
+  };
+
+  const handleCloseDetail = () => {
+    // Fade out rápido sin rebote
+    blurIntensity.value = withTiming(0, { duration: 150, easing: Easing.in(Easing.ease) });
+    modalScale.value = withTiming(0.95, { duration: 150, easing: Easing.in(Easing.ease) });
+    modalOpacity.value = withTiming(0, { duration: 150, easing: Easing.in(Easing.ease) });
+    
+    setTimeout(() => {
+      setIsDetailVisible(false);
+      setSelectedPatch(null);
+    }, 150);
+  };
+
+  // Animaciones de entrada
+  useEffect(() => {
+    headerOpacity.value = withTiming(1, { duration: 600, easing: Easing.out(Easing.ease) });
+    headerTranslateY.value = withSpring(0, { damping: 15, stiffness: 100 });
+    
+    searchOpacity.value = withDelay(200, withTiming(1, { duration: 500, easing: Easing.out(Easing.ease) }));
+    searchTranslateY.value = withDelay(200, withSpring(0, { damping: 15, stiffness: 100 }));
+  }, []);
+
+  // Estilos animados
+  const headerStyle = useAnimatedStyle(() => ({
+    opacity: headerOpacity.value,
+    transform: [{ translateY: headerTranslateY.value }],
+  }));
+
+  const searchStyle = useAnimatedStyle(() => ({
+    opacity: searchOpacity.value,
+    transform: [{ translateY: searchTranslateY.value }],
+  }));
+
+  const backgroundBlurStyle = useAnimatedStyle(() => ({
+    opacity: blurIntensity.value / 10,
+  }));
+
+  const modalStyle = useAnimatedStyle(() => ({
+    opacity: modalOpacity.value,
+    transform: [{ scale: modalScale.value }],
+  }));
 
 
 
@@ -86,6 +290,11 @@ export default function HomeScreen() {
       { type: 'search' },
     ];
 
+    // Agregar sección de parches destacados
+    if (patches.length > 0) {
+      sectionList.push({ type: 'patches', data: patches });
+    }
+
     if (todayEvents.length > 0) {
       sectionList.push({ type: 'events', data: todayEvents.slice(0, 3) });
     }
@@ -106,45 +315,49 @@ export default function HomeScreen() {
     sectionList.push({ type: 'zones' });
     sectionList.push({ type: 'spacing' });
     return sectionList;
-  }, [todayEvents, topPlans, filteredPlans]);
+  }, [patches, todayEvents, topPlans, filteredPlans]);
 
   const renderSection: ListRenderItem<SectionType> = ({ item }) => {
     switch (item.type) {
       case 'header':
         return (
-          <Animated.View entering={FadeInDown.delay(100)}>
-            <LinearGradient
-              colors={['rgba(0, 212, 170, 0.1)', 'transparent']}
-              style={styles.header}
-            >
-              {/* Logo 3VB en la parte superior */}
-              <View style={styles.logoContainer}>
-                <Logo3VB size={50} showText={false} />
+          <Animated.View style={[styles.header, headerStyle]}>
+            <View style={styles.headerContent}>
+              <View style={styles.profileSection}>
+                <Image
+                  source={{ uri: user?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100' }}
+                  style={styles.profileImage}
+                />
               </View>
-              
-              <View style={styles.headerContent}>
-                <View>
-                  <Text style={styles.greeting}>¿Que Parche {user?.name?.split(' ')[0] || 'Hay para hoy?'} 👋</Text>
-                  <Text style={styles.title}>¿Qué parche hay hoy en Medellín? 🔥</Text>
-                  <Text style={styles.subtitle}>Encuentra planes en segundos.</Text>
-                </View>
-                <View style={styles.userStats}>
-                  <View style={styles.statItem}>
-                    <Star size={16} color={Colors.light.premium} />
-                    <Text style={styles.statText}>{user?.points || 0}</Text>
-                  </View>
-                  {user?.isPremium && (
-                    <Crown size={20} color={Colors.light.premium} />
-                  )}
-                </View>
+              <View style={styles.headerIcons}>
+                <TouchableOpacity style={styles.headerIcon}>
+                  <Search size={18} color="#1A1A1A" />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.headerIcon}>
+                  <Bell size={18} color="#1A1A1A" />
+                </TouchableOpacity>
               </View>
-            </LinearGradient>
+            </View>
+            <View style={styles.titleSection}>
+              <Text style={styles.greeting}>¿Que Parche {user?.name?.split(' ')[0] || 'Hay para hoy?'} 👋</Text>
+              <Text style={styles.title}>¿Qué parche hay hoy en Medellín? 🔥</Text>
+              <Text style={styles.subtitle}>Encuentra planes en segundos.</Text>
+            </View>
+            <View style={styles.userStats}>
+              <View style={styles.statItem}>
+                <Star size={16} color={Colors.light.premium} />
+                <Text style={styles.statText}>{user?.points || 0}</Text>
+              </View>
+              {user?.isPremium && (
+                <Crown size={20} color={Colors.light.premium} />
+              )}
+            </View>
           </Animated.View>
         );
 
       case 'search':
         return (
-          <Animated.View entering={FadeInDown.delay(200)}>
+          <Animated.View style={[styles.searchContainer, searchStyle]}>
             <SearchBar
               value={searchQuery}
               onChangeText={performSearch}
@@ -153,6 +366,40 @@ export default function HomeScreen() {
               showFilter={true}
               onFilterPress={() => {}}
             />
+          </Animated.View>
+        );
+
+      case 'patches':
+        return (
+          <Animated.View entering={FadeInUp.delay(300)}>
+            <View style={styles.sectionHeader}>
+              <Star size={20} color={Colors.light.premium} />
+              <Text style={styles.sectionTitle}>¿Qué parche hay hoy en Medellín? 🔥</Text>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.patchesScroll}
+            >
+                  {item.data.map((patch, index) => (
+                    <View 
+                      key={patch.id}
+                      style={styles.patchCardContainer}
+                    >
+                      <PatchCard
+                        patch={patch}
+                        onPress={() => handlePatchPress(patch)}
+                        delay={index * 50}
+                      />
+                    </View>
+                  ))}
+            </ScrollView>
+            <View style={styles.seeAllContainer}>
+              <TouchableOpacity style={styles.seeAllButton}>
+                <Text style={styles.seeAllText}>Ver todos los parches</Text>
+                <Text style={styles.seeAllIcon}>→</Text>
+              </TouchableOpacity>
+            </View>
           </Animated.View>
         );
 
@@ -349,7 +596,23 @@ export default function HomeScreen() {
 
       {/* Floating Action Button */}
       <FABSpeedDial />
-      
+
+      {/* Blur Background */}
+      {isDetailVisible && (
+        <Animated.View style={[styles.blurBackground, backgroundBlurStyle]}>
+          <BlurView intensity={blurIntensity.value} style={StyleSheet.absoluteFill} />
+        </Animated.View>
+      )}
+
+      {/* Detail Modal */}
+      {isDetailVisible && selectedPatch && (
+        <Animated.View style={[styles.modalContainer, modalStyle]}>
+          <PatchDetailModal
+            patch={selectedPatch}
+            onClose={handleCloseDetail}
+          />
+        </Animated.View>
+      )}
     </View>
   );
 }
@@ -361,45 +624,75 @@ const styles = StyleSheet.create({
   },
 
   contentContainer: {
-    paddingBottom: 100,
+    paddingBottom: 120, // Increased bottom padding for FAB
+    flexGrow: 1, // Ensure content can grow
   },
   
-  // Header Section - Improved spacing and responsiveness
+  // Header Section - Clean and minimal design
   header: {
     paddingHorizontal: 20,
     paddingTop: 60,
-    paddingBottom: 24,
+    paddingBottom: 20,
     marginBottom: 8,
-  },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 16,
+    minHeight: 100, // Optimized height
   },
   headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    minHeight: 80, // Prevent content jumping
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  profileSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  profileImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#E9ECEF',
+  },
+  headerIcons: {
+    flexDirection: 'row',
+    gap: 15,
+  },
+  headerIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  titleSection: {
+    marginBottom: 16,
   },
   greeting: {
     fontSize: 16,
     color: Colors.light.darkGray,
-    marginBottom: 6,
-    lineHeight: 20,
+    marginBottom: 8,
+    lineHeight: 22,
+    fontWeight: '500',
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: "800",
     color: Colors.light.text,
-    marginBottom: 6,
-    lineHeight: 34,
+    marginBottom: 8,
+    lineHeight: 38,
     flexShrink: 1, // Allow text to wrap if needed
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 16,
     color: Colors.light.darkGray,
-    lineHeight: 18,
+    lineHeight: 22,
     flexShrink: 1,
+    fontWeight: '400',
   },
   userStats: {
     flexDirection: 'row',
@@ -429,9 +722,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginTop: 32, // Increased spacing between sections
+    marginTop: 24, // Reduced spacing to prevent overflow
     marginBottom: 16,
     paddingHorizontal: 20,
+    minHeight: 40, // Ensure minimum height for headers
   },
   sectionTitle: {
     fontSize: 18,
@@ -488,5 +782,75 @@ const styles = StyleSheet.create({
   // Bottom spacing for FAB
   bottomSpacing: {
     height: 20,
+  },
+  
+  // Search Container
+  searchContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  
+  // Patches Section
+  patchesScroll: {
+    paddingHorizontal: 20,
+    gap: 16,
+  },
+  patchCardContainer: {
+    width: 280,
+    marginRight: 16,
+  },
+  seeAllContainer: {
+    paddingHorizontal: 20,
+    marginTop: 16,
+    alignItems: 'center',
+  },
+  seeAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8F9FA',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 25,
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
+  },
+  seeAllText: {
+    fontSize: 14,
+    color: '#1A1A1A',
+    fontWeight: '600',
+    marginRight: 8,
+    ...Platform.select({
+      ios: {
+        fontFamily: 'System',
+        fontWeight: '600',
+      },
+      android: {
+        fontFamily: 'sans-serif-medium',
+        fontWeight: '600',
+      },
+    }),
+  },
+  seeAllIcon: {
+    fontSize: 16,
+    color: '#FF4444',
+    fontWeight: '600',
+  },
+  
+  // Modal and Blur
+  blurBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 10,
+  },
+  modalContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 20,
   },
 });

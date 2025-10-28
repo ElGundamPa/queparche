@@ -9,6 +9,8 @@ import {
   TextInput,
   Modal,
   FlatList,
+  Platform,
+  Linking,
 } from "react-native";
 import { Image } from "expo-image";
 import { StatusBar } from "expo-status-bar";
@@ -29,14 +31,21 @@ import { LinearGradient } from "expo-linear-gradient";
 import Colors from "@/constants/colors";
 import PlanCard from "@/components/PlanCard";
 import { usePlansStore } from "@/hooks/use-plans-store";
-import { useUserStore } from "@/hooks/use-user-store";
+import { useAuthStore } from "@/hooks/use-auth-store";
 import { categories } from "@/mocks/categories";
 import { useRouter } from "expo-router";
+import { pickImageFromGallery } from "@/utils/permissions";
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { plans } = usePlansStore();
-  const { user, updateProfile, isUpdating } = useUserStore();
+  const { currentUser, updateProfile: updateAuthProfile } = useAuthStore();
+  
+  // Debug: Log current user data
+  console.log('=== PROFILE DEBUG ===');
+  console.log('Current user:', currentUser);
+  console.log('Is authenticated:', !!currentUser);
+  console.log('====================');
   const [showEditModal, setShowEditModal] = useState(false);
   const [editName, setEditName] = useState("");
   const [editBio, setEditBio] = useState("");
@@ -47,17 +56,17 @@ export default function ProfileScreen() {
 
   // Update form fields when user data loads
   React.useEffect(() => {
-    if (user) {
-      setEditName(user.name || "");
-      setEditBio(user.bio || "");
-      setEditLocation(user.location || "");
-      setEditAvatar(user.avatar || "");
-      setSelectedPreferences(user.preferences || []);
+    if (currentUser) {
+      setEditName(currentUser.name || "");
+      setEditBio(currentUser.bio || "");
+      setEditLocation(currentUser.location || "");
+      setEditAvatar(currentUser.avatar || "");
+      setSelectedPreferences(currentUser.preferences || []);
     }
-  }, [user]);
+  }, [currentUser]);
 
   // Get user's created plans
-  const userPlans = plans.filter(plan => plan.userId === user?.id);
+  const userPlans = plans.filter(plan => plan.userId === currentUser?.id);
   const favoritePlans = plans.filter(plan => plan.favorites > 0).slice(0, 5); // Mock favorites
   const attendedPlans = plans.filter(plan => plan.currentPeople > 0).slice(0, 5); // Mock history
 
@@ -74,7 +83,9 @@ export default function ProfileScreen() {
           text: "Cerrar sesión",
           style: "destructive",
           onPress: () => {
-            Alert.alert("Sesión cerrada", "Has cerrado sesión exitosamente");
+            const { logout } = useAuthStore.getState();
+            logout();
+            router.replace('/(auth)/login');
           },
         },
       ]
@@ -82,18 +93,18 @@ export default function ProfileScreen() {
   };
 
   const handleEditProfile = () => {
-    if (user) {
-      setEditName(user.name);
-      setEditBio(user.bio || "");
-      setEditLocation(user.location || "");
-      setEditAvatar(user.avatar || "");
-      setSelectedPreferences(user.preferences || []);
+    if (currentUser) {
+      setEditName(currentUser.name);
+      setEditBio(currentUser.bio || "");
+      setEditLocation(currentUser.location || "");
+      setEditAvatar(currentUser.avatar || "");
+      setSelectedPreferences(currentUser.preferences || []);
       setShowEditModal(true);
     }
   };
 
   const handleSaveProfile = () => {
-    updateProfile({
+    updateAuthProfile({
       name: editName,
       bio: editBio,
       location: editLocation,
@@ -104,25 +115,9 @@ export default function ProfileScreen() {
   };
 
   const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
-    if (status !== "granted") {
-      Alert.alert(
-        "Permiso requerido",
-        "Por favor concede permiso para acceder a tu galería de fotos."
-      );
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
-    });
-
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      setEditAvatar(result.assets[0].uri);
+    const imageUri = await pickImageFromGallery();
+    if (imageUri) {
+      setEditAvatar(imageUri);
     }
   };
 
@@ -140,6 +135,21 @@ export default function ProfileScreen() {
     return { level, progress };
   };
 
+  if (!currentUser) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.loadingText}>Cargando perfil...</Text>
+        <Text style={styles.errorSubtext}>Usuario no autenticado</Text>
+        <TouchableOpacity 
+          style={styles.loginButton}
+          onPress={() => router.replace('/(auth)/login')}
+        >
+          <Text style={styles.loginButtonText}>Ir al Login</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   const getBadgeIcon = (badge: string) => {
     switch (badge) {
       case 'explorer': return '🗺️';
@@ -150,15 +160,7 @@ export default function ProfileScreen() {
     }
   };
 
-  if (!user) {
-    return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Cargando perfil...</Text>
-      </View>
-    );
-  }
-
-  const { level, progress } = getLevelInfo(user.points);
+  const { level, progress } = getLevelInfo(currentUser.points);
 
   const renderPlanItem = ({ item }: { item: any }) => (
     <PlanCard plan={item} horizontal={false} />
@@ -189,37 +191,37 @@ export default function ProfileScreen() {
         <View style={styles.profileContainer}>
           <View style={styles.avatarContainer}>
             <Image
-              source={{ uri: user.avatar }}
+              source={{ uri: currentUser.avatar }}
               style={styles.avatar}
               contentFit="cover"
             />
-            {user.isVerified && (
+            {currentUser.isVerified && (
               <View style={styles.verifiedBadge}>
                 <Text style={styles.verifiedIcon}>✓</Text>
               </View>
             )}
-            {user.isPremium && (
+            {currentUser.isPremium && (
               <View style={styles.premiumBadge}>
                 <Crown size={16} color={Colors.light.premium} />
               </View>
             )}
           </View>
 
-          <Text style={styles.name}>{user.name}</Text>
-          <Text style={styles.username}>@{user.username}</Text>
+          <Text style={styles.name}>{currentUser.name}</Text>
+          <Text style={styles.username}>{currentUser.username}</Text>
           
           <View style={styles.locationContainer}>
             <MapPin size={16} color={Colors.light.darkGray} />
-            <Text style={styles.locationText}>{user.location}</Text>
+            <Text style={styles.locationText}>{currentUser.location}</Text>
           </View>
           
-          <Text style={styles.bio}>{user.bio}</Text>
+          <Text style={styles.bio}>{currentUser.bio}</Text>
 
           {/* Level Progress */}
           <View style={styles.levelContainer}>
             <View style={styles.levelHeader}>
               <Text style={styles.levelText}>Nivel {level}</Text>
-              <Text style={styles.pointsText}>{user.points} puntos</Text>
+              <Text style={styles.pointsText}>{currentUser.points} puntos</Text>
             </View>
             <View style={styles.progressBar}>
               <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
@@ -233,25 +235,25 @@ export default function ProfileScreen() {
               <Text style={styles.statLabel}>Planes</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{user.followersCount}</Text>
+              <Text style={styles.statNumber}>{currentUser.followersCount}</Text>
               <Text style={styles.statLabel}>Seguidores</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{user.followingCount}</Text>
+              <Text style={styles.statNumber}>{currentUser.followingCount}</Text>
               <Text style={styles.statLabel}>Siguiendo</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{user.plansAttended}</Text>
+              <Text style={styles.statNumber}>{currentUser.plansAttended}</Text>
               <Text style={styles.statLabel}>Asistidos</Text>
             </View>
           </View>
 
           {/* Badges */}
-          {user.badges.length > 0 && (
+          {currentUser.badges.length > 0 && (
             <View style={styles.badgesContainer}>
               <Text style={styles.badgesTitle}>Insignias</Text>
               <View style={styles.badgesGrid}>
-                {user.badges.map((badge, index) => (
+                {currentUser.badges.map((badge, index) => (
                   <View key={index} style={styles.badge}>
                     <Text style={styles.badgeIcon}>{getBadgeIcon(badge)}</Text>
                     <Text style={styles.badgeText}>{badge}</Text>
@@ -265,7 +267,7 @@ export default function ProfileScreen() {
           <View style={styles.preferencesContainer}>
             <Text style={styles.preferencesTitle}>Intereses</Text>
             <View style={styles.preferencesGrid}>
-              {user.preferences.map((preference) => (
+              {currentUser.preferences.map((preference) => (
                 <View key={preference} style={styles.preferenceTag}>
                   <Text style={styles.preferenceText}>{preference}</Text>
                 </View>
@@ -475,14 +477,14 @@ export default function ProfileScreen() {
           <TouchableOpacity
             style={styles.saveButton}
             onPress={handleSaveProfile}
-            disabled={isUpdating}
+            disabled={false}
           >
             <LinearGradient
               colors={[Colors.light.primary, '#00B894']}
               style={styles.saveButtonGradient}
             >
               <Text style={styles.saveButtonText}>
-                {isUpdating ? "Guardando..." : "Guardar Cambios"}
+                Guardar Cambios
               </Text>
             </LinearGradient>
           </TouchableOpacity>
@@ -506,6 +508,24 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 16,
     color: Colors.light.text,
+  },
+  errorSubtext: {
+    fontSize: 14,
+    color: Colors.light.darkGray,
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  loginButton: {
+    backgroundColor: Colors.light.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 20,
+  },
+  loginButtonText: {
+    color: Colors.light.white,
+    fontSize: 16,
+    fontWeight: '600',
   },
   scrollView: {
     flex: 1,
@@ -903,4 +923,4 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: Colors.light.white,
   },
-});
+}); 

@@ -1,0 +1,17 @@
+{
+    "name": "QuePareche - Mobile Preview",
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "files.autoSave": "afterDelay",
+        "files.autoSaveDelay": 1000
+    },
+    "extensions": {
+        "recommendations": [
+            "ms-vscode.live-server"
+        ]
+    }
+}

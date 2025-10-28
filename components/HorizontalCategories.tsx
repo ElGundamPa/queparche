@@ -18,25 +18,26 @@ const getCategoryGradient = (categoryName: string, selected: boolean) => {
     return [Colors.light.card, Colors.light.lightGray];
   }
   
+  // Todos los gradientes ahora usan variaciones de rojo suave
   switch (categoryName) {
     case "Restaurants":
-      return ["#FF6B6B", "#FF8E8E"];
+      return ["#FF4444", "#FF6666"];
     case "Rooftops":
-      return ["#4ECDC4", "#6EDDD6"];
+      return ["#CC3333", "#FF4444"];
     case "Free plans":
-      return ["#45B7D1", "#67C3DB"];
+      return ["#FF4444", "#FF7777"];
     case "Culture":
-      return ["#96CEB4", "#A8D5C1"];
+      return ["#CC3333", "#FF6666"];
     case "Nature":
-      return ["#FFEAA7", "#FFF0C4"];
+      return ["#FF4444", "#FF7777"];
     case "Nightlife":
-      return ["#DDA0DD", "#E6B3E6"];
+      return ["#CC3333", "#FF4444"];
     case "Sports":
-      return ["#FF7675", "#FF9999"];
+      return ["#FF4444", "#FF6666"];
     case "Shopping":
-      return ["#FD79A8", "#FE94BB"];
+      return ["#CC3333", "#FF4444"];
     default:
-      return [Colors.light.primary, '#00B894'];
+      return [Colors.light.primary, '#FF4444'];
   }
 };
 

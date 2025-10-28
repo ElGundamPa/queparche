@@ -16,22 +16,18 @@ export default function Logo3VB({ size = 60, showText = true }: Logo3VBProps) {
     <View style={styles.container}>
       {/* Logo circular */}
       <LinearGradient
-        colors={['#9ca3af', '#6b7280', '#4b5563']}
+        colors={[Colors.light.primary, '#FF4444']}
         style={[styles.logoContainer, { width: logoSize, height: logoSize }]}
       >
         <View style={styles.logoInner}>
-          {/* Diseño tipo "S" o flechas entrelazadas */}
-          <View style={styles.logoShape}>
-            <View style={styles.logoCurve1} />
-            <View style={styles.logoCurve2} />
-            <View style={styles.logoCurve3} />
-          </View>
+          {/* Logo de parche - círculo con "P" */}
+          <Text style={[styles.logoText, { fontSize: logoSize * 0.4 }]}>P</Text>
         </View>
       </LinearGradient>
       
       {showText && (
-        <Text style={[styles.logoText, { fontSize: textSize }]}>
-          3VB — Abogados en ciberfraude
+        <Text style={[styles.brandText, { fontSize: textSize }]}>
+          QueParche
         </Text>
       )}
     </View>
@@ -58,53 +54,24 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   logoInner: {
-    width: '80%',
-    height: '80%',
+    width: '100%',
+    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  logoShape: {
-    width: '100%',
-    height: '100%',
-    position: 'relative',
-  },
-  logoCurve1: {
-    position: 'absolute',
-    width: '60%',
-    height: '8%',
-    backgroundColor: '#f3f4f6',
-    borderRadius: 10,
-    top: '20%',
-    left: '20%',
-    transform: [{ rotate: '45deg' }],
-  },
-  logoCurve2: {
-    position: 'absolute',
-    width: '60%',
-    height: '8%',
-    backgroundColor: '#f3f4f6',
-    borderRadius: 10,
-    top: '40%',
-    right: '20%',
-    transform: [{ rotate: '-45deg' }],
-  },
-  logoCurve3: {
-    position: 'absolute',
-    width: '60%',
-    height: '8%',
-    backgroundColor: '#f3f4f6',
-    borderRadius: 10,
-    bottom: '25%',
-    left: '20%',
-    transform: [{ rotate: '45deg' }],
-  },
   logoText: {
-    color: '#f3f4f6',
-    fontWeight: '600',
+    color: Colors.light.white,
+    fontWeight: '800',
     textAlign: 'center',
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
+  },
+  brandText: {
+    color: Colors.light.text,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginTop: 4,
   },
 });
 

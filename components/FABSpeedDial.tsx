@@ -27,7 +27,7 @@ const ActionButton = memo(function ActionButton({ icon, label, onPress, delay=0 
         <View style={{ backgroundColor: Colors.light.card, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 12, marginRight: 12, borderWidth: 1, borderColor: Colors.light.border }}>
           <Text style={{ color: Colors.light.text, fontSize: 12, fontWeight: '600' }}>{label}</Text>
         </View>
-        <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#00D1B2', alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#FF4444', alignItems: 'center', justifyContent: 'center' }}>
           {icon}
         </View>
       </Pressable>
@@ -99,8 +99,8 @@ export default function FABSpeedDial({ style }: FABSpeedDialProps) {
         )}
       </View>
 
-      <Animated.View style={{ transform: [{ scale: pulseScale }, { scale: mainScale }], shadowColor: '#00D1B2', shadowOpacity: glow as unknown as number, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 8 }}>
-        <Pressable onPress={handleToggle} accessibilityRole="button" accessibilityLabel="Abrir acciones rápidas" style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: '#00D1B2', alignItems: 'center', justifyContent: 'center' }} testID="floating-action-button">
+      <Animated.View style={{ transform: [{ scale: pulseScale }, { scale: mainScale }], shadowColor: '#FF4444', shadowOpacity: glow as unknown as number, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 8 }}>
+        <Pressable onPress={handleToggle} accessibilityRole="button" accessibilityLabel="Abrir acciones rápidas" style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: '#FF4444', alignItems: 'center', justifyContent: 'center' }} testID="floating-action-button">
           <Plus size={24} color={Colors.light.white} strokeWidth={2.5} />
         </Pressable>
       </Animated.View>

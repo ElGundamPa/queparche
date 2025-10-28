@@ -6,6 +6,7 @@ import createContextHook from "@nkzw/create-context-hook";
 import { Plan, Short, Event } from "@/types/plan";
 import { trpc } from "@/lib/trpc";
 import { mockEvents } from "@/mocks/events";
+import { mockShorts } from "@/mocks/shorts";
 
 const CACHE_KEYS = {
   PLANS: 'cached_plans',
@@ -17,7 +18,7 @@ export const [PlansProvider, usePlansStore] = createContextHook(() => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [events] = useState<Event[]>(mockEvents);
   const [cachedPlans, setCachedPlans] = useState<Plan[]>([]);
-  const [cachedShorts, setCachedShorts] = useState<Short[]>([]);
+  const [cachedShorts, setCachedShorts] = useState<Short[]>(mockShorts);
   const queryClient = useQueryClient();
 
   // Load cached data on mount
@@ -37,9 +38,14 @@ export const [PlansProvider, usePlansStore] = createContextHook(() => {
       }
       if (shortsData) {
         setCachedShorts(JSON.parse(shortsData));
+      } else {
+        // Si no hay datos en caché, usar los mock shorts
+        setCachedShorts(mockShorts);
       }
     } catch (error) {
       console.error('Error loading cached data:', error);
+      // En caso de error, asegurar que tenemos los mock shorts
+      setCachedShorts(mockShorts);
     }
   };
 
@@ -205,9 +211,9 @@ export const [PlansProvider, usePlansStore] = createContextHook(() => {
     },
   });
 
-  // Use cached data as fallback while loading
-  const plans = plansQuery.data || cachedPlans;
-  const shorts = shortsQuery.data || cachedShorts;
+  // Use cached data as fallback while loading, or mock data if no backend
+  const plans = plansQuery.data || cachedPlans || [];
+  const shorts = shortsQuery.data || cachedShorts || mockShorts;
 
   // Add a new plan
   const addPlan = (planData: Omit<Plan, 'id' | 'currentPeople' | 'likes' | 'favorites' | 'createdAt' | 'rating' | 'reviewCount'>) => {

@@ -1,0 +1,10 @@
+{
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 1000,
+  "editor.formatOnSave": true,
+  "simpleBrowser.focusLockIndicator.enabled": true,
+  "workbench.editor.enablePreview": true,
+  "workbench.editorAssociations": {
+    "*.html": "default"
+  }
+}

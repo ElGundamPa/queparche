@@ -1,0 +1,65 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "🚀 Expo Web - Mobile Preview",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/.bin/expo",
+      "args": [
+        "start",
+        "--web",
+        "--port",
+        "19006"
+      ],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "env": {
+        "EXPO_DEVTOOLS_LISTEN_ADDRESS": "0.0.0.0",
+        "EXPO_DEVTOOLS_LISTEN_PORT": "19006"
+      },
+      "preLaunchTask": "npm: start-web",
+      "postDebugTask": "open-mobile-preview"
+    }
+  ],
+  "tasks": [
+    {
+      "label": "npm: start-web",
+      "type": "shell",
+      "command": "npm",
+      "args": [
+        "run",
+        "start-web"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "expo",
+        "pattern": {
+          "regexp": "^(.*)$",
+          "line": 1
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*Starting.*",
+          "endsPattern": ".*Metro waiting on.*"
+        }
+      }
+    },
+    {
+      "label": "open-mobile-preview",
+      "type": "shell",
+      "command": "echo",
+      "args": [
+        "Opening mobile preview..."
+      ],
+      "group": "build"
+    }
+  ]
+}

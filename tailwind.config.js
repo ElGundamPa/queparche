@@ -9,24 +9,24 @@ module.exports = {
     extend: {
       colors: {
         brand: {
-          DEFAULT: '#6C5CE7',
-          dim: '#5646C2',
-          light: '#8B7CFF',
+          DEFAULT: '#FF4444', // Rojo suave principal
+          dim: '#CC3333', // Rojo más oscuro
+          light: '#FF6666', // Rojo más claro
         },
-        accent: '#00D1B2',
+        accent: '#FF4444', // Rojo suave para acentos
         bg: {
-          DEFAULT: '#0B0B0F',
-          soft: '#111118',
-          card: '#151522',
+          DEFAULT: '#000000', // Negro puro
+          soft: '#111111', // Negro suave
+          card: '#1A1A1A', // Negro para tarjetas
         },
         text: {
-          primary: '#F3F4F6',
-          secondary: '#C7CBD1',
-          muted: '#9AA0A6',
+          primary: '#FFFFFF', // Blanco para texto principal
+          secondary: '#CCCCCC', // Gris claro para texto secundario
+          muted: '#999999', // Gris para texto atenuado
         },
-        danger: '#EF4444',
-        warning: '#F59E0B',
-        success: '#10B981',
+        danger: '#FF4444', // Rojo suave para peligro
+        warning: '#FFA500', // Naranja para advertencias
+        success: '#00FF00', // Verde para éxito
       },
       fontFamily: {
         display: ['Poppins_700Bold', 'System'],

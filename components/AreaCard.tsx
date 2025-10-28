@@ -55,5 +55,5 @@ const styles = StyleSheet.create({
   mediaWrap: { width: '100%', height: 120 },
   media: { width: '100%', height: '100%' },
   meta: { padding: 8 },
-  title: { fontSize: 16, fontWeight: '600' as const, color: '#111827' } as const,
+  title: { fontSize: 16, fontWeight: '600' as const, color: '#FFFFFF' } as const,
 });
