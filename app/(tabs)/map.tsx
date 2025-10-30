@@ -19,6 +19,8 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import Toast from "react-native-toast-message";
+import * as Haptics from "expo-haptics";
+import { fadeIn, slideUp, scaleTap } from "@/lib/animations";
 
 import theme from "@/lib/theme";
 import { categories } from "@/mocks/categories";
@@ -61,6 +63,15 @@ export default function MapScreen() {
     opacity: dropdownOpacity.value,
   }));
 
+  // Mount animation for controls
+  const controlsFade = fadeIn(260);
+  const controlsSlide = slideUp(18, 320);
+
+  useEffect(() => {
+    controlsFade.start();
+    controlsSlide.start();
+  }, []);
+
   useEffect(() => {
     if (Platform.OS !== "web") {
       // Dynamically import react-native-maps only on native platforms
@@ -96,6 +107,7 @@ export default function MapScreen() {
   };
 
   const handleCreatePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Toast.show({
       type: 'info',
       text1: 'Creando parche...',
@@ -107,6 +119,7 @@ export default function MapScreen() {
   };
 
   const toggleFilters = () => {
+    Haptics.selectionAsync();
     if (showFilters) {
       dropdownScale.value = withSpring(0, { damping: 15 });
       dropdownOpacity.value = withTiming(0, { duration: 200 });
@@ -229,7 +242,8 @@ export default function MapScreen() {
         </View>
       )}
 
-      <View style={styles.buttonContainer}>
+      <Animated.View style={[styles.buttonContainer, controlsFade.style, controlsSlide.style]}>
+        <Animated.View style={scaleTap().style}>
         <TouchableOpacity
           ref={filterButtonRef}
           style={styles.filterButton}
@@ -238,7 +252,9 @@ export default function MapScreen() {
         >
           <Filter size={24} color={theme.colors.background} />
         </TouchableOpacity>
+        </Animated.View>
 
+        <Animated.View style={scaleTap().style}>
         <TouchableOpacity
           style={styles.createButton}
           onPress={handleCreatePress}
@@ -247,7 +263,8 @@ export default function MapScreen() {
           <Plus size={20} color={theme.colors.background} />
           <Text style={styles.createButtonText}>Publica tu parche</Text>
         </TouchableOpacity>
-      </View>
+        </Animated.View>
+      </Animated.View>
 
       {/* Animated Filter Dropdown Modal */}
       <Modal

@@ -35,6 +35,7 @@ const LoginScreen = () => {
   const textTranslateY = useSharedValue(30);
   const buttonsOpacity = useSharedValue(0);
   const buttonsTranslateY = useSharedValue(20);
+  const blurOpacity = useSharedValue(0);
   
   // Microinteracciones de botones
   const phoneButtonScale = useSharedValue(1);
@@ -55,6 +56,7 @@ const LoginScreen = () => {
     // 3. Botones aparecen al final (1000-1400ms)
     buttonsOpacity.value = withDelay(1000, withTiming(1, { duration: 400, easing: Easing.out(Easing.ease) }));
     buttonsTranslateY.value = withDelay(1000, withSpring(0, { damping: 15, stiffness: 100 }));
+    blurOpacity.value = withDelay(400, withTiming(1, { duration: 500, easing: Easing.out(Easing.exp) }));
   }, []);
 
   const handlePhoneLogin = () => {
@@ -136,7 +138,9 @@ const LoginScreen = () => {
       <View style={styles.content}>
         {/* Texto de bienvenida con animación */}
         <Animated.View style={[styles.textContainer, textStyle]}>
-          <BlurView intensity={20} tint="dark" style={styles.titleBlur} />
+          <Animated.View style={[styles.titleBlur, { opacity: blurOpacity } as any]}>
+            <BlurView intensity={20} tint="dark" style={{ flex: 1, borderRadius: theme.radii.lg }} />
+          </Animated.View>
           <View style={styles.titleContainer}>
             <Text style={styles.welcomeText}>Que Parche</Text>
             <Image

@@ -27,6 +27,7 @@ import {
 } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
+import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 
 import theme from "@/lib/theme";
 import PlanCard from "@/components/PlanCard";
@@ -161,6 +162,18 @@ export default function ProfileScreen() {
   };
 
   const { level, progress } = getLevelInfo(currentUser.points);
+
+  // Animación de contenido entre tabs
+  const tabAnim = useSharedValue(1);
+  const contentAnimStyle = useAnimatedStyle(() => ({ opacity: tabAnim.value, transform: [{ translateY: withTiming(tabAnim.value === 1 ? 0 : 8, { duration: 200 }) }] }));
+
+  const setTab = (tab: 'plans' | 'favorites' | 'history') => {
+    tabAnim.value = 0;
+    setTimeout(() => {
+      setActiveTab(tab);
+      tabAnim.value = withTiming(1, { duration: 240 });
+    }, 80);
+  };
 
   const renderPlanItem = ({ item }: { item: any }) => (
     <PlanCard plan={item} horizontal={false} />
@@ -307,7 +320,7 @@ export default function ProfileScreen() {
         <View style={styles.tabsContainer}>
           <TouchableOpacity
             style={[styles.tab, activeTab === 'plans' && styles.activeTab]}
-            onPress={() => setActiveTab('plans')}
+            onPress={() => setTab('plans')}
           >
             <Text style={[styles.tabText, activeTab === 'plans' && styles.activeTabText]}>
               Mis Planes
@@ -315,7 +328,7 @@ export default function ProfileScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.tab, activeTab === 'favorites' && styles.activeTab]}
-            onPress={() => setActiveTab('favorites')}
+            onPress={() => setTab('favorites')}
           >
             <Text style={[styles.tabText, activeTab === 'favorites' && styles.activeTabText]}>
               Favoritos
@@ -323,7 +336,7 @@ export default function ProfileScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.tab, activeTab === 'history' && styles.activeTab]}
-            onPress={() => setActiveTab('history')}
+            onPress={() => setTab('history')}
           >
             <Text style={[styles.tabText, activeTab === 'history' && styles.activeTabText]}>
               Historial
@@ -332,7 +345,7 @@ export default function ProfileScreen() {
         </View>
 
         {/* Content */}
-        <View style={styles.contentSection}>
+        <Animated.View style={[styles.contentSection, contentAnimStyle]}>
           {activeTab === 'plans' && (
             <View style={styles.plansContainer}>
               {userPlans.length > 0 ? (
@@ -389,7 +402,7 @@ export default function ProfileScreen() {
               )}
             </View>
           )}
-        </View>
+        </Animated.View>
       </ScrollView>
 
       {/* Edit Profile Modal */}

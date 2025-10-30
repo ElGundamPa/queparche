@@ -20,8 +20,8 @@ export default function ZoneDetail() {
   const { zone } = useLocalSearchParams<{ zone: string }>();
   const router = useRouter();
 
-  const zoneKey = useMemo(() => String(zone || ''), [zone]);
-  const zoneItem = useMemo(() => ZONES.find((z) => z.key === zoneKey), [zoneKey]);
+  const zoneKey = useMemo(() => String(zone || '').toLowerCase().trim(), [zone]);
+  const zoneItem = useMemo(() => ZONES.find((z) => String(z.key).toLowerCase().trim() === zoneKey), [zoneKey]);
 
   const areas = useMemo(() => {
     if (zoneKey === 'medellin') return MEDELLIN_COMUNAS;
@@ -57,8 +57,14 @@ export default function ZoneDetail() {
     return (
       <View style={styles.container}>
         <Stack.Screen options={{ title: 'Zona no encontrada' }} />
-        <View style={{ padding: 20 }}>
+        <View style={{ padding: 16 }}>
           <Text style={styles.empty}>Zona no encontrada</Text>
+          <View style={{ height: 12 }} />
+          <Text style={styles.empty}>Verifica tu conexión o vuelve a intentarlo.</Text>
+          <View style={{ height: 20 }} />
+          <Text onPress={() => router.back()} style={{ color: '#FF3B30', fontWeight: '700' }} accessibilityRole="button">
+            ← Volver
+          </Text>
         </View>
       </View>
     );

@@ -16,6 +16,7 @@ import Animated, {
   withDelay,
   Easing,
   interpolate,
+  withSequence,
 } from 'react-native-reanimated';
 
 const { width } = Dimensions.get('window');

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import React, { useState, useRef, useCallback, useEffect, memo } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import {
   StyleSheet,
@@ -13,10 +13,8 @@ import {
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Plus } from "lucide-react-native";
-import Animated, {
-  FadeInUp,
-  SlideInUp,
-} from "react-native-reanimated";
+import Animated, { useSharedValue, useAnimatedStyle, withTiming } from "react-native-reanimated";
+import { scaleTap } from "@/lib/animations";
 import Toast from "react-native-toast-message";
 
 import theme from "@/lib/theme";
@@ -71,35 +69,36 @@ export default function ShortsScreen() {
     itemVisiblePercentThreshold: 50,
   };
 
+  const ShortAnimatedItem = memo(({ item, isActive }: { item: any; isActive: boolean }) => {
+    const opacity = useSharedValue(isActive ? 1 : 0.2);
+    const scale = useSharedValue(isActive ? 1 : 0.98);
+    const style = useAnimatedStyle(() => ({
+      opacity: opacity.value,
+      transform: [{ scale: scale.value }],
+    }));
+    useEffect(() => {
+      opacity.value = withTiming(isActive ? 1 : 0.2, { duration: 220 });
+      scale.value = withTiming(isActive ? 1 : 0.98, { duration: 220 });
+    }, [isActive]);
+
+    return (
+      <Animated.View style={[{ height: SCREEN_HEIGHT }, style]}>
+        <TikTokShortItem
+          item={item}
+          isActive={isActive}
+          onLike={() => {}}
+          onComment={() => {}}
+          onSave={() => {}}
+          onShare={() => {}}
+          onTap={() => {}}
+        />
+      </Animated.View>
+    );
+  });
+
   const renderItem = useCallback(({ item, index }: { item: any; index: number }) => {
     const isActive = index === activeIndex;
-    console.log(`Rendering item ${index}:`, item.placeName, 'isActive:', isActive);
-    
-    return (
-      <TikTokShortItem
-        item={item}
-        isActive={isActive}
-        onLike={(id) => {
-          console.log('Like:', id);
-          // TODO: Implement like functionality
-        }}
-        onComment={(id) => {
-          console.log('Comment:', id);
-          // TODO: Implement comment functionality
-        }}
-        onSave={(id) => {
-          console.log('Save:', id);
-          // TODO: Implement save functionality
-        }}
-        onShare={(id) => {
-          console.log('Share:', id);
-          // TODO: Implement share functionality
-        }}
-        onTap={() => {
-          console.log('Tap on video:', item.placeName);
-        }}
-      />
-    );
+    return <ShortAnimatedItem item={item} isActive={isActive} />;
   }, [activeIndex]);
 
   const keyExtractor = useCallback((item: any) => item.id, []);
@@ -169,14 +168,8 @@ export default function ShortsScreen() {
       />
 
       {/* Botón de crear */}
-      <Animated.View
-        entering={SlideInUp.delay(500)}
-        style={styles.createButtonContainer}
-      >
-        <TouchableOpacity
-          style={styles.createButton}
-          onPress={handleCreatePress}
-        >
+      <Animated.View style={styles.createButtonContainer}>
+        <TouchableOpacity style={styles.createButton} onPress={handleCreatePress}>
           <Plus size={24} color="white" />
         </TouchableOpacity>
       </Animated.View>
