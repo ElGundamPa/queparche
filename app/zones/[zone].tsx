@@ -7,8 +7,7 @@ import AreaCard from '@/components/AreaCard';
 import { useFilters } from '@/store/filters';
 import { Image as ExpoImage, type ImageSource } from 'expo-image';
 import { ArrowLeft } from 'lucide-react-native';
-import Animated, { useSharedValue, useAnimatedScrollHandler, useAnimatedStyle, interpolate } from 'react-native-reanimated';
-import useStaggeredFade from '@/lib/useStaggeredFade';
+import Animated, { useSharedValue, useAnimatedScrollHandler, useAnimatedStyle, interpolate, FadeInUp } from 'react-native-reanimated';
 
 function extractUri(src?: ImageSource): string | undefined {
   if (!src) return undefined;
@@ -80,8 +79,7 @@ export default function ZoneDetail() {
     transform: [{ translateY: interpolate(scrollY.value, [0, 120], [0, -40], 'clamp') }],
   }));
 
-  const { styles: staggerStyles, start: startStagger } = useStaggeredFade(areas.length, 60, 280);
-  useEffect(() => { startStagger(); }, [areas.length]);
+  // Stagger mediante entering delays (sin hooks variables)
 
   return (
     <View style={styles.container}>
@@ -108,7 +106,7 @@ export default function ZoneDetail() {
       >
         <View style={styles.grid}>
           {areas.map((item, index) => (
-            <Animated.View key={item.key} style={[styles.col, staggerStyles[index]]}>
+            <Animated.View key={item.key} style={styles.col} entering={FadeInUp.delay(350 + index * 70)}>
               <AreaCard
                 title={item.name}
                 image={item.image}

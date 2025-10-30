@@ -24,7 +24,6 @@ import Animated, {
 import { BlurView } from 'expo-blur';
 import PatchCard from './PatchCard';
 import theme from '@/lib/theme';
-import useStaggeredFade from '@/lib/useStaggeredFade';
 import PatchDetailModal from './PatchDetailModal';
 
 const { width, height } = Dimensions.get('window');
@@ -169,13 +168,9 @@ const PatchesScreen = () => {
     return matchesCategory && matchesSearch;
   });
 
-  // Staggered fade para cards
-  const { styles: staggerStyles, start: startStagger } = useStaggeredFade(filteredPatches.length, 80, 260);
 
   // Animaciones de entrada
   useEffect(() => {
-    // iniciar stagger cuando se cargan los ítems
-    startStagger();
     // Secuencia de animaciones de entrada
     headerOpacity.value = withTiming(1, { duration: 600, easing: Easing.out(Easing.ease) });
     headerTranslateY.value = withSpring(0, { damping: 15, stiffness: 100 });
@@ -324,7 +319,7 @@ const PatchesScreen = () => {
           scrollEventThrottle={16}
         >
           {filteredPatches.map((patch, index) => (
-            <Animated.View key={patch.id} style={staggerStyles[index]}>
+            <Animated.View key={patch.id} entering={Animated.FadeInUp.delay(600 + index * 80)}>
               <PatchCard
                 patch={patch}
                 onPress={() => handlePatchPress(patch)}

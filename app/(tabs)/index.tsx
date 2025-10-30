@@ -43,7 +43,7 @@ import Logo3VB from "@/components/Logo3VB";
 import PatchCard from "@/components/PatchCard";
 import PatchDetailModal from "@/components/PatchDetailModal";
 import theme from "@/lib/theme";
-import useStaggeredFade from "@/lib/useStaggeredFade";
+// use entering delays por item en lugar de hooks variables
 import { categories } from "@/mocks/categories";
 import { useFilteredPlans, usePlansStore, useTopPlans } from "@/hooks/use-plans-store";
 import { useUserStore } from "@/hooks/use-user-store";
@@ -335,10 +335,7 @@ export default function HomeScreen() {
     return sectionList;
   }, [patches, todayEvents, topPlans, filteredPlans]);
 
-  // Stagger para cards
-  const { styles: patchStaggerStyles, start: startPatchStagger } = useStaggeredFade(patches.length, 60, 280);
-  const { styles: topStaggerStyles, start: startTopStagger } = useStaggeredFade(topPlans.length, 70, 280);
-  const { styles: filteredStaggerStyles, start: startFilteredStagger } = useStaggeredFade(filteredPlans.length, 70, 280);
+  // Stagger por item con entering delays (sin hooks variables)
 
   const renderSection: ListRenderItem<SectionType> = ({ item }) => {
     switch (item.type) {
@@ -405,7 +402,7 @@ export default function HomeScreen() {
               contentContainerStyle={styles.patchesScroll}
             >
                   {item.data.map((patch, index) => (
-                    <Animated.View key={patch.id} style={patchStaggerStyles[index]}>
+                    <Animated.View key={patch.id} entering={FadeInUp.delay(350 + index * 70)}>
                       <View style={styles.patchCardContainer}>
                         <PatchCard
                           patch={patch}
@@ -494,7 +491,7 @@ export default function HomeScreen() {
               <HorizontalCards
                 data={item.data}
                 renderItem={({ item: plan, index }) => (
-                  <Animated.View style={topStaggerStyles[index]}>
+                  <Animated.View entering={FadeInUp.delay(550 + index * 80)}>
                     <PlanCard plan={plan} horizontal={true} />
                   </Animated.View>
                 )}
@@ -568,7 +565,7 @@ export default function HomeScreen() {
               <HorizontalCards
                 data={item.data}
                 renderItem={({ item: plan, index }) => (
-                  <Animated.View style={filteredStaggerStyles[index]}>
+                  <Animated.View entering={FadeInUp.delay(800 + index * 80)}>
                     <PlanCard plan={plan} horizontal={true} />
                   </Animated.View>
                 )}
