@@ -9,6 +9,8 @@ import {
   Platform,
   Image,
 } from 'react-native';
+import theme from '@/lib/theme';
+import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 import Animated, {
   useSharedValue,
@@ -120,7 +122,7 @@ const LoginScreen = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#000000" />
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
       
       {/* Esfera de partículas con animación */}
       <Animated.View style={sphereStyle}>
@@ -134,6 +136,7 @@ const LoginScreen = () => {
       <View style={styles.content}>
         {/* Texto de bienvenida con animación */}
         <Animated.View style={[styles.textContainer, textStyle]}>
+          <BlurView intensity={20} tint="dark" style={styles.titleBlur} />
           <View style={styles.titleContainer}>
             <Text style={styles.welcomeText}>Que Parche</Text>
             <Image
@@ -184,7 +187,7 @@ const LoginScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: theme.colors.background,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -192,7 +195,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 32,
+    paddingHorizontal: theme.spacing.horizontal,
     width: '100%',
     zIndex: 2,
     // Mejor centrado visual
@@ -203,6 +206,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 50,
     marginTop: 120, // Ajustado para mejor centrado con la esfera
+    position: 'relative',
+  },
+  titleBlur: {
+    position: 'absolute',
+    top: -12,
+    bottom: -12,
+    left: -16,
+    right: -16,
+    borderRadius: theme.radii.lg,
   },
   titleContainer: {
     flexDirection: 'row',
@@ -214,7 +226,7 @@ const styles = StyleSheet.create({
     width: 16,
     height: 16,
     marginLeft: 4,
-    tintColor: '#FF4444',
+    tintColor: theme.colors.primary,
     shadowColor: 'rgba(255, 68, 68, 0.3)',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
@@ -224,7 +236,7 @@ const styles = StyleSheet.create({
   welcomeText: {
     fontSize: 40,
     fontWeight: '700',
-    color: '#FF4444',
+    color: theme.colors.primary,
     letterSpacing: -0.5,
     // Glow más sutil
     textShadowColor: 'rgba(255, 68, 68, 0.3)',
@@ -249,7 +261,7 @@ const styles = StyleSheet.create({
   },
   subtitleText: {
     fontSize: 18,
-    color: '#B3B3B3', // Mejor contraste para legibilidad
+    color: theme.colors.textSecondary, // Mejor contraste para legibilidad
     textAlign: 'center',
     lineHeight: 24,
     letterSpacing: 0.2,
@@ -275,17 +287,17 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   phoneButton: {
-    backgroundColor: '#FF4444',
+    backgroundColor: theme.colors.primary,
     paddingVertical: 18,
     paddingHorizontal: 24,
     borderRadius: 16,
     alignItems: 'center',
     // Glow más sutil
-    shadowColor: '#FF4444',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+    elevation: 4,
     // Sombra adicional para profundidad
     borderWidth: 0,
     borderColor: 'transparent',
@@ -293,7 +305,7 @@ const styles = StyleSheet.create({
   phoneButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: theme.colors.textPrimary,
     letterSpacing: 0.2,
     ...Platform.select({
       ios: {
@@ -313,18 +325,18 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#FF4444',
+    borderColor: theme.colors.primary,
     // Sombra sutil para el borde
-    shadowColor: '#FF4444',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+    elevation: 2,
   },
   appleButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FF4444',
+    color: theme.colors.primary,
     letterSpacing: 0.2,
     ...Platform.select({
       ios: {
@@ -345,7 +357,7 @@ const styles = StyleSheet.create({
   },
   legalText: {
     fontSize: 13,
-    color: '#666666',
+    color: theme.colors.textSecondary,
     textAlign: 'center',
     lineHeight: 18,
     letterSpacing: 0.1,
@@ -361,7 +373,7 @@ const styles = StyleSheet.create({
     }),
   },
   linkText: {
-    color: '#FFFFFF',
+    color: theme.colors.textPrimary,
     fontWeight: '600',
     ...Platform.select({
       ios: {

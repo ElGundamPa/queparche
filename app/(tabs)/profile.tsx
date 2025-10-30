@@ -28,7 +28,7 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 
-import Colors from "@/constants/colors";
+import theme from "@/lib/theme";
 import PlanCard from "@/components/PlanCard";
 import { usePlansStore } from "@/hooks/use-plans-store";
 import { useAuthStore } from "@/hooks/use-auth-store";
@@ -182,7 +182,7 @@ export default function ProfileScreen() {
           <View style={styles.headerContent}>
             <Text style={styles.title}>Mi Perfil</Text>
             <TouchableOpacity onPress={handleEditProfile} testID="edit-profile-button">
-              <Edit3 size={24} color={Colors.light.text} />
+              <Edit3 size={24} color={theme.colors.textPrimary} />
             </TouchableOpacity>
           </View>
         </LinearGradient>
@@ -202,7 +202,7 @@ export default function ProfileScreen() {
             )}
             {currentUser.isPremium && (
               <View style={styles.premiumBadge}>
-                <Crown size={16} color={Colors.light.premium} />
+                <Crown size={16} color={theme.colors.primary} />
               </View>
             )}
           </View>
@@ -211,7 +211,7 @@ export default function ProfileScreen() {
           <Text style={styles.username}>{currentUser.username}</Text>
           
           <View style={styles.locationContainer}>
-            <MapPin size={16} color={Colors.light.darkGray} />
+            <MapPin size={16} color={theme.colors.textSecondary} />
             <Text style={styles.locationText}>{currentUser.location}</Text>
           </View>
           
@@ -279,17 +279,17 @@ export default function ProfileScreen() {
         {/* Action Buttons */}
         <View style={styles.actionsContainer}>
           <TouchableOpacity style={styles.actionButton} testID="favorites-button">
-            <Heart size={20} color={Colors.light.text} />
+            <Heart size={20} color={theme.colors.textPrimary} />
             <Text style={styles.actionText}>Favoritos</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.actionButton} testID="saved-button">
-            <Bookmark size={20} color={Colors.light.text} />
+            <Bookmark size={20} color={theme.colors.textPrimary} />
             <Text style={styles.actionText}>Guardados</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionButton} testID="settings-button">
-            <Settings size={20} color={Colors.light.text} />
+            <Settings size={20} color={theme.colors.textPrimary} />
             <Text style={styles.actionText}>Ajustes</Text>
           </TouchableOpacity>
           
@@ -298,7 +298,7 @@ export default function ProfileScreen() {
             onPress={handleLogout}
             testID="logout-button"
           >
-            <LogOut size={20} color={Colors.light.error} />
+            <LogOut size={20} color={theme.colors.primary} />
             <Text style={[styles.actionText, styles.logoutText]}>Salir</Text>
           </TouchableOpacity>
         </View>
@@ -403,7 +403,7 @@ export default function ProfileScreen() {
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Editar Perfil</Text>
             <TouchableOpacity onPress={() => setShowEditModal(false)}>
-              <X size={24} color={Colors.light.text} />
+              <X size={24} color={theme.colors.textPrimary} />
             </TouchableOpacity>
           </View>
 
@@ -416,7 +416,7 @@ export default function ProfileScreen() {
                   contentFit="cover"
                 />
                 <View style={styles.editAvatarOverlay}>
-                  <Edit3 size={20} color={Colors.light.white} />
+                  <Edit3 size={20} color={theme.colors.textPrimary} />
                 </View>
               </TouchableOpacity>
             </View>
@@ -427,7 +427,7 @@ export default function ProfileScreen() {
               value={editName}
               onChangeText={setEditName}
               placeholder="Ingresa tu nombre"
-              placeholderTextColor={Colors.light.darkGray}
+              placeholderTextColor={theme.colors.textSecondary}
             />
 
             <Text style={styles.inputLabel}>Biografía</Text>
@@ -436,7 +436,7 @@ export default function ProfileScreen() {
               value={editBio}
               onChangeText={setEditBio}
               placeholder="Cuéntanos sobre ti"
-              placeholderTextColor={Colors.light.darkGray}
+              placeholderTextColor={theme.colors.textSecondary}
               multiline
               numberOfLines={3}
             />
@@ -447,7 +447,7 @@ export default function ProfileScreen() {
               value={editLocation}
               onChangeText={setEditLocation}
               placeholder="Ingresa tu ubicación"
-              placeholderTextColor={Colors.light.darkGray}
+              placeholderTextColor={theme.colors.textSecondary}
             />
 
             <Text style={styles.inputLabel}>Intereses</Text>
@@ -480,7 +480,7 @@ export default function ProfileScreen() {
             disabled={false}
           >
             <LinearGradient
-              colors={[Colors.light.primary, '#00B894']}
+              colors={[theme.colors.primary, '#00B894']}
               style={styles.saveButtonGradient}
             >
               <Text style={styles.saveButtonText}>
@@ -497,33 +497,33 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
+    backgroundColor: theme.colors.background,
   },
   loadingContainer: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: Colors.light.background,
+    backgroundColor: theme.colors.background,
   },
   loadingText: {
     fontSize: 16,
-    color: Colors.light.text,
+    color: theme.colors.textPrimary,
   },
   errorSubtext: {
     fontSize: 14,
-    color: Colors.light.darkGray,
+    color: theme.colors.textSecondary,
     marginTop: 8,
     textAlign: 'center',
   },
   loginButton: {
-    backgroundColor: Colors.light.primary,
+    backgroundColor: theme.colors.primary,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
     marginTop: 20,
   },
   loginButtonText: {
-    color: Colors.light.white,
+    color: theme.colors.textPrimary,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -534,9 +534,9 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   header: {
-    paddingHorizontal: 20,
+    paddingHorizontal: theme.spacing.horizontal,
     paddingTop: 60,
-    paddingBottom: 20,
+    paddingBottom: theme.spacing.vertical * 2,
   },
   headerContent: {
     flexDirection: "row",
@@ -544,14 +544,13 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   title: {
-    fontSize: 28,
-    fontWeight: "800",
-    color: Colors.light.text,
+    ...theme.typography.h1,
+    color: theme.colors.textPrimary,
   },
   profileContainer: {
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingHorizontal: theme.spacing.horizontal,
+    paddingVertical: theme.spacing.section,
   },
   avatarContainer: {
     position: 'relative',
@@ -562,13 +561,13 @@ const styles = StyleSheet.create({
     height: 120,
     borderRadius: 60,
     borderWidth: 3,
-    borderColor: Colors.light.primary,
+    borderColor: theme.colors.primary,
   },
   verifiedBadge: {
     position: 'absolute',
     bottom: 5,
     right: 5,
-    backgroundColor: Colors.light.verified,
+    backgroundColor: theme.colors.primary,
     borderRadius: 12,
     width: 24,
     height: 24,
@@ -576,7 +575,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   verifiedIcon: {
-    color: Colors.light.white,
+    color: theme.colors.textPrimary,
     fontSize: 12,
     fontWeight: '700',
   },
@@ -584,7 +583,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 5,
     right: 5,
-    backgroundColor: Colors.light.premium,
+    backgroundColor: theme.colors.primary,
     borderRadius: 12,
     width: 24,
     height: 24,
@@ -592,13 +591,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   name: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: Colors.light.text,
+    ...theme.typography.h1,
+    color: theme.colors.textPrimary,
   },
   username: {
     fontSize: 16,
-    color: Colors.light.darkGray,
+    color: theme.colors.textSecondary,
     marginTop: 4,
   },
   locationContainer: {
@@ -608,12 +606,12 @@ const styles = StyleSheet.create({
   },
   locationText: {
     fontSize: 14,
-    color: Colors.light.darkGray,
+    color: theme.colors.textSecondary,
     marginLeft: 4,
   },
   bio: {
     fontSize: 16,
-    color: Colors.light.text,
+    color: theme.colors.textPrimary,
     textAlign: "center",
     marginTop: 16,
     marginBottom: 20,
@@ -621,7 +619,7 @@ const styles = StyleSheet.create({
   },
   levelContainer: {
     width: '100%',
-    backgroundColor: Colors.light.card,
+    backgroundColor: theme.colors.surface,
     borderRadius: 16,
     padding: 16,
     marginBottom: 20,
@@ -635,29 +633,29 @@ const styles = StyleSheet.create({
   levelText: {
     fontSize: 16,
     fontWeight: '700',
-    color: Colors.light.text,
+    color: theme.colors.textPrimary,
   },
   pointsText: {
     fontSize: 14,
-    color: Colors.light.primary,
+    color: theme.colors.primary,
     fontWeight: '600',
   },
   progressBar: {
     height: 8,
-    backgroundColor: Colors.light.lightGray,
+    backgroundColor: theme.colors.surface,
     borderRadius: 4,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: Colors.light.primary,
+    backgroundColor: theme.colors.primary,
     borderRadius: 4,
   },
   statsContainer: {
     flexDirection: "row",
     width: "100%",
     justifyContent: "space-around",
-    backgroundColor: Colors.light.card,
+    backgroundColor: theme.colors.surface,
     borderRadius: 16,
     paddingVertical: 20,
     marginBottom: 20,
@@ -668,11 +666,11 @@ const styles = StyleSheet.create({
   statNumber: {
     fontSize: 20,
     fontWeight: "700",
-    color: Colors.light.text,
+    color: theme.colors.textPrimary,
   },
   statLabel: {
     fontSize: 12,
-    color: Colors.light.darkGray,
+    color: theme.colors.textSecondary,
     marginTop: 4,
   },
   badgesContainer: {
@@ -682,7 +680,7 @@ const styles = StyleSheet.create({
   badgesTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: Colors.light.text,
+    color: theme.colors.textPrimary,
     marginBottom: 12,
   },
   badgesGrid: {
@@ -691,7 +689,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   badge: {
-    backgroundColor: Colors.light.card,
+    backgroundColor: theme.colors.surface,
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -705,7 +703,7 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 12,
     fontWeight: '600',
-    color: Colors.light.text,
+    color: theme.colors.textPrimary,
     textTransform: 'capitalize',
   },
   preferencesContainer: {
@@ -715,7 +713,7 @@ const styles = StyleSheet.create({
   preferencesTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: Colors.light.text,
+    color: theme.colors.textPrimary,
     marginBottom: 12,
   },
   preferencesGrid: {
@@ -724,7 +722,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   preferenceTag: {
-    backgroundColor: Colors.light.primary,
+    backgroundColor: theme.colors.primary,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
@@ -732,18 +730,18 @@ const styles = StyleSheet.create({
   preferenceText: {
     fontSize: 12,
     fontWeight: "600",
-    color: Colors.light.black,
+    color: theme.colors.background,
   },
   actionsContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingHorizontal: theme.spacing.horizontal,
+    paddingVertical: theme.spacing.section,
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: Colors.light.border,
-    backgroundColor: Colors.light.card,
-    marginHorizontal: 20,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+    marginHorizontal: theme.spacing.horizontal,
     borderRadius: 16,
     marginBottom: 20,
   },
@@ -755,22 +753,22 @@ const styles = StyleSheet.create({
   },
   actionText: {
     fontSize: 12,
-    color: Colors.light.text,
+    color: theme.colors.textPrimary,
     marginTop: 4,
     fontWeight: '600',
   },
   logoutButton: {
     borderLeftWidth: 1,
-    borderColor: Colors.light.border,
+    borderColor: theme.colors.border,
     paddingLeft: 16,
   },
   logoutText: {
-    color: Colors.light.error,
+    color: theme.colors.primary,
   },
   tabsContainer: {
     flexDirection: 'row',
-    backgroundColor: Colors.light.card,
-    marginHorizontal: 20,
+    backgroundColor: theme.colors.surface,
+    marginHorizontal: theme.spacing.horizontal,
     borderRadius: 16,
     padding: 4,
     marginBottom: 20,
@@ -782,18 +780,18 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   activeTab: {
-    backgroundColor: Colors.light.primary,
+    backgroundColor: theme.colors.primary,
   },
   tabText: {
     fontSize: 14,
     fontWeight: '600',
-    color: Colors.light.darkGray,
+    color: theme.colors.textSecondary,
   },
   activeTabText: {
-    color: Colors.light.black,
+    color: theme.colors.background,
   },
   contentSection: {
-    paddingHorizontal: 20,
+    paddingHorizontal: theme.spacing.horizontal,
   },
   plansContainer: {
     gap: 16,
@@ -802,43 +800,43 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 40,
-    backgroundColor: Colors.light.card,
+    backgroundColor: theme.colors.surface,
     borderRadius: 16,
   },
   emptyText: {
     fontSize: 16,
     fontWeight: "600",
-    color: Colors.light.text,
+    color: theme.colors.textPrimary,
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 14,
-    color: Colors.light.darkGray,
+    color: theme.colors.textSecondary,
     textAlign: "center",
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: Colors.light.background,
+    backgroundColor: theme.colors.background,
   },
   modalHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
+    paddingHorizontal: theme.spacing.horizontal,
     paddingTop: 60,
     paddingBottom: 20,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.light.border,
+    borderBottomColor: theme.colors.border,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: Colors.light.text,
+    color: theme.colors.textPrimary,
   },
   modalContent: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingHorizontal: theme.spacing.horizontal,
+    paddingTop: theme.spacing.section,
   },
   avatarSection: {
     alignItems: "center",
@@ -853,7 +851,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 0,
     right: 0,
-    backgroundColor: Colors.light.primary,
+    backgroundColor: theme.colors.primary,
     width: 24,
     height: 24,
     borderRadius: 12,
@@ -863,19 +861,19 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 16,
     fontWeight: "600",
-    color: Colors.light.text,
+    color: theme.colors.textPrimary,
     marginBottom: 8,
     marginTop: 16,
   },
   modalInput: {
-    backgroundColor: Colors.light.card,
+    backgroundColor: theme.colors.surface,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
-    color: Colors.light.text,
+    color: theme.colors.textPrimary,
     borderWidth: 1,
-    borderColor: Colors.light.border,
+    borderColor: theme.colors.border,
   },
   textArea: {
     height: 80,
@@ -888,27 +886,27 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   preferenceButton: {
-    backgroundColor: Colors.light.card,
+    backgroundColor: theme.colors.surface,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: Colors.light.border,
+    borderColor: theme.colors.border,
   },
   selectedPreferenceButton: {
-    backgroundColor: Colors.light.primary,
-    borderColor: Colors.light.primary,
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
   },
   preferenceButtonText: {
     fontSize: 14,
-    color: Colors.light.text,
+    color: theme.colors.textPrimary,
   },
   selectedPreferenceButtonText: {
-    color: Colors.light.black,
+    color: theme.colors.background,
     fontWeight: '600',
   },
   saveButton: {
-    marginHorizontal: 20,
+    marginHorizontal: theme.spacing.horizontal,
     marginVertical: 20,
     borderRadius: 16,
     overflow: 'hidden',
@@ -921,6 +919,6 @@ const styles = StyleSheet.create({
   saveButtonText: {
     fontSize: 16,
     fontWeight: "700",
-    color: Colors.light.white,
+    color: theme.colors.textPrimary,
   },
 }); 

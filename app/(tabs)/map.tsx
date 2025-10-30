@@ -20,7 +20,7 @@ import Animated, {
 } from "react-native-reanimated";
 import Toast from "react-native-toast-message";
 
-import Colors from "@/constants/colors";
+import theme from "@/lib/theme";
 import { categories } from "@/mocks/categories";
 import { usePlansStore } from "@/hooks/use-plans-store";
 
@@ -167,7 +167,7 @@ export default function MapScreen() {
       case "Shopping":
         return "#FD79A8";
       default:
-        return Colors.light.primary;
+        return theme.colors.primary;
     }
   };
 
@@ -236,7 +236,7 @@ export default function MapScreen() {
           onPress={toggleFilters}
           testID="filter-button"
         >
-          <Filter size={24} color={Colors.light.background} />
+          <Filter size={24} color={theme.colors.background} />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -244,7 +244,7 @@ export default function MapScreen() {
           onPress={handleCreatePress}
           testID="create-plan-button"
         >
-          <Plus size={20} color={Colors.light.background} />
+          <Plus size={20} color={theme.colors.background} />
           <Text style={styles.createButtonText}>Publica tu parche</Text>
         </TouchableOpacity>
       </View>
@@ -272,7 +272,7 @@ export default function MapScreen() {
             <View style={styles.dropdownHeader}>
               <Text style={styles.filtersTitle}>Filtrar por categoría</Text>
               <TouchableOpacity onPress={toggleFilters} style={styles.closeButton}>
-                <X size={20} color={Colors.light.darkGray} />
+              <X size={20} color={theme.colors.textSecondary} />
               </TouchableOpacity>
             </View>
             <View style={styles.categoriesContainer}>
@@ -310,7 +310,7 @@ export default function MapScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
+    backgroundColor: theme.colors.background,
   },
   map: {
     width: "100%",
@@ -325,12 +325,12 @@ const styles = StyleSheet.create({
   webFallbackText: {
     fontSize: 18,
     fontWeight: "600",
-    color: Colors.light.text,
+    color: theme.colors.textPrimary,
     marginBottom: 8,
   },
   webFallbackSubtext: {
     fontSize: 14,
-    color: Colors.light.darkGray,
+    color: theme.colors.textSecondary,
     textAlign: "center",
     marginBottom: 32,
   },
@@ -341,25 +341,26 @@ const styles = StyleSheet.create({
   webPlansTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: Colors.light.text,
+    color: theme.colors.textPrimary,
     marginBottom: 16,
   },
   webPlanItem: {
-    backgroundColor: Colors.light.card,
+    backgroundColor: theme.colors.surface,
     padding: 16,
     borderRadius: 12,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: Colors.light.border,
+    borderColor: theme.colors.border,
+    ...theme.shadows.card,
   },
   webPlanName: {
     fontSize: 16,
     fontWeight: "600",
-    color: Colors.light.text,
+    color: theme.colors.textPrimary,
   },
   webPlanCategory: {
     fontSize: 14,
-    color: Colors.light.darkGray,
+    color: theme.colors.textSecondary,
     marginTop: 4,
   },
   buttonContainer: {
@@ -372,36 +373,28 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   filterButton: {
-    backgroundColor: Colors.light.primary,
+    backgroundColor: theme.colors.primary,
     width: 56,
     height: 56,
     borderRadius: 28,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: Colors.light.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    ...theme.shadows.button,
   },
   createButton: {
-    backgroundColor: Colors.light.primary,
+    backgroundColor: theme.colors.primary,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 16,
     paddingHorizontal: 20,
     borderRadius: 28,
-    shadowColor: Colors.light.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    ...theme.shadows.button,
   },
   createButtonText: {
     fontSize: 16,
     fontWeight: "600",
-    color: Colors.light.background,
+    color: theme.colors.background,
     marginLeft: 8,
   },
   modalOverlay: {
@@ -411,16 +404,16 @@ const styles = StyleSheet.create({
   filtersDropdown: {
     position: 'absolute',
     width: 300,
-    backgroundColor: Colors.light.card,
+    backgroundColor: theme.colors.surface,
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: Colors.light.border,
-    shadowColor: Colors.light.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 12,
+    borderColor: theme.colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 8,
   },
   dropdownHeader: {
     flexDirection: 'row',
@@ -434,7 +427,7 @@ const styles = StyleSheet.create({
   filtersTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: Colors.light.text,
+    color: theme.colors.textPrimary,
     marginBottom: 12,
   },
   categoriesContainer: {
@@ -443,18 +436,18 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   categoryButton: {
-    backgroundColor: Colors.light.background,
+    backgroundColor: theme.colors.background,
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: Colors.light.border,
+    borderColor: theme.colors.border,
   },
   categoryText: {
     fontSize: 14,
-    color: Colors.light.text,
+    color: theme.colors.textPrimary,
   },
   selectedCategoryText: {
-    color: Colors.light.background,
+    color: theme.colors.background,
   },
 });

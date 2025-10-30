@@ -40,7 +40,7 @@ import { PlanCardSkeleton } from "@/components/SkeletonLoader";
 import Logo3VB from "@/components/Logo3VB";
 import PatchCard from "@/components/PatchCard";
 import PatchDetailModal from "@/components/PatchDetailModal";
-import Colors from "@/constants/colors";
+import theme from "@/lib/theme";
 import { categories } from "@/mocks/categories";
 import { useFilteredPlans, usePlansStore, useTopPlans } from "@/hooks/use-plans-store";
 import { useUserStore } from "@/hooks/use-user-store";
@@ -345,11 +345,11 @@ export default function HomeScreen() {
             </View>
             <View style={styles.userStats}>
               <View style={styles.statItem}>
-                <Star size={16} color={Colors.light.premium} />
+                <Star size={16} color={theme.colors.primary} />
                 <Text style={styles.statText}>{user?.points || 0}</Text>
               </View>
               {user?.isPremium && (
-                <Crown size={20} color={Colors.light.premium} />
+                <Crown size={20} color={theme.colors.primary} />
               )}
             </View>
           </Animated.View>
@@ -373,7 +373,7 @@ export default function HomeScreen() {
         return (
           <Animated.View entering={FadeInUp.delay(300)}>
             <View style={styles.sectionHeader}>
-              <Star size={20} color={Colors.light.premium} />
+              <Star size={20} color={theme.colors.primary} />
               <Text style={styles.sectionTitle}>¿Qué parche hay hoy en Medellín? 🔥</Text>
             </View>
             <ScrollView
@@ -407,7 +407,7 @@ export default function HomeScreen() {
         return (
           <Animated.View entering={FadeInUp.delay(300)}>
             <View style={styles.sectionHeader}>
-              <Calendar size={20} color={Colors.light.primary} />
+              <Calendar size={20} color={theme.colors.primary} />
               <Text style={styles.sectionTitle}>Eventos de hoy</Text>
             </View>
             <HorizontalCards
@@ -431,7 +431,7 @@ export default function HomeScreen() {
         return (
           <Animated.View entering={FadeInUp.delay(400)}>
             <View style={styles.sectionHeader}>
-              <Star size={20} color={Colors.light.premium} />
+              <Star size={20} color={theme.colors.primary} />
               <Text style={styles.sectionTitle}>Plan destacado</Text>
             </View>
             <HorizontalCards
@@ -455,7 +455,7 @@ export default function HomeScreen() {
         return (
           <Animated.View entering={FadeInUp.delay(500)}>
             <View style={styles.sectionHeader}>
-              <Star size={20} color={Colors.light.premium} />
+              <Star size={20} color={theme.colors.primary} />
               <Text style={styles.sectionTitle}>Más planes populares</Text>
             </View>
             {isLoading ? (
@@ -620,7 +620,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
+    backgroundColor: theme.colors.background,
   },
 
   contentContainer: {
@@ -630,9 +630,9 @@ const styles = StyleSheet.create({
   
   // Header Section - Clean and minimal design
   header: {
-    paddingHorizontal: 20,
+    paddingHorizontal: theme.spacing.horizontal,
     paddingTop: 60,
-    paddingBottom: 20,
+    paddingBottom: theme.spacing.vertical * 2,
     marginBottom: 8,
     minHeight: 100, // Optimized height
   },
@@ -660,39 +660,32 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.surface,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    ...theme.shadows.button,
   },
   titleSection: {
     marginBottom: 16,
   },
   greeting: {
-    fontSize: 16,
-    color: Colors.light.darkGray,
+    ...theme.typography.body,
+    color: theme.colors.textSecondary,
     marginBottom: 8,
     lineHeight: 22,
-    fontWeight: '500',
   },
   title: {
-    fontSize: 32,
-    fontWeight: "800",
-    color: Colors.light.text,
+    ...theme.typography.h1,
+    color: theme.colors.textPrimary,
     marginBottom: 8,
-    lineHeight: 38,
+    lineHeight: 28,
     flexShrink: 1, // Allow text to wrap if needed
   },
   subtitle: {
-    fontSize: 16,
-    color: Colors.light.darkGray,
+    ...theme.typography.body,
+    color: theme.colors.textSecondary,
     lineHeight: 22,
     flexShrink: 1,
-    fontWeight: '400',
   },
   userStats: {
     flexDirection: 'row',
@@ -704,17 +697,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: Colors.light.card,
+    backgroundColor: theme.colors.surface,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.light.border,
+    borderColor: theme.colors.border,
   },
   statText: {
-    fontSize: 12,
+    ...theme.typography.caption,
     fontWeight: '600',
-    color: Colors.light.text,
+    color: theme.colors.textPrimary,
   },
   
   // Section Headers - Consistent spacing
@@ -722,15 +715,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginTop: 24, // Reduced spacing to prevent overflow
-    marginBottom: 16,
-    paddingHorizontal: 20,
+    marginTop: theme.spacing.section,
+    marginBottom: theme.spacing.md,
+    paddingHorizontal: theme.spacing.horizontal,
     minHeight: 40, // Ensure minimum height for headers
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: Colors.light.text,
+    ...theme.typography.h2,
+    color: theme.colors.textPrimary,
     lineHeight: 22,
   },
   
@@ -742,7 +734,7 @@ const styles = StyleSheet.create({
   
   // Top Plans Section - Improved horizontal scrolling
   topPlansContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: theme.spacing.horizontal,
     flexDirection: 'row',
     gap: 12,
   },
@@ -760,7 +752,7 @@ const styles = StyleSheet.create({
     flexGrow: 0, // Prevent container from growing
   },
   horizontalScrollContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: theme.spacing.horizontal,
     paddingRight: 40, // Extra padding for last item
   },
   horizontalPlanCard: {
@@ -770,7 +762,7 @@ const styles = StyleSheet.create({
   
   // Horizontal Lists - Consistent padding
   horizontalListContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: theme.spacing.horizontal,
     paddingRight: 40, // Extra padding for last item
   },
   
@@ -786,13 +778,13 @@ const styles = StyleSheet.create({
   
   // Search Container
   searchContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
+    paddingHorizontal: theme.spacing.horizontal,
+    marginBottom: theme.spacing.section,
   },
   
   // Patches Section
   patchesScroll: {
-    paddingHorizontal: 20,
+    paddingHorizontal: theme.spacing.horizontal,
     gap: 16,
   },
   patchCardContainer: {
@@ -800,23 +792,24 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   seeAllContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: theme.spacing.horizontal,
     marginTop: 16,
     alignItems: 'center',
   },
   seeAllButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F8F9FA',
+    backgroundColor: theme.colors.surface,
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 25,
     borderWidth: 1,
-    borderColor: '#E9ECEF',
+    borderColor: theme.colors.border,
+    ...theme.shadows.button,
   },
   seeAllText: {
-    fontSize: 14,
-    color: '#1A1A1A',
+    ...theme.typography.caption,
+    color: theme.colors.textPrimary,
     fontWeight: '600',
     marginRight: 8,
     ...Platform.select({
@@ -832,7 +825,7 @@ const styles = StyleSheet.create({
   },
   seeAllIcon: {
     fontSize: 16,
-    color: '#FF4444',
+    color: theme.colors.primary,
     fontWeight: '600',
   },
   

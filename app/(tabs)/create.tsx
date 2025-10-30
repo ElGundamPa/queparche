@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -14,14 +14,35 @@ import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 import { StatusBar } from "expo-status-bar";
+import { LinearGradient } from "expo-linear-gradient";
+import { Animated } from "react-native";
 import { Camera, MapPin, Upload, ArrowLeft } from "lucide-react-native";
 
-import Colors from "@/constants/colors";
+import theme from "@/lib/theme";
 import { categories } from "@/mocks/categories";
 import { usePlansStore } from "@/hooks/use-plans-store";
 import { useUserStore } from "@/hooks/use-user-store";
 
 export default function CreatePlanScreen() {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const onPublishPressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.98,
+      useNativeDriver: true,
+      friction: 6,
+      tension: 150,
+    }).start();
+  };
+
+  const onPublishPressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      friction: 6,
+      tension: 150,
+    }).start();
+  };
   const router = useRouter();
   const { addPlan } = usePlansStore();
   const { user } = useUserStore();
@@ -137,7 +158,7 @@ export default function CreatePlanScreen() {
           onPress={() => router.back()}
           testID="back-button"
         >
-          <ArrowLeft size={24} color={Colors.light.text} />
+          <ArrowLeft size={24} color={theme.colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Crear Parche</Text>
         <View style={styles.placeholder} />
@@ -162,7 +183,7 @@ export default function CreatePlanScreen() {
             value={name}
             onChangeText={setName}
             placeholder="Enter a name for your plan"
-            placeholderTextColor={Colors.light.darkGray}
+            placeholderTextColor={theme.colors.textSecondary}
             testID="plan-name-input"
           />
 
@@ -172,7 +193,7 @@ export default function CreatePlanScreen() {
             value={description}
             onChangeText={setDescription}
             placeholder="Describe your plan in detail"
-            placeholderTextColor={Colors.light.darkGray}
+            placeholderTextColor={theme.colors.textSecondary}
             multiline
             numberOfLines={4}
             testID="plan-description-input"
@@ -211,7 +232,7 @@ export default function CreatePlanScreen() {
             value={maxPeople}
             onChangeText={setMaxPeople}
             placeholder="Enter maximum number of people"
-            placeholderTextColor={Colors.light.darkGray}
+            placeholderTextColor={theme.colors.textSecondary}
             keyboardType="number-pad"
             testID="plan-max-people-input"
           />
@@ -222,7 +243,7 @@ export default function CreatePlanScreen() {
             onPress={getLocation}
             testID="get-location-button"
           >
-            <MapPin size={20} color={Colors.light.primary} />
+            <MapPin size={20} color={theme.colors.primary} />
             <Text style={styles.locationButtonText}>
               {location ? "Location selected" : "Use current location"}
             </Text>
@@ -249,21 +270,32 @@ export default function CreatePlanScreen() {
               onPress={pickImage}
               testID="add-image-button"
             >
-              <Camera size={24} color={Colors.light.primary} />
+              <Camera size={24} color={theme.colors.primary} />
               <Text style={styles.addImageText}>Add Photo</Text>
             </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
 
-      <TouchableOpacity
-        style={styles.publishButton}
-        onPress={handleCreatePlan}
-        testID="publish-plan-button"
-      >
-        <Upload size={20} color={Colors.light.white} />
-        <Text style={styles.publishButtonText}>Publish Plan</Text>
-      </TouchableOpacity>
+      <Animated.View style={[styles.publishButton, { transform: [{ scale: scaleAnim }] }]}>
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPressIn={onPublishPressIn}
+          onPressOut={onPublishPressOut}
+          onPress={handleCreatePlan}
+          testID="publish-plan-button"
+        >
+          <LinearGradient
+            colors={["#FF3B30", "#FF5252"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.publishGradient}
+          >
+            <Upload size={20} color={theme.colors.textPrimary} />
+            <Text style={styles.publishButtonText}>Publish Plan</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      </Animated.View>
     </View>
   );
 }
@@ -271,36 +303,31 @@ export default function CreatePlanScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
+    backgroundColor: theme.colors.background,
   },
   topHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
+    paddingHorizontal: theme.spacing.horizontal,
     paddingTop: 60,
     paddingBottom: 16,
-    backgroundColor: Colors.light.background,
+    backgroundColor: theme.colors.background,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.light.border,
+    borderBottomColor: theme.colors.border,
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.light.card,
+    backgroundColor: theme.colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 4,
+    ...theme.shadows.button,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.light.text,
+    ...theme.typography.h2,
+    color: theme.colors.textPrimary,
   },
   placeholder: {
     width: 40,
@@ -312,37 +339,38 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 20,
+    paddingHorizontal: theme.spacing.horizontal,
+    paddingTop: theme.spacing.section,
+    paddingBottom: theme.spacing.md,
   },
   title: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: Colors.light.text,
+    ...theme.typography.h1,
+    color: theme.colors.textPrimary,
   },
   subtitle: {
-    fontSize: 16,
-    color: Colors.light.darkGray,
+    ...theme.typography.body,
+    color: theme.colors.textSecondary,
     marginTop: 8,
   },
   formContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: theme.spacing.horizontal,
   },
   label: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.light.text,
-    marginTop: 20,
-    marginBottom: 8,
+    ...theme.typography.caption,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.section,
+    marginBottom: theme.spacing.sm,
   },
   input: {
-    backgroundColor: Colors.light.lightGray,
+    backgroundColor: theme.colors.surface,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
-    color: Colors.light.text,
+    color: theme.colors.textPrimary,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    ...theme.shadows.card,
   },
   textArea: {
     height: 120,
@@ -353,45 +381,51 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   categoryButton: {
-    backgroundColor: Colors.light.lightGray,
+    backgroundColor: theme.colors.surface,
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 20,
     marginRight: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   selectedCategoryButton: {
-    backgroundColor: Colors.light.primary,
+    backgroundColor: theme.colors.primary,
   },
   categoryText: {
     fontSize: 14,
-    color: Colors.light.text,
+    color: theme.colors.textPrimary,
   },
   selectedCategoryText: {
-    color: Colors.light.white,
+    color: theme.colors.background,
   },
   locationButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.light.lightGray,
+    backgroundColor: theme.colors.surface,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   locationButtonText: {
     fontSize: 16,
-    color: Colors.light.text,
+    color: theme.colors.textPrimary,
     marginLeft: 8,
   },
   addressContainer: {
-    backgroundColor: Colors.light.lightGray,
+    backgroundColor: theme.colors.surface,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
     marginTop: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   addressText: {
     fontSize: 14,
-    color: Colors.light.text,
+    color: theme.colors.textPrimary,
   },
   imagesContainer: {
     flexDirection: "row",
@@ -410,14 +444,14 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: Colors.light.primary,
+    borderColor: theme.colors.primary,
     borderStyle: "dashed",
     alignItems: "center",
     justifyContent: "center",
   },
   addImageText: {
     fontSize: 12,
-    color: Colors.light.primary,
+    color: theme.colors.primary,
     marginTop: 4,
   },
   publishButton: {
@@ -425,22 +459,27 @@ const styles = StyleSheet.create({
     bottom: 20,
     left: 20,
     right: 20,
-    backgroundColor: Colors.light.primary,
-    borderRadius: 12,
+    borderRadius: 16,
     paddingVertical: 16,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: Colors.light.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
+    ...theme.shadows.button,
+  },
+  publishGradient: {
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
   },
   publishButtonText: {
     fontSize: 16,
     fontWeight: "600",
-    color: Colors.light.white,
+    color: theme.colors.textPrimary,
     marginLeft: 8,
   },
+// removed extra closing brace
 });

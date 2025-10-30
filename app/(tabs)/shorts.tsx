@@ -19,7 +19,7 @@ import Animated, {
 } from "react-native-reanimated";
 import Toast from "react-native-toast-message";
 
-import Colors from "@/constants/colors";
+import theme from "@/lib/theme";
 import EmptyState from "@/components/EmptyState";
 import TikTokShortItem from "@/components/TikTokShortItem";
 import { usePlansStore } from "@/hooks/use-plans-store";
@@ -125,7 +125,7 @@ export default function ShortsScreen() {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={Colors.light.primary} />
+        <ActivityIndicator size="large" color={theme.colors.primary} />
         <Text style={styles.loadingText}>Cargando shorts...</Text>
       </View>
     );
@@ -187,16 +187,16 @@ export default function ShortsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "black",
+    backgroundColor: "#0A0A0A",
   },
   loadingContainer: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "black",
+    backgroundColor: "#0A0A0A",
   },
   loadingText: {
-    color: "white",
+    color: theme.colors.textPrimary,
     fontSize: 16,
     marginTop: 16,
   },
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     padding: 20,
-    backgroundColor: "black",
+    backgroundColor: "#0A0A0A",
   },
   createButtonContainer: {
     position: "absolute",
@@ -213,18 +213,18 @@ const styles = StyleSheet.create({
     right: 20,
   },
   createButton: {
-    backgroundColor: Colors.light.primary,
+    backgroundColor: theme.colors.primary,
     width: 48,
     height: 48,
     borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: Colors.light.primary,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+    elevation: 6,
     borderWidth: 2,
-    borderColor: "white",
+    borderColor: theme.colors.textPrimary,
   },
 });
