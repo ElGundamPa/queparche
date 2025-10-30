@@ -25,7 +25,8 @@ import {
   MessageCircle, 
   Share2,
   Crown,
-  Send
+  Send,
+  ArrowLeft
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
@@ -246,6 +247,16 @@ export default function PlanDetailScreen() {
             colors={['transparent', 'rgba(0,0,0,0.8)']}
             style={styles.overlay}
           />
+          
+          {/* Back Button */}
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+            testID="back-button"
+          >
+            <ArrowLeft size={24} color={Colors.light.white} />
+          </TouchableOpacity>
+          
           {plan.isPremium && (
             <View style={styles.premiumBadge}>
               <Crown size={16} color={Colors.light.premium} />
@@ -471,6 +482,18 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 60,
+    left: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
   },
   premiumBadge: {
     position: 'absolute',

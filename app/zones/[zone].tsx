@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import Colors from '@/constants/colors';
 import { ZONES, MEDELLIN_COMUNAS } from '@/data/zones';
@@ -7,6 +7,7 @@ import { FlashList } from '@shopify/flash-list';
 import AreaCard from '@/components/AreaCard';
 import { useFilters } from '@/store/filters';
 import { Image as ExpoImage, type ImageSource } from 'expo-image';
+import { ArrowLeft } from 'lucide-react-native';
 
 function extractUri(src?: ImageSource): string | undefined {
   if (!src) return undefined;
@@ -66,6 +67,19 @@ export default function ZoneDetail() {
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ title: zoneItem.name }} />
+      
+      {/* Header with back button */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+          testID="back-button"
+        >
+          <ArrowLeft size={24} color={Colors.light.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{zoneItem.name}</Text>
+        <View style={styles.placeholder} />
+      </View>
 
       <FlashList
         data={areas}
@@ -95,6 +109,38 @@ export default function ZoneDetail() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.light.background },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 16,
+    backgroundColor: Colors.light.background,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.light.border,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.light.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.light.text,
+  },
+  placeholder: {
+    width: 40,
+  },
   listContent: { padding: 16, gap: 12 },
   col: { width: '50%', padding: 6 },
   empty: { color: Colors.light.darkGray, fontSize: 14 },

@@ -11,17 +11,7 @@ import {
   StatusBar,
   Linking,
 } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-  Easing,
-  withSequence,
-  useAnimatedScrollHandler,
-  interpolate,
-  Extrapolate,
-} from 'react-native-reanimated';
+import Colors from '@/constants/colors';
 
 const { width, height } = Dimensions.get('window');
 
@@ -48,10 +38,7 @@ interface PatchDetailModalProps {
 
 const PatchDetailModal = ({ patch, onClose }: PatchDetailModalProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const heartScale = useSharedValue(1);
-  const shareScale = useSharedValue(1);
-  const buttonScale = useSharedValue(1);
-  const scrollY = useSharedValue(0);
+  const [showFullDescription, setShowFullDescription] = useState(false);
 
   // Imágenes de ejemplo para el carrusel
   const images = patch.images || [
@@ -61,26 +48,19 @@ const PatchDetailModal = ({ patch, onClose }: PatchDetailModalProps) => {
   ];
 
   const handleHeartPress = () => {
-    heartScale.value = withSequence(
-      withTiming(1.3, { duration: 100, easing: Easing.out(Easing.ease) }),
-      withSpring(1, { damping: 10, stiffness: 200 })
-    );
+    // Función para manejar el like
   };
 
   const handleSharePress = () => {
-    shareScale.value = withSequence(
-      withTiming(1.2, { duration: 100, easing: Easing.out(Easing.ease) }),
-      withSpring(1, { damping: 10, stiffness: 200 })
-    );
+    // Función para compartir
   };
 
-  const handleButtonPress = (type: 'view' | 'maps') => {
-    buttonScale.value = withSequence(
-      withTiming(0.95, { duration: 100, easing: Easing.out(Easing.ease) }),
-      withSpring(1, { damping: 15, stiffness: 200 })
-    );
-    
-    if (type === 'maps' && patch.latitude && patch.longitude) {
+  const handleLinkPress = () => {
+    // Función para copiar enlace
+  };
+
+  const handleButtonPress = () => {
+    if (patch.latitude && patch.longitude) {
       openMaps(patch.latitude, patch.longitude);
     }
   };
@@ -95,56 +75,12 @@ const PatchDetailModal = ({ patch, onClose }: PatchDetailModalProps) => {
     }
   };
 
-  const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (event) => {
-      scrollY.value = event.contentOffset.y;
-    },
-  });
-
-  const heroImageStyle = useAnimatedStyle(() => {
-    const translateY = interpolate(
-      scrollY.value,
-      [0, 200],
-      [0, -50],
-      Extrapolate.CLAMP
-    );
-    
-    return {
-      transform: [{ translateY }],
-    };
-  });
-
-  const contentStyle = useAnimatedStyle(() => {
-    const translateY = interpolate(
-      scrollY.value,
-      [0, 200],
-      [0, -20],
-      Extrapolate.CLAMP
-    );
-    
-    return {
-      transform: [{ translateY }],
-    };
-  });
-
-  const heartStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: heartScale.value }],
-  }));
-
-  const shareStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: shareScale.value }],
-  }));
-
-  const buttonStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: buttonScale.value }],
-  }));
-
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="rgba(0,0,0,0.5)" />
+      <StatusBar barStyle="light-content" backgroundColor={Colors.light.background} />
       
       {/* Hero Image with Carousel */}
-      <Animated.View style={[styles.heroContainer, heroImageStyle]}>
+      <View style={styles.heroContainer}>
         <Image
           source={{ uri: images[currentImageIndex] }}
           style={styles.heroImage}
@@ -157,33 +93,29 @@ const PatchDetailModal = ({ patch, onClose }: PatchDetailModalProps) => {
         {/* Header Icons */}
         <View style={styles.headerIcons}>
           <TouchableOpacity
-            style={styles.headerIcon}
+            style={styles.backButton}
             onPress={onClose}
             activeOpacity={0.7}
           >
-            <Text style={styles.headerIconText}>←</Text>
+            <Text style={styles.backIcon}>←</Text>
           </TouchableOpacity>
           
           <View style={styles.headerRightIcons}>
-            <Animated.View style={shareStyle}>
-              <TouchableOpacity
-                style={styles.headerIcon}
-                onPress={handleSharePress}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.headerIconText}>↗️</Text>
-              </TouchableOpacity>
-            </Animated.View>
+            <TouchableOpacity
+              style={styles.floatingButton}
+              onPress={handleSharePress}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.floatingButtonIcon}>↗️</Text>
+            </TouchableOpacity>
             
-            <Animated.View style={heartStyle}>
-              <TouchableOpacity
-                style={styles.headerIcon}
-                onPress={handleHeartPress}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.headerIconText}>❤️</Text>
-              </TouchableOpacity>
-            </Animated.View>
+            <TouchableOpacity
+              style={styles.floatingButton}
+              onPress={handleLinkPress}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.floatingButtonIcon}>🔗</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -191,10 +123,7 @@ const PatchDetailModal = ({ patch, onClose }: PatchDetailModalProps) => {
         <View style={styles.hotelInfoOverlay}>
           <View style={styles.hotelNameContainer}>
             <Text style={styles.hotelIcon}>🏠</Text>
-            <View style={styles.hotelNameText}>
-              <Text style={styles.hotelNameFirstLine}>{patch.name}</Text>
-              <Text style={styles.hotelNameSecondLine}>{patch.category}</Text>
-            </View>
+            <Text style={styles.hotelName}>{patch.name}</Text>
           </View>
           <View style={styles.reviewSection}>
             <View style={styles.reviewAvatars}>
@@ -219,48 +148,71 @@ const PatchDetailModal = ({ patch, onClose }: PatchDetailModalProps) => {
             />
           ))}
         </View>
-      </Animated.View>
+      </View>
 
-      {/* Content */}
-      <Animated.View style={[styles.content, contentStyle]}>
+      {/* Content Card */}
+      <View style={styles.content}>
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
-          onScroll={scrollHandler}
-          scrollEventThrottle={16}
         >
           {/* Popular Amenities */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Popular Amenities</Text>
-            <View style={styles.amenitiesRow}>
-              <View style={styles.amenityButton}>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.amenitiesScrollContainer}
+            >
+              <View style={styles.amenityItem}>
                 <Text style={styles.amenityIcon}>🛏️</Text>
                 <Text style={styles.amenityText}>2 Beds</Text>
               </View>
-              <View style={styles.amenityButton}>
+              <View style={styles.amenityItem}>
                 <Text style={styles.amenityIcon}>📺</Text>
                 <Text style={styles.amenityText}>HDTV</Text>
               </View>
-              <View style={styles.amenityButton}>
+              <View style={styles.amenityItem}>
                 <Text style={styles.amenityIcon}>📶</Text>
                 <Text style={styles.amenityText}>Free Wi-Fi</Text>
               </View>
-              <View style={styles.amenityButton}>
+              <View style={styles.amenityItem}>
                 <Text style={styles.amenityIcon}>🛁</Text>
                 <Text style={styles.amenityText}>Bathtub</Text>
               </View>
-            </View>
+              <View style={styles.amenityItem}>
+                <Text style={styles.amenityIcon}>🚗</Text>
+                <Text style={styles.amenityText}>Parking</Text>
+              </View>
+            </ScrollView>
           </View>
 
           {/* Description */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Description</Text>
-            <Text style={styles.description}>
-              Riverside Grand Hotel offers luxury stays, stunning river views, fine dining, a spa, and elegant event spaces for unforgettable See More.....
-            </Text>
+            <View style={styles.descriptionContainer}>
+              <Text style={styles.description}>
+                {showFullDescription 
+                  ? patch.description 
+                  : patch.description.length > 150 
+                    ? `${patch.description.substring(0, 150)}...` 
+                    : patch.description
+                }
+              </Text>
+              {patch.description.length > 150 && (
+                <TouchableOpacity 
+                  onPress={() => setShowFullDescription(!showFullDescription)}
+                  style={styles.seeMoreContainer}
+                >
+                  <Text style={styles.seeMoreText}>
+                    {showFullDescription ? 'Ver menos' : 'Ver más...'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
         </ScrollView>
-      </Animated.View>
+      </View>
 
       {/* Bottom Action Bar */}
       <View style={styles.bottomBar}>
@@ -275,27 +227,14 @@ const PatchDetailModal = ({ patch, onClose }: PatchDetailModalProps) => {
           </Text>
         </View>
         
-        <View style={styles.buttonContainer}>
-          <Animated.View style={[styles.actionButton, styles.viewMoreButton, buttonStyle]}>
-            <TouchableOpacity
-              style={styles.buttonContent}
-              onPress={() => handleButtonPress('view')}
-              activeOpacity={0.9}
-            >
-              <Text style={styles.viewMoreText}>Ver más</Text>
-            </TouchableOpacity>
-          </Animated.View>
-          
-          <Animated.View style={[styles.actionButton, styles.mapsButton, buttonStyle]}>
-            <TouchableOpacity
-              style={styles.buttonContent}
-              onPress={() => handleButtonPress('maps')}
-              activeOpacity={0.9}
-            >
-              <Text style={styles.mapsIcon}>🌍</Text>
-              <Text style={styles.mapsText}>Llévame allá</Text>
-            </TouchableOpacity>
-          </Animated.View>
+        <View style={styles.bookButton}>
+          <TouchableOpacity
+            style={styles.bookButtonContent}
+            onPress={handleButtonPress}
+            activeOpacity={0.9}
+          >
+            <Text style={styles.bookButtonText}>Llévame allá</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </View>
@@ -305,14 +244,25 @@ const PatchDetailModal = ({ patch, onClose }: PatchDetailModalProps) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F6F2', // Ivory background
+    backgroundColor: Colors.light.background,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1000,
   },
   heroContainer: {
     width: '100%',
-    height: height * 0.5,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+    height: height * 0.6,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 16,
   },
   heroImage: {
     width: '100%',
@@ -323,12 +273,12 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: 120,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    height: 140,
+    backgroundColor: 'rgba(0,0,0,0.4)',
   },
   headerIcons: {
     position: 'absolute',
-    top: Platform.OS === 'ios' ? 50 : 20,
+    top: Platform.OS === 'ios' ? 60 : 30,
     left: 20,
     right: 20,
     flexDirection: 'row',
@@ -336,179 +286,100 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 1,
   },
-  headerIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
-  headerIconText: {
-    fontSize: 18,
-    color: '#FFFFFF',
+  backIcon: {
+    fontSize: 20,
+    color: Colors.light.white,
+    fontWeight: '600',
   },
   headerRightIcons: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 16,
+  },
+  floatingButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: Colors.light.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  floatingButtonIcon: {
+    fontSize: 18,
+    color: Colors.light.text,
   },
   hotelInfoOverlay: {
     position: 'absolute',
-    bottom: 20,
+    bottom: 30,
     left: 20,
     right: 20,
   },
   hotelNameContainer: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 12,
+    alignItems: 'center',
+    marginBottom: 16,
   },
   hotelIcon: {
-    fontSize: 16,
-    marginRight: 8,
-    marginTop: 2,
+    fontSize: 20,
+    marginRight: 12,
   },
-  hotelNameText: {
-    flex: 1,
-  },
-  hotelNameFirstLine: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    lineHeight: 28,
+  hotelName: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: Colors.light.white,
+    lineHeight: 32,
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
     ...Platform.select({
       ios: {
         fontFamily: 'System',
-        fontWeight: '700',
+        fontWeight: '800',
       },
       android: {
-        fontFamily: 'sans-serif-medium',
-        fontWeight: '700',
-      },
-    }),
-  },
-  hotelNameSecondLine: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    lineHeight: 28,
-    ...Platform.select({
-      ios: {
-        fontFamily: 'System',
-        fontWeight: '700',
-      },
-      android: {
-        fontFamily: 'sans-serif-medium',
-        fontWeight: '700',
+        fontFamily: 'sans-serif-black',
+        fontWeight: '800',
       },
     }),
   },
   reviewSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   reviewAvatars: {
     flexDirection: 'row',
-    gap: 4,
-    marginRight: 8,
+    gap: 6,
+    marginRight: 12,
   },
   avatar: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   reviewCount: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    ...Platform.select({
-      ios: {
-        fontFamily: 'System',
-        fontWeight: '400',
-      },
-      android: {
-        fontFamily: 'sans-serif',
-        fontWeight: '400',
-      },
-    }),
-  },
-  carouselIndicator: {
-    position: 'absolute',
-    bottom: 10,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-  },
-  dotActive: {
-    backgroundColor: '#FFFFFF',
-  },
-  content: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    marginTop: -24,
-    zIndex: 1,
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 100,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1A1A1A',
-    marginBottom: 12,
-    ...Platform.select({
-      ios: {
-        fontFamily: 'System',
-        fontWeight: '700',
-      },
-      android: {
-        fontFamily: 'sans-serif-medium',
-        fontWeight: '700',
-      },
-    }),
-  },
-  amenitiesRow: {
-    flexDirection: 'row',
-    gap: 12,
-    flexWrap: 'wrap',
-  },
-  amenityButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F8F9FA',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#E9ECEF',
-  },
-  amenityIcon: {
     fontSize: 16,
-    marginRight: 6,
-  },
-  amenityText: {
-    fontSize: 12,
-    color: '#1A1A1A',
+    color: 'rgba(255, 255, 255, 0.9)',
     fontWeight: '500',
     ...Platform.select({
       ios: {
@@ -521,10 +392,107 @@ const styles = StyleSheet.create({
       },
     }),
   },
+  carouselIndicator: {
+    position: 'absolute',
+    bottom: 20,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+  },
+  dotActive: {
+    backgroundColor: Colors.light.white,
+    width: 24,
+  },
+  content: {
+    flex: 1,
+    backgroundColor: Colors.light.card,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    marginTop: -32,
+    zIndex: 1,
+    shadowColor: Colors.light.shadow,
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 16,
+  },
+  scrollContent: {
+    padding: 24,
+    paddingBottom: 120,
+  },
+  section: {
+    marginBottom: 32,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.light.text,
+    marginBottom: 16,
+    ...Platform.select({
+      ios: {
+        fontFamily: 'System',
+        fontWeight: '700',
+      },
+      android: {
+        fontFamily: 'sans-serif-medium',
+        fontWeight: '700',
+      },
+    }),
+  },
+  amenitiesScrollContainer: {
+    paddingRight: 24,
+  },
+  amenityItem: {
+    alignItems: 'center',
+    backgroundColor: Colors.light.lightGray,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    marginRight: 12,
+    minWidth: 80,
+    shadowColor: Colors.light.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  amenityIcon: {
+    fontSize: 20,
+    marginBottom: 4,
+  },
+  amenityText: {
+    fontSize: 12,
+    color: Colors.light.text,
+    fontWeight: '600',
+    textAlign: 'center',
+    ...Platform.select({
+      ios: {
+        fontFamily: 'System',
+        fontWeight: '600',
+      },
+      android: {
+        fontFamily: 'sans-serif-medium',
+        fontWeight: '600',
+      },
+    }),
+  },
+  descriptionContainer: {
+    position: 'relative',
+  },
   description: {
     fontSize: 16,
-    color: '#6C757D',
-    lineHeight: 24,
+    color: Colors.light.darkGray,
+    lineHeight: 26,
     ...Platform.select({
       ios: {
         fontFamily: 'System',
@@ -536,23 +504,42 @@ const styles = StyleSheet.create({
       },
     }),
   },
+  seeMoreContainer: {
+    marginTop: 8,
+    alignSelf: 'flex-start',
+  },
+  seeMoreText: {
+    fontSize: 16,
+    color: Colors.light.primary,
+    fontWeight: '600',
+    ...Platform.select({
+      ios: {
+        fontFamily: 'System',
+        fontWeight: '600',
+      },
+      android: {
+        fontFamily: 'sans-serif-medium',
+        fontWeight: '600',
+      },
+    }),
+  },
   bottomBar: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    paddingBottom: Platform.OS === 'ios' ? 34 : 16,
+    backgroundColor: Colors.light.card,
+    paddingHorizontal: 24,
+    paddingVertical: 20,
+    paddingBottom: Platform.OS === 'ios' ? 40 : 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowColor: Colors.light.shadow,
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 16,
   },
   priceContainer: {
     flex: 1,
@@ -562,98 +549,67 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
   },
   priceAmount: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#1A1A1A',
+    fontSize: 28,
+    fontWeight: '800',
+    color: Colors.light.text,
     ...Platform.select({
       ios: {
         fontFamily: 'System',
-        fontWeight: '700',
+        fontWeight: '800',
       },
       android: {
-        fontFamily: 'sans-serif-medium',
-        fontWeight: '700',
+        fontFamily: 'sans-serif-black',
+        fontWeight: '800',
       },
     }),
   },
   priceUnit: {
-    fontSize: 16,
-    fontWeight: '400',
-    color: '#1A1A1A',
-    marginLeft: 2,
+    fontSize: 18,
+    fontWeight: '500',
+    color: Colors.light.darkGray,
+    marginLeft: 4,
     ...Platform.select({
       ios: {
         fontFamily: 'System',
-        fontWeight: '400',
+        fontWeight: '500',
       },
       android: {
-        fontFamily: 'sans-serif',
-        fontWeight: '400',
+        fontFamily: 'sans-serif-medium',
+        fontWeight: '500',
       },
     }),
   },
-  buttonContainer: {
-    flexDirection: 'row',
-    gap: 12,
+  bookButton: {
+    borderRadius: 16,
+    shadowColor: Colors.light.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
-  actionButton: {
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  viewMoreButton: {
-    backgroundColor: '#FF4444',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-  },
-  mapsButton: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#FF4444',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  buttonContent: {
+  bookButtonContent: {
+    backgroundColor: Colors.light.primary,
+    paddingHorizontal: 32,
+    paddingVertical: 16,
+    borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
   },
-  viewMoreText: {
+  bookButtonText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
+    fontWeight: '700',
+    color: Colors.light.white,
     ...Platform.select({
       ios: {
         fontFamily: 'System',
-        fontWeight: '600',
+        fontWeight: '700',
       },
       android: {
         fontFamily: 'sans-serif-medium',
-        fontWeight: '600',
+        fontWeight: '700',
       },
     }),
-  },
-  mapsText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FF4444',
-    ...Platform.select({
-      ios: {
-        fontFamily: 'System',
-        fontWeight: '600',
-      },
-      android: {
-        fontFamily: 'sans-serif-medium',
-        fontWeight: '600',
-      },
-    }),
-  },
-  mapsIcon: {
-    fontSize: 16,
   },
 });
 
