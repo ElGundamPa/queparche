@@ -24,6 +24,8 @@ import Animated, {
   withSpring,
   withTiming,
   withDelay,
+  useAnimatedScrollHandler,
+  interpolate,
   Easing,
 } from "react-native-reanimated";
 import { BlurView } from "expo-blur";
@@ -41,6 +43,7 @@ import Logo3VB from "@/components/Logo3VB";
 import PatchCard from "@/components/PatchCard";
 import PatchDetailModal from "@/components/PatchDetailModal";
 import theme from "@/lib/theme";
+import useStaggeredFade from "@/lib/useStaggeredFade";
 import { categories } from "@/mocks/categories";
 import { useFilteredPlans, usePlansStore, useTopPlans } from "@/hooks/use-plans-store";
 import { useUserStore } from "@/hooks/use-user-store";
@@ -102,6 +105,14 @@ export default function HomeScreen() {
   const blurIntensity = useSharedValue(0);
   const modalScale = useSharedValue(0.8);
   const modalOpacity = useSharedValue(0);
+
+  // Parallax global
+  const scrollY = useSharedValue(0);
+  const onScroll = useAnimatedScrollHandler({
+    onScroll: (e) => {
+      scrollY.value = e.contentOffset.y;
+    },
+  });
 
   // Datos de parches de ejemplo - Más parches para mejor experiencia
   const patches: Patch[] = [
@@ -245,7 +256,9 @@ export default function HomeScreen() {
   // Estilos animados
   const headerStyle = useAnimatedStyle(() => ({
     opacity: headerOpacity.value,
-    transform: [{ translateY: headerTranslateY.value }],
+    transform: [
+      { translateY: headerTranslateY.value + interpolate(scrollY.value, [0, 120], [0, -40], 'clamp') },
+    ],
   }));
 
   const searchStyle = useAnimatedStyle(() => ({
@@ -317,6 +330,9 @@ export default function HomeScreen() {
     return sectionList;
   }, [patches, todayEvents, topPlans, filteredPlans]);
 
+  // Stagger para cards de parches del header de parches
+  const { styles: patchStaggerStyles, start: startPatchStagger } = useStaggeredFade(patches.length, 60, 280);
+
   const renderSection: ListRenderItem<SectionType> = ({ item }) => {
     switch (item.type) {
       case 'header':
@@ -382,16 +398,15 @@ export default function HomeScreen() {
               contentContainerStyle={styles.patchesScroll}
             >
                   {item.data.map((patch, index) => (
-                    <View 
-                      key={patch.id}
-                      style={styles.patchCardContainer}
-                    >
-                      <PatchCard
-                        patch={patch}
-                        onPress={() => handlePatchPress(patch)}
-                        delay={index * 50}
-                      />
-                    </View>
+                    <Animated.View key={patch.id} style={patchStaggerStyles[index]}>
+                      <View style={styles.patchCardContainer}>
+                        <PatchCard
+                          patch={patch}
+                          onPress={() => handlePatchPress(patch)}
+                          delay={index * 50}
+                        />
+                      </View>
+                    </Animated.View>
                   ))}
             </ScrollView>
             <View style={styles.seeAllContainer}>
@@ -586,12 +601,14 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      <FlatList
+      <Animated.FlatList
         data={sections}
         keyExtractor={(item, index) => `${item.type}-${index}`}
         renderItem={renderSection}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.contentContainer}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
       />
 
       {/* Floating Action Button */}

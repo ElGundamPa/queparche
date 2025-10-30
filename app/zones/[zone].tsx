@@ -1,13 +1,14 @@
 import React, { useMemo, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
-import Colors from '@/constants/colors';
+import theme from '@/lib/theme';
 import { ZONES, MEDELLIN_COMUNAS } from '@/data/zones';
-import { FlashList } from '@shopify/flash-list';
 import AreaCard from '@/components/AreaCard';
 import { useFilters } from '@/store/filters';
 import { Image as ExpoImage, type ImageSource } from 'expo-image';
 import { ArrowLeft } from 'lucide-react-native';
+import Animated, { useSharedValue, useAnimatedScrollHandler, useAnimatedStyle, interpolate } from 'react-native-reanimated';
+import useStaggeredFade from '@/lib/useStaggeredFade';
 
 function extractUri(src?: ImageSource): string | undefined {
   if (!src) return undefined;
@@ -19,6 +20,7 @@ function extractUri(src?: ImageSource): string | undefined {
 export default function ZoneDetail() {
   const { zone } = useLocalSearchParams<{ zone: string }>();
   const router = useRouter();
+  const { width } = Dimensions.get('window');
 
   const zoneKey = useMemo(() => String(zone || '').toLowerCase().trim(), [zone]);
   const zoneItem = useMemo(() => ZONES.find((z) => String(z.key).toLowerCase().trim() === zoneKey), [zoneKey]);
@@ -32,7 +34,6 @@ export default function ZoneDetail() {
     if (zoneKey !== 'medellin') return;
     try {
       const first = MEDELLIN_COMUNAS.slice(0, 6);
-      console.log('[ZoneDetail] prefetch comunas images', first.map((a) => a.key));
       first.forEach((a) => {
         const uri = extractUri(a.image);
         if (uri) {
@@ -62,7 +63,7 @@ export default function ZoneDetail() {
           <View style={{ height: 12 }} />
           <Text style={styles.empty}>Verifica tu conexión o vuelve a intentarlo.</Text>
           <View style={{ height: 20 }} />
-          <Text onPress={() => router.back()} style={{ color: '#FF3B30', fontWeight: '700' }} accessibilityRole="button">
+          <Text onPress={() => router.back()} style={{ color: theme.colors.primary, fontWeight: '700' }} accessibilityRole="button">
             ← Volver
           </Text>
         </View>
@@ -70,51 +71,60 @@ export default function ZoneDetail() {
     );
   }
 
+  // Parallax y stagger
+  const scrollY = useSharedValue(0);
+  const onScroll = useAnimatedScrollHandler({
+    onScroll: (e) => { scrollY.value = e.contentOffset.y; },
+  });
+  const headerStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: interpolate(scrollY.value, [0, 120], [0, -40], 'clamp') }],
+  }));
+
+  const { styles: staggerStyles, start: startStagger } = useStaggeredFade(areas.length, 60, 280);
+  useEffect(() => { startStagger(); }, [areas.length]);
+
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ title: zoneItem.name }} />
-      
-      {/* Header with back button */}
-      <View style={styles.header}>
+
+      {/* Header con back y parallax */}
+      <Animated.View style={[styles.header, headerStyle]}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}
           testID="back-button"
         >
-          <ArrowLeft size={24} color={Colors.light.text} />
+          <ArrowLeft size={24} color={theme.colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{zoneItem.name}</Text>
         <View style={styles.placeholder} />
-      </View>
+      </Animated.View>
 
-      <FlashList
-        data={areas}
-        numColumns={2}
-        estimatedItemSize={150}
-        keyExtractor={(i) => i.key}
+      <Animated.ScrollView
         contentContainerStyle={styles.listContent}
-        renderItem={({ item }) => (
-          <View style={styles.col}>
-            <AreaCard
-              title={item.name}
-              image={item.image}
-              onPress={() => onAreaPress(item.key)}
-              testID={`area-${item.key}`}
-            />
-          </View>
-        )}
-        ListEmptyComponent={() => (
-          <View style={{ padding: 20 }}>
-            <Text style={styles.empty}>Pronto verás los barrios y sectores de {zoneItem?.name ?? 'esta zona'}.</Text>
-          </View>
-        )}
-      />
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.grid}>
+          {areas.map((item, index) => (
+            <Animated.View key={item.key} style={[styles.col, staggerStyles[index]]}>
+              <AreaCard
+                title={item.name}
+                image={item.image}
+                onPress={() => onAreaPress(item.key)}
+                testID={`area-${item.key}`}
+              />
+            </Animated.View>
+          ))}
+        </View>
+      </Animated.ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.light.background },
+  container: { flex: 1, backgroundColor: theme.colors.background },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -122,15 +132,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 16,
-    backgroundColor: Colors.light.background,
+    backgroundColor: theme.colors.background,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.light.border,
+    borderBottomColor: theme.colors.border,
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.light.card,
+    backgroundColor: theme.colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -142,12 +152,13 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: Colors.light.text,
+    color: theme.colors.textPrimary,
   },
   placeholder: {
     width: 40,
   },
-  listContent: { padding: 16, gap: 12 },
+  listContent: { padding: 16 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -6 },
   col: { width: '50%', padding: 6 },
-  empty: { color: Colors.light.darkGray, fontSize: 14 },
+  empty: { color: theme.colors.textSecondary, fontSize: 14 },
 });
