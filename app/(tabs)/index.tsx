@@ -253,6 +253,11 @@ export default function HomeScreen() {
     searchTranslateY.value = withDelay(200, withSpring(0, { damping: 15, stiffness: 100 }));
   }, []);
 
+  // Lanzar stagger para datasets horizontales
+  useEffect(() => { startPatchStagger(); }, [patches.length]);
+  useEffect(() => { startTopStagger(); }, [topPlans.length]);
+  useEffect(() => { startFilteredStagger(); }, [filteredPlans.length]);
+
   // Estilos animados
   const headerStyle = useAnimatedStyle(() => ({
     opacity: headerOpacity.value,
@@ -330,8 +335,10 @@ export default function HomeScreen() {
     return sectionList;
   }, [patches, todayEvents, topPlans, filteredPlans]);
 
-  // Stagger para cards de parches del header de parches
+  // Stagger para cards
   const { styles: patchStaggerStyles, start: startPatchStagger } = useStaggeredFade(patches.length, 60, 280);
+  const { styles: topStaggerStyles, start: startTopStagger } = useStaggeredFade(topPlans.length, 70, 280);
+  const { styles: filteredStaggerStyles, start: startFilteredStagger } = useStaggeredFade(filteredPlans.length, 70, 280);
 
   const renderSection: ListRenderItem<SectionType> = ({ item }) => {
     switch (item.type) {
@@ -487,7 +494,7 @@ export default function HomeScreen() {
               <HorizontalCards
                 data={item.data}
                 renderItem={({ item: plan, index }) => (
-                  <Animated.View entering={FadeInUp.delay(600 + index * 100)}>
+                  <Animated.View style={topStaggerStyles[index]}>
                     <PlanCard plan={plan} horizontal={true} />
                   </Animated.View>
                 )}
@@ -561,7 +568,7 @@ export default function HomeScreen() {
               <HorizontalCards
                 data={item.data}
                 renderItem={({ item: plan, index }) => (
-                  <Animated.View entering={FadeInUp.delay(900 + index * 100)}>
+                  <Animated.View style={filteredStaggerStyles[index]}>
                     <PlanCard plan={plan} horizontal={true} />
                   </Animated.View>
                 )}
