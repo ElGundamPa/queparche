@@ -17,8 +17,8 @@ import Animated, {
   withSpring,
   withTiming,
   withDelay,
-  withSequence,
   Easing,
+  runOnJS,
 } from 'react-native-reanimated';
 import ParticleSphere from './ParticleSphere';
 
@@ -59,16 +59,14 @@ const LoginScreen = () => {
   }, []);
 
   const handlePhoneLogin = () => {
-    // Microinteracción del botón principal
-    phoneButtonScale.value = withSequence(
-      withTiming(0.95, { duration: 100, easing: Easing.out(Easing.ease) }),
-      withSpring(1, { damping: 15, stiffness: 200 })
-    );
-    phoneButtonOpacity.value = withSequence(
-      withTiming(0.8, { duration: 100 }),
-      withTiming(1, { duration: 200 })
-    );
-    
+    // Microinteracción del botón principal (sin withSequence)
+    phoneButtonScale.value = withTiming(0.95, { duration: 100, easing: Easing.out(Easing.ease) }, () => {
+      phoneButtonScale.value = withSpring(1, { damping: 15, stiffness: 200 });
+    });
+    phoneButtonOpacity.value = withTiming(0.8, { duration: 100 }, () => {
+      phoneButtonOpacity.value = withTiming(1, { duration: 200 });
+    });
+
     // Navegar después de la animación
     setTimeout(() => {
       router.push('/(auth)/login-form');
@@ -76,16 +74,14 @@ const LoginScreen = () => {
   };
 
   const handleRegister = () => {
-    // Microinteracción del botón secundario
-    registerButtonScale.value = withSequence(
-      withTiming(0.95, { duration: 100, easing: Easing.out(Easing.ease) }),
-      withSpring(1, { damping: 15, stiffness: 200 })
-    );
-    registerButtonOpacity.value = withSequence(
-      withTiming(0.8, { duration: 100 }),
-      withTiming(1, { duration: 200 })
-    );
-    
+    // Microinteracción del botón secundario (sin withSequence)
+    registerButtonScale.value = withTiming(0.95, { duration: 100, easing: Easing.out(Easing.ease) }, () => {
+      registerButtonScale.value = withSpring(1, { damping: 15, stiffness: 200 });
+    });
+    registerButtonOpacity.value = withTiming(0.8, { duration: 100 }, () => {
+      registerButtonOpacity.value = withTiming(1, { duration: 200 });
+    });
+
     // Navegar después de la animación
     setTimeout(() => {
       router.push('/(auth)/register-form');
