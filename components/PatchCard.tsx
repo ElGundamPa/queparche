@@ -46,6 +46,8 @@ const PatchCard = ({ patch, onPress, delay = 0 }: PatchCardProps) => {
   const translateY = useSharedValue(30);
   const heartScale = useSharedValue(1);
   const shareScale = useSharedValue(1);
+  const heartGlow = useSharedValue(0);
+  const shareGlow = useSharedValue(0);
   const isPressed = useSharedValue(false);
 
   useEffect(() => {
@@ -74,6 +76,7 @@ const PatchCard = ({ patch, onPress, delay = 0 }: PatchCardProps) => {
       withTiming(1.3, { duration: 150, easing: Easing.out(Easing.ease) }),
       withSpring(1, { damping: 15, stiffness: 200 })
     );
+    heartGlow.value = withSequence(withTiming(0.25, { duration: 120 }), withTiming(0, { duration: 180 }));
   };
 
   const handleSharePress = () => {
@@ -81,6 +84,7 @@ const PatchCard = ({ patch, onPress, delay = 0 }: PatchCardProps) => {
       withTiming(1.2, { duration: 150, easing: Easing.out(Easing.ease) }),
       withSpring(1, { damping: 15, stiffness: 200 })
     );
+    shareGlow.value = withSequence(withTiming(0.25, { duration: 120 }), withTiming(0, { duration: 180 }));
   };
 
   const cardStyle = useAnimatedStyle(() => ({
@@ -96,6 +100,8 @@ const PatchCard = ({ patch, onPress, delay = 0 }: PatchCardProps) => {
   const shareStyle = useAnimatedStyle(() => ({
     transform: [{ scale: shareScale.value }],
   }));
+  const heartGlowStyle = useAnimatedStyle(() => ({ opacity: heartGlow.value }));
+  const shareGlowStyle = useAnimatedStyle(() => ({ opacity: shareGlow.value }));
 
   const getPriceColor = (price: string) => {
     switch (price) {
@@ -147,6 +153,7 @@ const PatchCard = ({ patch, onPress, delay = 0 }: PatchCardProps) => {
           {/* Overlay Icons */}
           <View style={styles.overlayIcons}>
             <Animated.View style={heartStyle}>
+              <Animated.View style={[styles.iconGlow, heartGlowStyle]} />
               <TouchableOpacity
                 style={styles.overlayIcon}
                 onPress={handleHeartPress}
@@ -157,6 +164,7 @@ const PatchCard = ({ patch, onPress, delay = 0 }: PatchCardProps) => {
             </Animated.View>
             
             <Animated.View style={shareStyle}>
+              <Animated.View style={[styles.iconGlow, shareGlowStyle]} />
               <TouchableOpacity
                 style={styles.overlayIcon}
                 onPress={handleSharePress}
@@ -268,6 +276,15 @@ const styles = StyleSheet.create({
   },
   overlayIconText: {
     fontSize: 16,
+  },
+  iconGlow: {
+    position: 'absolute',
+    top: -6,
+    left: -6,
+    right: -6,
+    bottom: -6,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 59, 48, 0.25)',
   },
   priceBadge: {
     position: 'absolute',

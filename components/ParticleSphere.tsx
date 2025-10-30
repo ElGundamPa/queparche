@@ -305,10 +305,7 @@ const ParticleSphere = ({ onAnimationStart }: ParticleSphereProps) => {
 
   return (
     <View style={styles.container}>
-      {/* Glow ambiental de fondo */}
-      <Animated.View style={styles.ambientGlow} />
-      
-      {/* Contenedor de partículas optimizado */}
+      {/* Contenedor de partículas (sin overlay ni fondo) */}
       <View style={styles.particleContainer}>
         {particles.map(renderParticle)}
       </View>
@@ -328,18 +325,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 1,
   },
-  ambientGlow: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    borderRadius: 125, // Círculo perfecto
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    shadowColor: '#FFFFFF',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.1,
-    shadowRadius: 50,
-    elevation: 5,
-  },
+  // Eliminado ambientGlow para fondo completamente limpio
   particleContainer: {
     width: '100%',
     height: '100%',

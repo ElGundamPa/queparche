@@ -17,13 +17,14 @@ import Animated, {
   withSpring,
   withTiming,
   withDelay,
-  withSequence,
   Easing,
   interpolate,
-  runOnJS,
+  useAnimatedScrollHandler,
 } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import PatchCard from './PatchCard';
+import theme from '@/lib/theme';
+import useStaggeredFade from '@/lib/useStaggeredFade';
 import PatchDetailModal from './PatchDetailModal';
 
 const { width, height } = Dimensions.get('window');
@@ -61,6 +62,14 @@ const PatchesScreen = () => {
   const blurIntensity = useSharedValue(0);
   const modalScale = useSharedValue(0.8);
   const modalOpacity = useSharedValue(0);
+
+  // Parallax scroll
+  const scrollY = useSharedValue(0);
+  const onScroll = useAnimatedScrollHandler({
+    onScroll: (e) => {
+      scrollY.value = e.contentOffset.y;
+    },
+  });
 
   const categories = [
     { id: 'Todos', name: 'Todos', icon: '🏠' },
@@ -160,8 +169,13 @@ const PatchesScreen = () => {
     return matchesCategory && matchesSearch;
   });
 
+  // Staggered fade para cards
+  const { styles: staggerStyles, start: startStagger } = useStaggeredFade(filteredPatches.length, 80, 260);
+
   // Animaciones de entrada
   useEffect(() => {
+    // iniciar stagger cuando se cargan los ítems
+    startStagger();
     // Secuencia de animaciones de entrada
     headerOpacity.value = withTiming(1, { duration: 600, easing: Easing.out(Easing.ease) });
     headerTranslateY.value = withSpring(0, { damping: 15, stiffness: 100 });
@@ -205,7 +219,9 @@ const PatchesScreen = () => {
   // Estilos animados
   const headerStyle = useAnimatedStyle(() => ({
     opacity: headerOpacity.value,
-    transform: [{ translateY: headerTranslateY.value }],
+    transform: [
+      { translateY: headerTranslateY.value + interpolate(scrollY.value, [0, 120], [0, -40], 'clamp') },
+    ],
   }));
 
   const searchStyle = useAnimatedStyle(() => ({
@@ -234,7 +250,7 @@ const PatchesScreen = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F8F9FA" />
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
       
       {/* Header */}
       <Animated.View style={[styles.header, headerStyle]}>
@@ -301,19 +317,22 @@ const PatchesScreen = () => {
 
       {/* Patches List */}
       <Animated.View style={[styles.patchesContainer, cardsStyle]}>
-        <ScrollView
+        <Animated.ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.patchesScroll}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
         >
           {filteredPatches.map((patch, index) => (
-            <PatchCard
-              key={patch.id}
-              patch={patch}
-              onPress={() => handlePatchPress(patch)}
-              delay={index * 100}
-            />
+            <Animated.View key={patch.id} style={staggerStyles[index]}>
+              <PatchCard
+                patch={patch}
+                onPress={() => handlePatchPress(patch)}
+                delay={index * 60}
+              />
+            </Animated.View>
           ))}
-        </ScrollView>
+        </Animated.ScrollView>
       </Animated.View>
 
       {/* Blur Background */}
@@ -339,7 +358,7 @@ const PatchesScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: theme.colors.background,
   },
   header: {
     paddingTop: Platform.OS === 'ios' ? 50 : 30,
@@ -360,7 +379,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#E9ECEF',
+    backgroundColor: '#1A1A1A',
   },
   headerIcons: {
     flexDirection: 'row',
@@ -370,7 +389,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.surface,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -385,7 +404,7 @@ const styles = StyleSheet.create({
   mainTitle: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#1A1A1A',
+    color: theme.colors.textPrimary,
     letterSpacing: -0.5,
     ...Platform.select({
       ios: {
@@ -405,7 +424,7 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.surface,
     borderRadius: 16,
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -418,12 +437,12 @@ const styles = StyleSheet.create({
   searchIcon: {
     fontSize: 18,
     marginRight: 12,
-    color: '#999',
+    color: theme.colors.textSecondary,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: '#1A1A1A',
+    color: theme.colors.textPrimary,
     ...Platform.select({
       ios: {
         fontFamily: 'System',
@@ -448,7 +467,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.surface,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -456,7 +475,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   categoryButtonActive: {
-    backgroundColor: '#FF4444',
+    backgroundColor: theme.colors.primary,
   },
   categoryIcon: {
     fontSize: 16,
@@ -465,7 +484,7 @@ const styles = StyleSheet.create({
   categoryText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#1A1A1A',
+    color: theme.colors.textPrimary,
     ...Platform.select({
       ios: {
         fontFamily: 'System',
@@ -478,7 +497,7 @@ const styles = StyleSheet.create({
     }),
   },
   categoryTextActive: {
-    color: '#FFFFFF',
+    color: theme.colors.background,
   },
   patchesContainer: {
     flex: 1,

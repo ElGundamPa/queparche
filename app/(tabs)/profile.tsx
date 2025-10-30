@@ -164,15 +164,31 @@ export default function ProfileScreen() {
   const { level, progress } = getLevelInfo(currentUser.points);
 
   // Animación de contenido entre tabs
-  const tabAnim = useSharedValue(1);
-  const contentAnimStyle = useAnimatedStyle(() => ({ opacity: tabAnim.value, transform: [{ translateY: withTiming(tabAnim.value === 1 ? 0 : 8, { duration: 200 }) }] }));
+  const tabOpacity = useSharedValue(1);
+  const tabTranslateY = useSharedValue(0);
+  const contentAnimStyle = useAnimatedStyle(() => ({ opacity: tabOpacity.value, transform: [{ translateY: tabTranslateY.value }] }));
+
+  // Contadores animados
+  const plansCount = useSharedValue(0);
+  const followers = useSharedValue(0);
+  const following = useSharedValue(0);
+  const attended = useSharedValue(0);
+
+  React.useEffect(() => {
+    plansCount.value = withTiming(userPlans.length, { duration: 450 });
+    followers.value = withTiming(currentUser.followersCount, { duration: 450 });
+    following.value = withTiming(currentUser.followingCount, { duration: 450 });
+    attended.value = withTiming(currentUser.plansAttended, { duration: 450 });
+  }, [currentUser, userPlans.length]);
 
   const setTab = (tab: 'plans' | 'favorites' | 'history') => {
-    tabAnim.value = 0;
+    tabOpacity.value = withTiming(0, { duration: 160 });
+    tabTranslateY.value = withTiming(8, { duration: 160 });
     setTimeout(() => {
       setActiveTab(tab);
-      tabAnim.value = withTiming(1, { duration: 240 });
-    }, 80);
+      tabOpacity.value = withTiming(1, { duration: 240 });
+      tabTranslateY.value = withTiming(0, { duration: 240 });
+    }, 100);
   };
 
   const renderPlanItem = ({ item }: { item: any }) => (

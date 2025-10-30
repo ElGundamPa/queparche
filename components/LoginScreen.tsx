@@ -10,7 +10,6 @@ import {
   Image,
 } from 'react-native';
 import theme from '@/lib/theme';
-import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 import Animated, {
   useSharedValue,
@@ -136,11 +135,8 @@ const LoginScreen = () => {
 
       {/* Contenido principal */}
       <View style={styles.content}>
-        {/* Texto de bienvenida con animación */}
+        {/* Texto de bienvenida con animación (fondo limpio, sin overlays) */}
         <Animated.View style={[styles.textContainer, textStyle]}>
-          <Animated.View style={[styles.titleBlur, { opacity: blurOpacity } as any]}>
-            <BlurView intensity={20} tint="dark" style={{ flex: 1, borderRadius: theme.radii.lg }} />
-          </Animated.View>
           <View style={styles.titleContainer}>
             <Text style={styles.welcomeText}>Que Parche</Text>
             <Image
@@ -212,14 +208,7 @@ const styles = StyleSheet.create({
     marginTop: 120, // Ajustado para mejor centrado con la esfera
     position: 'relative',
   },
-  titleBlur: {
-    position: 'absolute',
-    top: -12,
-    bottom: -12,
-    left: -16,
-    right: -16,
-    borderRadius: theme.radii.lg,
-  },
+  // Eliminado blur detrás del título para fondo completamente limpio
   titleContainer: {
     flexDirection: 'row',
     alignItems: 'baseline',
