@@ -8,6 +8,9 @@ interface UseActiveVideoOptions {
   loop?: boolean;
 }
 
+const DEBUG = false; // Cambiar a true para logs de desarrollo
+const PROGRESS_THROTTLE_MS = 120; // Throttling del progreso para reducir renders
+
 /**
  * Hook para manejar la reproducción de videos de forma optimizada
  * Evita re-renders innecesarios y maneja pausa/reproducción automática
@@ -27,32 +30,47 @@ export function useActiveVideo({
   });
 
   const wasActiveRef = useRef(false);
+  const lastProgressUpdateRef = useRef(0);
 
   // Control de reproducción basado en visibilidad
   useEffect(() => {
     if (isActive) {
-      // Video está activo
-      console.log(`[useActiveVideo] Video activo: ${videoUrl.substring(0, 30)}...`);
+      // Video está activo - reanudación segura
+      if (DEBUG) console.log(`[useActiveVideo] Video activo`);
       player.muted = false;
-      if (autoPlay && !wasActiveRef.current) {
-        player.play();
+      
+      if (autoPlay) {
+        // Pausar primero y luego reproducir para evitar "doble play"
+        if (wasActiveRef.current) {
+          player.pause();
+          requestAnimationFrame(() => {
+            player.play();
+          });
+        } else {
+          player.play();
+        }
       }
       wasActiveRef.current = true;
     } else {
       // Video NO está activo - pausar siempre
-      console.log(`[useActiveVideo] Pausando video: ${videoUrl.substring(0, 30)}...`);
+      if (DEBUG) console.log(`[useActiveVideo] Pausando video`);
       player.pause();
       player.muted = true;
       wasActiveRef.current = false;
     }
-  }, [isActive, player, autoPlay, videoUrl]);
+  }, [isActive, player, autoPlay]);
 
-  // Listener para actualizar progreso
+  // Listener para actualizar progreso con throttling
   useEffect(() => {
     const subscription = player.addListener('playbackStatusUpdate', (status: AVPlaybackStatus) => {
       if (status.isLoaded && status.durationMillis) {
-        const newProgress = status.currentTimeMillis / status.durationMillis;
-        setProgress(newProgress);
+        const now = Date.now();
+        // Throttling: solo actualizar cada PROGRESS_THROTTLE_MS
+        if (now - lastProgressUpdateRef.current >= PROGRESS_THROTTLE_MS) {
+          const newProgress = status.currentTimeMillis / status.durationMillis;
+          setProgress(newProgress);
+          lastProgressUpdateRef.current = now;
+        }
       }
     });
 
@@ -61,7 +79,6 @@ export function useActiveVideo({
 
   // Control de velocidad de reproducción
   useEffect(() => {
-    // Intentar cambiar rate (puede no estar soportado en todas las plataformas)
     try {
       // @ts-ignore - playbackRate puede no estar en tipos
       if (player.playbackRate !== undefined) {
@@ -70,7 +87,7 @@ export function useActiveVideo({
       }
     } catch (e) {
       // Rate no soportado en esta plataforma
-      console.log('Playback rate not supported');
+      if (DEBUG) console.log('Playback rate not supported');
     }
   }, [playbackRate, player]);
 

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   Text,
@@ -15,6 +15,7 @@ import * as Haptics from "expo-haptics";
 import { BlurView } from "expo-blur";
 
 import theme from "@/lib/theme";
+import { videoStateManager } from "@/lib/videoStateManager";
 
 const { width, height } = Dimensions.get('window');
 
@@ -44,12 +45,14 @@ export default function CreateScreen() {
   const handleUploadShort = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setModalVisible(false);
+    videoStateManager.pauseAllVideos(); // Pausar todos los videos antes de navegar
     router.push("/create-short");
   };
 
   const handleCreatePlan = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setModalVisible(false);
+    videoStateManager.pauseAllVideos(); // Pausar todos los videos antes de navegar
     // Mantener el formulario de crear plan aquí o navegar a otra pantalla
     // Por ahora mostramos el modal original
     setTimeout(() => {

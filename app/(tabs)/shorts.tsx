@@ -1,5 +1,5 @@
-import React, { useState, useRef, useCallback, memo } from "react";
-import { useFocusEffect } from "@react-navigation/native";
+import React, { useState, useRef, useCallback, memo, useEffect } from "react";
+import { useIsFocused } from "@react-navigation/native";
 import {
   StyleSheet,
   View,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Dimensions,
+  AppState,
 } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import { useRouter } from "expo-router";
@@ -16,6 +17,9 @@ import theme from "@/lib/theme";
 import EmptyState from "@/components/EmptyState";
 import TikTokShortItem from "@/components/TikTokShortItem";
 import { usePlansStore } from "@/hooks/use-plans-store";
+import { videoStateManager } from "@/lib/videoStateManager";
+
+const DEBUG = false; // Cambiar a true para logs de desarrollo
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -23,42 +27,61 @@ export default function ShortsScreen() {
   const router = useRouter();
   const { shorts, isLoading } = usePlansStore();
   const [activeIndex, setActiveIndex] = useState(0);
+  const isScreenFocused = useIsFocused();
+  const lastValidIndexRef = useRef(0);
   const flashListRef = useRef<FlashList<any>>(null);
 
-  // Debug: Log shorts data
-  console.log('=== TIKTOK SHORTS DEBUG ===');
-  console.log('Shorts data:', shorts);
-  console.log('Shorts length:', shorts?.length);
-  console.log('Is loading:', isLoading);
-  console.log('Active index:', activeIndex);
-  if (shorts && shorts.length > 0) {
-    console.log('First short:', shorts[0]);
-    console.log('All short IDs:', shorts.map(s => s.id));
-  }
-  console.log('===========================');
+  // Log de inicialización
+  useEffect(() => {
+    console.log('🛡️ Shorts hardening applied: isFocused, appState, throttleMs (120ms)');
+  }, []);
 
-  // Pausar todos los videos cuando se sale de la pantalla
-  useFocusEffect(
-    useCallback(() => {
-      // Cuando se enfoca la pantalla, no hacer nada especial
-      console.log('Shorts screen focused');
-      
-      return () => {
-        // Cuando se desenfoca la pantalla, pausar todos los videos
-        console.log('Shorts screen unfocused - pausing all videos');
-        // Forzar pausa de todos los videos estableciendo activeIndex a -1
-        setActiveIndex(-1);
-      };
-    }, [])
-  );
+  // Pausar todos los videos cuando la pantalla pierde foco
+  useEffect(() => {
+    if (!isScreenFocused) {
+      if (DEBUG) console.log('[Shorts] Screen unfocused - pausing videos');
+      setActiveIndex(-1);
+      lastValidIndexRef.current = activeIndex;
+    } else if (lastValidIndexRef.current >= 0) {
+      // Restaurar último índice válido al volver
+      if (DEBUG) console.log('[Shorts] Screen focused - restoring index:', lastValidIndexRef.current);
+      setActiveIndex(lastValidIndexRef.current);
+    }
+  }, [isScreenFocused, activeIndex]);
+
+  // Suscribirse a eventos globales de pausa (AppState)
+  useEffect(() => {
+    const handleGlobalPause = () => {
+      if (DEBUG) console.log('[Shorts] Global pause event received');
+      setActiveIndex(-1);
+    };
+
+    videoStateManager.on('GLOBAL_PAUSE_VIDEOS', handleGlobalPause);
+    return () => videoStateManager.off('GLOBAL_PAUSE_VIDEOS', handleGlobalPause);
+  }, []);
+
+  // AppState listener para pausar en background
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'background' || nextAppState === 'inactive') {
+        if (DEBUG) console.log('[Shorts] App going to background - pausing videos');
+        videoStateManager.pauseAllVideos();
+      }
+    });
+
+    return () => subscription?.remove();
+  }, []);
 
   const handleViewableItemsChanged = useCallback(({ viewableItems }: any) => {
-    if (viewableItems.length > 0) {
+    if (viewableItems.length > 0 && isScreenFocused) {
       const newIndex = viewableItems[0].index || 0;
-      setActiveIndex(newIndex);
-      console.log('Active video changed to:', newIndex, shorts[newIndex]?.placeName);
+      if (newIndex !== activeIndex) {
+        setActiveIndex(newIndex);
+        lastValidIndexRef.current = newIndex;
+        if (DEBUG) console.log('[Shorts] Active video changed to:', newIndex);
+      }
     }
-  }, [shorts]);
+  }, [shorts, isScreenFocused, activeIndex]);
 
   // Configuración optimizada para viewability
   const viewabilityConfigRef = useRef({
@@ -67,19 +90,19 @@ export default function ShortsScreen() {
   });
 
   const handleLike = useCallback((id: string) => {
-    console.log('Like short:', id);
+    if (DEBUG) console.log('[Shorts] Like short:', id);
   }, []);
 
   const handleComment = useCallback((id: string) => {
-    console.log('Comment short:', id);
+    if (DEBUG) console.log('[Shorts] Comment short:', id);
   }, []);
 
   const handleSave = useCallback((id: string) => {
-    console.log('Save short:', id);
+    if (DEBUG) console.log('[Shorts] Save short:', id);
   }, []);
 
   const handleShare = useCallback((id: string) => {
-    console.log('Share short:', id);
+    if (DEBUG) console.log('[Shorts] Share short:', id);
   }, []);
 
   const ShortAnimatedItem = memo(({ item, isActive }: { item: any; isActive: boolean }) => {
@@ -99,9 +122,9 @@ export default function ShortsScreen() {
   });
 
   const renderItem = useCallback(({ item, index }: { item: any; index: number }) => {
-    const isActive = index === activeIndex;
+    const isActive = isScreenFocused && index === activeIndex;
     return <ShortAnimatedItem item={item} isActive={isActive} />;
-  }, [activeIndex, handleLike, handleComment, handleSave, handleShare]);
+  }, [activeIndex, isScreenFocused, handleLike, handleComment, handleSave, handleShare]);
 
   const keyExtractor = useCallback((item: any) => item.id, []);
 
