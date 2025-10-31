@@ -71,6 +71,7 @@ export default function CreateScreen() {
                   style={styles.primaryButton}
                 >
                   <Text style={styles.primaryButtonText}>🎥 Subir Parche</Text>
+                  <Text style={styles.primaryButtonSubtext}>Video corto con ubicación</Text>
                 </Pressable>
 
                 <Pressable
@@ -78,6 +79,7 @@ export default function CreateScreen() {
                   style={styles.secondaryButton}
                 >
                   <Text style={styles.secondaryButtonText}>📍 Crear Parche</Text>
+                  <Text style={styles.secondaryButtonSubtext}>Plan con ubicación y detalles</Text>
                 </Pressable>
 
                 <Pressable onPress={handleClose} style={styles.cancelButton}>
@@ -137,6 +139,11 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 16,
   },
+  primaryButtonSubtext: {
+    color: "rgba(255, 255, 255, 0.8)",
+    fontSize: 12,
+    marginTop: 4,
+  },
   secondaryButton: {
     backgroundColor: theme.colors.surface,
     borderRadius: 14,
@@ -151,6 +158,11 @@ const styles = StyleSheet.create({
     color: theme.colors.textPrimary,
     fontWeight: "600",
     fontSize: 16,
+  },
+  secondaryButtonSubtext: {
+    color: theme.colors.textSecondary,
+    fontSize: 12,
+    marginTop: 4,
   },
   cancelButton: {
     marginTop: 20,

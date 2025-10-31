@@ -138,6 +138,15 @@ export default function ShortsScreen() {
   }, []);
 
   const ShortAnimatedItem = memo(({ item, isActive }: { item: any; isActive: boolean }) => {
+    // Validar que el item exista antes de renderizar
+    if (!item || !item.id) {
+      return (
+        <View style={{ height: SCREEN_HEIGHT, justifyContent: 'center', alignItems: 'center' }}>
+          <Text style={{ color: theme.colors.textSecondary }}>Item no disponible</Text>
+        </View>
+      );
+    }
+
     return (
       <View style={{ height: SCREEN_HEIGHT }}>
         <TikTokShortItem
@@ -152,6 +161,8 @@ export default function ShortsScreen() {
       </View>
     );
   });
+
+  ShortAnimatedItem.displayName = 'ShortAnimatedItem';
 
   const renderItem = useCallback(({ item, index }: { item: any; index: number }) => {
     const isActive = isScreenFocused && index === activeIndex;

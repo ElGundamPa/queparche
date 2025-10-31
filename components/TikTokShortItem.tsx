@@ -45,9 +45,18 @@ const TikTokShortItem: React.FC<TikTokShortItemProps> = ({
   // Debug: Log cuando isActive cambia
   React.useEffect(() => {
     if (DEBUG_ITEM) {
-      console.log(`[TikTokShortItem] ${item.placeName} - isActive: ${isActive}, isPaused: ${isPaused}`);
+      console.log(`[TikTokShortItem] ${item?.placeName || 'Unknown'} - isActive: ${isActive}, isPaused: ${isPaused}`);
     }
-  }, [isActive, isPaused, item.placeName]);
+  }, [isActive, isPaused, item?.placeName]);
+
+  // Validar que el item tenga las propiedades necesarias
+  if (!item || !item.videoUrl) {
+    return (
+      <View style={styles.container}>
+        <Text style={{ color: 'white', textAlign: 'center' }}>Error: Video no disponible</Text>
+      </View>
+    );
+  }
 
   // Hook optimizado para manejo de video
   // Pasar isActive directamente (sin considerar isPaused aquí, el hook lo maneja)

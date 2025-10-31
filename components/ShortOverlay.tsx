@@ -56,9 +56,9 @@ export const ShortOverlay = memo(({
         entering={FadeInUp.delay(200).duration(300).easing(Easing.out(Easing.cubic))}
         style={styles.descriptionContainer}
       >
-        <Text style={styles.placeName} numberOfLines={1}>{short.placeName}</Text>
-        <Text style={styles.description} numberOfLines={2}>{short.description}</Text>
-        <Text style={styles.hashtag}>#{short.category}</Text>
+        <Text style={styles.placeName} numberOfLines={1}>{short?.placeName || 'Sin nombre'}</Text>
+        <Text style={styles.description} numberOfLines={2}>{short?.description || ''}</Text>
+        <Text style={styles.hashtag}>#{short?.category || 'general'}</Text>
       </Animated.View>
 
       {/* Íconos de interacción (derecha) */}
@@ -70,7 +70,7 @@ export const ShortOverlay = memo(({
         <Animated.View style={likeAnimation.style}>
           <TouchableOpacity
             style={styles.actionButton}
-            onPress={() => onLike(short.id)}
+            onPress={() => onLike(short?.id || '')}
             onPressIn={likeAnimation.onPressIn}
             onPressOut={likeAnimation.onPressOut}
           >
@@ -79,7 +79,7 @@ export const ShortOverlay = memo(({
               color={isLiked ? "#FF3B30" : "white"}
               fill={isLiked ? "#FF3B30" : "transparent"}
             />
-            <Text style={styles.actionCount}>{short.likes}</Text>
+            <Text style={styles.actionCount}>{short?.likes || 0}</Text>
           </TouchableOpacity>
         </Animated.View>
 
@@ -87,12 +87,12 @@ export const ShortOverlay = memo(({
         <Animated.View style={commentAnimation.style}>
           <TouchableOpacity
             style={styles.actionButton}
-            onPress={() => onComment(short.id)}
+            onPress={() => onComment(short?.id || '')}
             onPressIn={commentAnimation.onPressIn}
             onPressOut={commentAnimation.onPressOut}
           >
             <MessageCircle size={24} color="white" />
-            <Text style={styles.actionCount}>{short.comments}</Text>
+            <Text style={styles.actionCount}>{short?.comments || 0}</Text>
           </TouchableOpacity>
         </Animated.View>
 
@@ -100,7 +100,7 @@ export const ShortOverlay = memo(({
         <Animated.View style={saveAnimation.style}>
           <TouchableOpacity
             style={styles.actionButton}
-            onPress={() => onSave(short.id)}
+            onPress={() => onSave(short?.id || '')}
             onPressIn={saveAnimation.onPressIn}
             onPressOut={saveAnimation.onPressOut}
           >
@@ -109,7 +109,7 @@ export const ShortOverlay = memo(({
               color={isSaved ? "#FF3B30" : "white"}
               fill={isSaved ? "#FF3B30" : "transparent"}
             />
-            <Text style={styles.actionCount}>{short.favorites}</Text>
+            <Text style={styles.actionCount}>{short?.favorites || 0}</Text>
           </TouchableOpacity>
         </Animated.View>
 
@@ -117,7 +117,7 @@ export const ShortOverlay = memo(({
         <Animated.View style={shareAnimation.style}>
           <TouchableOpacity
             style={styles.actionButton}
-            onPress={() => onShare(short.id)}
+            onPress={() => onShare(short?.id || '')}
             onPressIn={shareAnimation.onPressIn}
             onPressOut={shareAnimation.onPressOut}
           >
