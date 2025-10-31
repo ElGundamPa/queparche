@@ -5,10 +5,10 @@ import {
   View,
   Text,
   TouchableOpacity,
-  FlatList,
   ActivityIndicator,
   Dimensions,
 } from "react-native";
+import { FlashList } from "@shopify/flash-list";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Plus } from "lucide-react-native";
@@ -25,7 +25,7 @@ export default function ShortsScreen() {
   const router = useRouter();
   const { shorts, isLoading } = usePlansStore();
   const [activeIndex, setActiveIndex] = useState(0);
-  const flatListRef = useRef<FlatList>(null);
+  const flashListRef = useRef<FlashList<any>>(null);
 
   // Debug: Log shorts data
   console.log('=== TIKTOK SHORTS DEBUG ===');
@@ -91,15 +91,6 @@ export default function ShortsScreen() {
 
   const keyExtractor = useCallback((item: any) => item.id, []);
 
-  const getItemLayout = useCallback(
-    (_: any, index: number) => ({
-      length: SCREEN_HEIGHT,
-      offset: SCREEN_HEIGHT * index,
-      index,
-    }),
-    []
-  );
-
   const handleCreatePress = () => {
     Toast.show({
       type: "success",
@@ -134,12 +125,12 @@ export default function ShortsScreen() {
       <StatusBar style="light" />
       
 
-      <FlatList
-        ref={flatListRef}
+      <FlashList
+        ref={flashListRef}
         data={shorts}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
-        getItemLayout={getItemLayout}
+        estimatedItemSize={SCREEN_HEIGHT}
         pagingEnabled={true}
         showsVerticalScrollIndicator={false}
         snapToInterval={SCREEN_HEIGHT}
@@ -148,16 +139,16 @@ export default function ShortsScreen() {
         viewabilityConfig={viewabilityConfigRef.current}
         onViewableItemsChanged={handleViewableItemsChanged}
         removeClippedSubviews={false}
-        maxToRenderPerBatch={2}
-        windowSize={3}
-        initialNumToRender={2}
+        maxToRenderPerBatch={4}
+        windowSize={5}
+        initialNumToRender={3}
         scrollEventThrottle={16}
-        maintainVisibleContentPosition={null}
         testID="tiktok-shorts-list"
+        drawDistance={SCREEN_HEIGHT * 2}
       />
 
       {/* Botón de crear */}
-      <View style={styles.createButtonContainer} pointerEvents="box-only">
+      <View style={styles.createButtonContainer} pointerEvents="box-none">
         <TouchableOpacity style={styles.createButton} onPress={handleCreatePress}>
           <Plus size={28} color="white" />
         </TouchableOpacity>
@@ -191,8 +182,8 @@ const styles = StyleSheet.create({
   },
   createButtonContainer: {
     position: "absolute",
-    bottom: 80,
-    right: 15,
+    bottom: 25,
+    alignSelf: "center",
     zIndex: 100,
   },
   createButton: {
@@ -202,10 +193,10 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: '#000',
+    shadowColor: '#FF3B30',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 10,
   },
 });
