@@ -66,16 +66,32 @@ export default function ShortsScreen() {
     minimumViewTime: 100,
   });
 
+  const handleLike = useCallback((id: string) => {
+    console.log('Like short:', id);
+  }, []);
+
+  const handleComment = useCallback((id: string) => {
+    console.log('Comment short:', id);
+  }, []);
+
+  const handleSave = useCallback((id: string) => {
+    console.log('Save short:', id);
+  }, []);
+
+  const handleShare = useCallback((id: string) => {
+    console.log('Share short:', id);
+  }, []);
+
   const ShortAnimatedItem = memo(({ item, isActive }: { item: any; isActive: boolean }) => {
     return (
       <View style={{ height: SCREEN_HEIGHT }}>
         <TikTokShortItem
           item={item}
           isActive={isActive}
-          onLike={() => {}}
-          onComment={() => {}}
-          onSave={() => {}}
-          onShare={() => {}}
+          onLike={handleLike}
+          onComment={handleComment}
+          onSave={handleSave}
+          onShare={handleShare}
           onTap={() => {}}
         />
       </View>
@@ -85,7 +101,7 @@ export default function ShortsScreen() {
   const renderItem = useCallback(({ item, index }: { item: any; index: number }) => {
     const isActive = index === activeIndex;
     return <ShortAnimatedItem item={item} isActive={isActive} />;
-  }, [activeIndex]);
+  }, [activeIndex, handleLike, handleComment, handleSave, handleShare]);
 
   const keyExtractor = useCallback((item: any) => item.id, []);
 
@@ -103,7 +119,7 @@ export default function ShortsScreen() {
       <View style={styles.emptyContainer}>
         <EmptyState
           type="shorts"
-          onAction={handleCreatePress}
+          onAction={() => router.push('/create')}
         />
       </View>
     );

@@ -30,20 +30,22 @@ export function useActiveVideo({
 
   // Control de reproducción basado en visibilidad
   useEffect(() => {
-    if (isActive && !wasActiveRef.current) {
-      // Video acaba de volverse activo
+    if (isActive) {
+      // Video está activo
+      console.log(`[useActiveVideo] Video activo: ${videoUrl.substring(0, 30)}...`);
       player.muted = false;
-      if (autoPlay) {
+      if (autoPlay && !wasActiveRef.current) {
         player.play();
       }
       wasActiveRef.current = true;
-    } else if (!isActive && wasActiveRef.current) {
-      // Video acaba de dejar de ser activo
+    } else {
+      // Video NO está activo - pausar siempre
+      console.log(`[useActiveVideo] Pausando video: ${videoUrl.substring(0, 30)}...`);
       player.pause();
       player.muted = true;
       wasActiveRef.current = false;
     }
-  }, [isActive, player, autoPlay]);
+  }, [isActive, player, autoPlay, videoUrl]);
 
   // Listener para actualizar progreso
   useEffect(() => {
