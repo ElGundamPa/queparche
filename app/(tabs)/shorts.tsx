@@ -9,9 +9,11 @@ import {
   Dimensions,
 } from "react-native";
 import { FlashList } from "@shopify/flash-list";
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from "react-native-reanimated";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Plus } from "lucide-react-native";
+import * as Haptics from "expo-haptics";
 import Toast from "react-native-toast-message";
 
 import theme from "@/lib/theme";
@@ -26,6 +28,12 @@ export default function ShortsScreen() {
   const { shorts, isLoading } = usePlansStore();
   const [activeIndex, setActiveIndex] = useState(0);
   const flashListRef = useRef<FlashList<any>>(null);
+  
+  // Animación del botón de upload
+  const buttonScale = useSharedValue(1);
+  const buttonStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: buttonScale.value }],
+  }));
 
   // Debug: Log shorts data
   console.log('=== TIKTOK SHORTS DEBUG ===');
@@ -92,6 +100,14 @@ export default function ShortsScreen() {
   const keyExtractor = useCallback((item: any) => item.id, []);
 
   const handleCreatePress = () => {
+    // Animación de rebote
+    buttonScale.value = withSpring(0.9, {}, () => {
+      buttonScale.value = withSpring(1);
+    });
+    
+    // Haptic feedback
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
     Toast.show({
       type: "success",
       text1: "¡Crear Short!",
@@ -149,9 +165,11 @@ export default function ShortsScreen() {
 
       {/* Botón de crear */}
       <View style={styles.createButtonContainer} pointerEvents="box-none">
-        <TouchableOpacity style={styles.createButton} onPress={handleCreatePress}>
-          <Plus size={28} color="white" />
-        </TouchableOpacity>
+        <Animated.View style={buttonStyle}>
+          <TouchableOpacity style={styles.createButton} onPress={handleCreatePress}>
+            <Plus size={28} color="white" />
+          </TouchableOpacity>
+        </Animated.View>
       </View>
     </View>
   );

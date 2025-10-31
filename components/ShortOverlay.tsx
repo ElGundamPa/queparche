@@ -75,7 +75,7 @@ export const ShortOverlay = memo(({
             onPressOut={likeAnimation.onPressOut}
           >
             <Heart
-              size={26}
+              size={24}
               color={isLiked ? "#FF3B30" : "white"}
               fill={isLiked ? "#FF3B30" : "transparent"}
             />
@@ -91,7 +91,7 @@ export const ShortOverlay = memo(({
             onPressIn={commentAnimation.onPressIn}
             onPressOut={commentAnimation.onPressOut}
           >
-            <MessageCircle size={26} color="white" />
+            <MessageCircle size={24} color="white" />
             <Text style={styles.actionCount}>{short.comments}</Text>
           </TouchableOpacity>
         </Animated.View>
@@ -105,7 +105,7 @@ export const ShortOverlay = memo(({
             onPressOut={saveAnimation.onPressOut}
           >
             <Bookmark
-              size={26}
+              size={24}
               color={isSaved ? "#FF3B30" : "white"}
               fill={isSaved ? "#FF3B30" : "transparent"}
             />
@@ -121,7 +121,7 @@ export const ShortOverlay = memo(({
             onPressIn={shareAnimation.onPressIn}
             onPressOut={shareAnimation.onPressOut}
           >
-            <Share size={26} color="white" />
+            <Share size={24} color="white" />
           </TouchableOpacity>
         </Animated.View>
       </Animated.View>
@@ -167,14 +167,14 @@ const styles = StyleSheet.create({
     right: 14,
     bottom: 100,
     alignItems: "center",
-    gap: 20,
+    gap: 26,
   },
   actionButton: {
     alignItems: "center",
   },
   actionCount: {
-    color: "white",
-    fontSize: 12,
+    color: "#D9D9D9",
+    fontSize: 11,
     fontWeight: "600",
     marginTop: 4,
   },

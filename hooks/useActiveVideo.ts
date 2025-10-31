@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
-import { useVideoPlayer } from 'expo-video';
+import { useEffect, useRef, useState } from 'react';
+import { useVideoPlayer, AVPlaybackStatus } from 'expo-video';
 
 interface UseActiveVideoOptions {
   videoUrl: string;
@@ -18,6 +18,9 @@ export function useActiveVideo({
   autoPlay = true,
   loop = true 
 }: UseActiveVideoOptions) {
+  const [progress, setProgress] = useState(0);
+  const [playbackRate, setPlaybackRate] = useState(1);
+  
   const player = useVideoPlayer(videoUrl, (player) => {
     player.loop = loop;
     player.muted = false;
@@ -42,6 +45,33 @@ export function useActiveVideo({
     }
   }, [isActive, player, autoPlay]);
 
+  // Listener para actualizar progreso
+  useEffect(() => {
+    const subscription = player.addListener('playbackStatusUpdate', (status: AVPlaybackStatus) => {
+      if (status.isLoaded && status.durationMillis) {
+        const newProgress = status.currentTimeMillis / status.durationMillis;
+        setProgress(newProgress);
+      }
+    });
+
+    return () => subscription?.remove();
+  }, [player]);
+
+  // Control de velocidad de reproducción
+  useEffect(() => {
+    // Intentar cambiar rate (puede no estar soportado en todas las plataformas)
+    try {
+      // @ts-ignore - playbackRate puede no estar en tipos
+      if (player.playbackRate !== undefined) {
+        // @ts-ignore
+        player.playbackRate = playbackRate;
+      }
+    } catch (e) {
+      // Rate no soportado en esta plataforma
+      console.log('Playback rate not supported');
+    }
+  }, [playbackRate, player]);
+
   const togglePlayPause = () => {
     if (player.playing) {
       player.pause();
@@ -53,6 +83,8 @@ export function useActiveVideo({
   const pause = () => player.pause();
   const play = () => player.play();
 
+  const setSpeed = (rate: number) => setPlaybackRate(rate);
+
   return {
     player,
     togglePlayPause,
@@ -60,6 +92,9 @@ export function useActiveVideo({
     play,
     isPlaying: player.playing,
     isPaused: !player.playing,
+    progress,
+    playbackRate,
+    setSpeed,
   };
 }
 
