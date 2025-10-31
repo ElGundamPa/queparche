@@ -9,14 +9,15 @@ import {
 } from "react-native";
 import { VideoView, useVideoPlayer } from "expo-video";
 import Animated, {
-  FadeIn,
-  SlideInUp,
-  SlideOutDown,
+  FadeInUp,
+  Easing,
 } from "react-native-reanimated";
+import { LinearGradient } from "expo-linear-gradient";
 import { Heart, MessageCircle, Bookmark, Share } from "lucide-react-native";
 
 import Colors from "@/constants/colors";
 import { Short } from "@/types/plan";
+import { scaleTap } from "@/lib/animations";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -83,12 +84,15 @@ const TikTokShortItem: React.FC<TikTokShortItemProps> = ({
     onSave(item.id);
   };
 
+  // Animación scaleTap para cada botón
+  const likeAnimation = scaleTap(0.9);
+  const commentAnimation = scaleTap(0.9);
+  const saveAnimation = scaleTap(0.9);
+  const shareAnimation = scaleTap(0.9);
+
   return (
-    <Animated.View
-      entering={FadeIn.duration(300)}
-      style={styles.container}
-    >
-      {/* Video */}
+    <View style={styles.container}>
+      {/* Video de fondo */}
       <TouchableOpacity
         style={styles.videoContainer}
         activeOpacity={1}
@@ -104,7 +108,7 @@ const TikTokShortItem: React.FC<TikTokShortItemProps> = ({
         {/* Overlay de pausa */}
         {isPaused && (
           <Animated.View
-            entering={FadeIn.duration(200)}
+            entering={FadeInUp.duration(200).easing(Easing.out(Easing.cubic))}
             style={styles.pauseOverlay}
           >
             <View style={styles.pauseIcon}>
@@ -115,72 +119,88 @@ const TikTokShortItem: React.FC<TikTokShortItemProps> = ({
         )}
       </TouchableOpacity>
 
-      {/* Contenido del video */}
-      <View style={styles.content}>
-        {/* Información del video (izquierda) */}
-        <View style={styles.videoInfo}>
-          <Animated.View
-            entering={SlideInUp.delay(500).duration(400)}
-            style={styles.infoContainer}
-          >
-            <Text style={styles.placeName}>{item.placeName}</Text>
-            <Text style={styles.description}>{item.description}</Text>
-            <View style={styles.categoryContainer}>
-              <Text style={styles.category}>#{item.category}</Text>
-            </View>
-          </Animated.View>
-        </View>
+      {/* Gradient fade inferior */}
+      <LinearGradient
+        colors={["transparent", "rgba(0,0,0,0.3)", "rgba(0,0,0,0.8)"]}
+        style={styles.gradient}
+        pointerEvents="none"
+      />
 
-        {/* Botones de interacción (derecha) */}
-        <Animated.View
-          entering={SlideInUp.delay(700).duration(400)}
-          style={styles.actionsContainer}
-        >
-          {/* Like */}
+      {/* Descripción y hashtags (izquierda) */}
+      <Animated.View
+        entering={FadeInUp.delay(300).duration(400).easing(Easing.out(Easing.cubic))}
+        style={styles.descriptionContainer}
+      >
+        <Text style={styles.placeName}>{item.placeName}</Text>
+        <Text style={styles.description} numberOfLines={3}>{item.description}</Text>
+        <Text style={styles.hashtag}>#{item.category}</Text>
+      </Animated.View>
+
+      {/* Íconos de interacción (derecha) */}
+      <Animated.View
+        entering={FadeInUp.delay(400).duration(400).easing(Easing.out(Easing.cubic))}
+        style={styles.actionsContainer}
+      >
+        {/* Like */}
+        <Animated.View style={likeAnimation.style}>
           <TouchableOpacity
             style={styles.actionButton}
             onPress={handleLike}
+            onPressIn={likeAnimation.onPressIn}
+            onPressOut={likeAnimation.onPressOut}
           >
             <Heart
-              size={32}
-              color={isLiked ? "#FF4444" : "white"}
-              fill={isLiked ? "#FF4444" : "transparent"}
+              size={28}
+              color={isLiked ? "#FF3B30" : "white"}
+              fill={isLiked ? "#FF3B30" : "transparent"}
             />
-            <Text style={styles.actionText}>{item.likes}</Text>
+            <Text style={styles.actionCount}>{item.likes}</Text>
           </TouchableOpacity>
+        </Animated.View>
 
-          {/* Comentarios */}
+        {/* Comment */}
+        <Animated.View style={commentAnimation.style}>
           <TouchableOpacity
             style={styles.actionButton}
             onPress={() => onComment(item.id)}
+            onPressIn={commentAnimation.onPressIn}
+            onPressOut={commentAnimation.onPressOut}
           >
-            <MessageCircle size={32} color="white" />
-            <Text style={styles.actionText}>{item.comments}</Text>
+            <MessageCircle size={28} color="white" />
+            <Text style={styles.actionCount}>{item.comments}</Text>
           </TouchableOpacity>
+        </Animated.View>
 
-          {/* Guardar */}
+        {/* Save */}
+        <Animated.View style={saveAnimation.style}>
           <TouchableOpacity
             style={styles.actionButton}
             onPress={handleSave}
+            onPressIn={saveAnimation.onPressIn}
+            onPressOut={saveAnimation.onPressOut}
           >
             <Bookmark
-              size={32}
-              color={isSaved ? Colors.light.primary : "white"}
-              fill={isSaved ? Colors.light.primary : "transparent"}
+              size={28}
+              color={isSaved ? "#FF3B30" : "white"}
+              fill={isSaved ? "#FF3B30" : "transparent"}
             />
-            <Text style={styles.actionText}>{item.favorites}</Text>
+            <Text style={styles.actionCount}>{item.favorites}</Text>
           </TouchableOpacity>
+        </Animated.View>
 
-          {/* Compartir */}
+        {/* Share */}
+        <Animated.View style={shareAnimation.style}>
           <TouchableOpacity
             style={styles.actionButton}
             onPress={() => onShare(item.id)}
+            onPressIn={shareAnimation.onPressIn}
+            onPressOut={shareAnimation.onPressOut}
           >
-            <Share size={32} color="white" />
+            <Share size={28} color="white" />
           </TouchableOpacity>
         </Animated.View>
-      </View>
-    </Animated.View>
+      </Animated.View>
+    </View>
   );
 };
 
@@ -188,15 +208,21 @@ const styles = StyleSheet.create({
   container: {
     width: SCREEN_WIDTH,
     height: SCREEN_HEIGHT,
-    backgroundColor: "black",
+    backgroundColor: "#0E0E0E",
   },
   videoContainer: {
     flex: 1,
-    position: "relative",
   },
   video: {
     width: "100%",
     height: "100%",
+  },
+  gradient: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: "40%",
   },
   pauseOverlay: {
     position: "absolute",
@@ -222,70 +248,46 @@ const styles = StyleSheet.create({
     marginHorizontal: 2,
     borderRadius: 2,
   },
-  content: {
+  // Descripción a la izquierda
+  descriptionContainer: {
     position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingBottom: 100,
-  },
-  videoInfo: {
-    flex: 1,
-    justifyContent: "flex-end",
-    paddingBottom: 20,
-  },
-  infoContainer: {
-    backgroundColor: "rgba(0, 0, 0, 0.4)",
-    borderRadius: 16,
-    padding: 16,
-    backdropFilter: "blur(12px)",
-    borderWidth: 0.5,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    bottom: 90,
+    left: 12,
+    right: 70,
   },
   placeName: {
-    fontSize: 18,
-    fontWeight: "bold",
+    fontSize: 16,
+    fontWeight: "700",
     color: "white",
-    marginBottom: 8,
+    marginBottom: 4,
   },
   description: {
     fontSize: 14,
     color: "white",
     lineHeight: 20,
-    marginBottom: 8,
+    marginBottom: 4,
   },
-  categoryContainer: {
-    alignSelf: "flex-start",
-  },
-  category: {
-    fontSize: 12,
-    color: Colors.light.primary,
+  hashtag: {
+    fontSize: 14,
+    color: "#FF3B30",
     fontWeight: "600",
   },
+  // Íconos a la derecha
   actionsContainer: {
-    justifyContent: "flex-end",
+    position: "absolute",
+    right: 15,
+    bottom: 100,
     alignItems: "center",
-    paddingBottom: 20,
+    gap: 20,
   },
   actionButton: {
     alignItems: "center",
-    marginBottom: 20,
-    padding: 8,
-    borderRadius: 20,
-    backgroundColor: "rgba(0, 0, 0, 0.2)",
-    minWidth: 48,
-    minHeight: 48,
-    justifyContent: "center",
   },
-  actionText: {
+  actionCount: {
     color: "white",
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "600",
-    marginTop: 2,
+    marginTop: 4,
   },
 });
 

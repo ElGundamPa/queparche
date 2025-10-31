@@ -3,9 +3,9 @@ import { User } from "@/types/user";
 export const mockUsers: User[] = [
   {
     id: "1",
-    name: "Juan Pérez",
-    username: "juanperez",
-    email: "juan@example.com",
+    name: "Usuario Demo",
+    username: "usuario",
+    email: "usuario@example.com",
     avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1000",
     bio: "Explorer | Food lover | Always looking for new adventures in Medellín 🌟",
     location: "Medellín, Colombia",

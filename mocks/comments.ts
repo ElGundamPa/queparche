@@ -22,7 +22,7 @@ export const mockComments: Comment[] = [
   {
     id: "3",
     userId: "1",
-    userName: "Juan Pérez",
+    userName: "Usuario Demo",
     userAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1000",
     shortId: "2",
     content: "María, eres la mejor guía de Comuna 13! 🎨",
@@ -40,7 +40,7 @@ export const mockComments: Comment[] = [
   {
     id: "5",
     userId: "1",
-    userName: "Juan Pérez",
+    userName: "Usuario Demo",
     userAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1000",
     shortId: "3",
     content: "¡Se me hace agua la boca! ¿Cuál restaurante recomiendas?",

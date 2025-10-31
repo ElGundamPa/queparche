@@ -33,6 +33,7 @@ import theme from "@/lib/theme";
 import PlanCard from "@/components/PlanCard";
 import { usePlansStore } from "@/hooks/use-plans-store";
 import { useAuthStore } from "@/hooks/use-auth-store";
+import { useUserStore } from "@/hooks/use-user-store";
 import { categories } from "@/mocks/categories";
 import { useRouter } from "expo-router";
 import { pickImageFromGallery } from "@/utils/permissions";
@@ -41,6 +42,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { plans } = usePlansStore();
   const { currentUser, updateProfile: updateAuthProfile } = useAuthStore();
+  const { updateProfile: updateUserStoreProfile } = useUserStore();
   
   // Debug: Log current user data
   console.log('=== PROFILE DEBUG ===');
@@ -105,13 +107,18 @@ export default function ProfileScreen() {
   };
 
   const handleSaveProfile = () => {
-    updateAuthProfile({
+    const profileUpdates = {
       name: editName,
       bio: editBio,
       location: editLocation,
       avatar: editAvatar,
       preferences: selectedPreferences,
-    });
+    };
+    
+    // Update both stores to keep them in sync
+    updateAuthProfile(profileUpdates);
+    updateUserStoreProfile(profileUpdates);
+    
     setShowEditModal(false);
   };
 

@@ -35,12 +35,12 @@ interface AuthState {
   completeOnboarding: (onboardingData: { bio: string; interests: string[]; avatar: string }) => void;
 }
 
-// Usuario por defecto (Juan Pérez) para pruebas
+// Usuario por defecto para pruebas
 const defaultUser: User = {
   id: '1',
-  name: 'Juan Pérez',
-  username: '@juanperez',
-  email: 'juan@example.com',
+  name: 'Usuario Demo',
+  username: '@usuario',
+  email: 'demo@example.com',
   bio: 'Amante de la comida y las aventuras urbanas',
   avatar: '',
   interests: ['restaurants', 'nightlife', 'culture'],

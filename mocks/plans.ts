@@ -18,7 +18,7 @@ export const mockPlans: Plan[] = [
       "https://images.unsplash.com/photo-1635805737707-575885ab0820?q=80&w=1000",
     ],
     createdAt: "2025-07-15T10:30:00Z",
-    createdBy: "Juan Pérez",
+    createdBy: "Usuario Demo",
     userId: "1",
     likes: 24,
     favorites: 8,

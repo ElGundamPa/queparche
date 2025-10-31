@@ -42,6 +42,7 @@ import { PlanCardSkeleton } from "@/components/SkeletonLoader";
 import Logo3VB from "@/components/Logo3VB";
 import PatchCard from "@/components/PatchCard";
 import PatchDetailModal from "@/components/PatchDetailModal";
+import UserGreeting from "@/components/UserGreeting";
 import theme from "@/lib/theme";
 // use entering delays por item en lugar de hooks variables
 import { categories } from "@/mocks/categories";
@@ -253,10 +254,7 @@ export default function HomeScreen() {
     searchTranslateY.value = withDelay(200, withSpring(0, { damping: 15, stiffness: 100 }));
   }, []);
 
-  // Lanzar stagger para datasets horizontales
-  useEffect(() => { startPatchStagger(); }, [patches.length]);
-  useEffect(() => { startTopStagger(); }, [topPlans.length]);
-  useEffect(() => { startFilteredStagger(); }, [filteredPlans.length]);
+  // Stagger se maneja con entering delays por ítem (sin hooks variables)
 
   // Estilos animados
   const headerStyle = useAnimatedStyle(() => ({
@@ -343,12 +341,6 @@ export default function HomeScreen() {
         return (
           <Animated.View style={[styles.header, headerStyle]}>
             <View style={styles.headerContent}>
-              <View style={styles.profileSection}>
-                <Image
-                  source={{ uri: user?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100' }}
-                  style={styles.profileImage}
-                />
-              </View>
               <View style={styles.headerIcons}>
                 <TouchableOpacity style={styles.headerIcon}>
                   <Search size={18} color="#1A1A1A" />
@@ -358,10 +350,8 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               </View>
             </View>
-            <View style={styles.titleSection}>
-              <Text style={styles.greeting}>¿Que Parche {user?.name?.split(' ')[0] || 'Hay para hoy?'} 👋</Text>
-              <Text style={styles.title}>¿Qué parche hay hoy en Medellín? 🔥</Text>
-              <Text style={styles.subtitle}>Encuentra planes en segundos.</Text>
+            <View style={styles.greetingSection}>
+              <UserGreeting />
             </View>
             <View style={styles.userStats}>
               <View style={styles.statItem}>
@@ -659,19 +649,9 @@ const styles = StyleSheet.create({
   },
   headerContent: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     alignItems: 'center',
     marginBottom: 20,
-  },
-  profileSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  profileImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#E9ECEF',
   },
   headerIcons: {
     flexDirection: 'row',
@@ -686,27 +666,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     ...theme.shadows.button,
   },
-  titleSection: {
+  greetingSection: {
     marginBottom: 16,
-  },
-  greeting: {
-    ...theme.typography.body,
-    color: theme.colors.textSecondary,
-    marginBottom: 8,
-    lineHeight: 22,
-  },
-  title: {
-    ...theme.typography.h1,
-    color: theme.colors.textPrimary,
-    marginBottom: 8,
-    lineHeight: 28,
-    flexShrink: 1, // Allow text to wrap if needed
-  },
-  subtitle: {
-    ...theme.typography.body,
-    color: theme.colors.textSecondary,
-    lineHeight: 22,
-    flexShrink: 1,
   },
   userStats: {
     flexDirection: 'row',

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect, memo } from "react";
+import React, { useState, useRef, useCallback, memo } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import {
   StyleSheet,
@@ -7,14 +7,11 @@ import {
   TouchableOpacity,
   FlatList,
   ActivityIndicator,
-  Platform,
   Dimensions,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Plus } from "lucide-react-native";
-import Animated, { useSharedValue, useAnimatedStyle, withTiming } from "react-native-reanimated";
-import { scaleTap } from "@/lib/animations";
 import Toast from "react-native-toast-message";
 
 import theme from "@/lib/theme";
@@ -70,19 +67,8 @@ export default function ShortsScreen() {
   };
 
   const ShortAnimatedItem = memo(({ item, isActive }: { item: any; isActive: boolean }) => {
-    const opacity = useSharedValue(isActive ? 1 : 0.2);
-    const scale = useSharedValue(isActive ? 1 : 0.98);
-    const style = useAnimatedStyle(() => ({
-      opacity: opacity.value,
-      transform: [{ scale: scale.value }],
-    }));
-    useEffect(() => {
-      opacity.value = withTiming(isActive ? 1 : 0.2, { duration: 220 });
-      scale.value = withTiming(isActive ? 1 : 0.98, { duration: 220 });
-    }, [isActive]);
-
     return (
-      <Animated.View style={[{ height: SCREEN_HEIGHT }, style]}>
+      <View style={{ height: SCREEN_HEIGHT }}>
         <TikTokShortItem
           item={item}
           isActive={isActive}
@@ -92,7 +78,7 @@ export default function ShortsScreen() {
           onShare={() => {}}
           onTap={() => {}}
         />
-      </Animated.View>
+      </View>
     );
   });
 
@@ -202,22 +188,21 @@ const styles = StyleSheet.create({
   },
   createButtonContainer: {
     position: "absolute",
-    bottom: 20,
-    right: 20,
+    bottom: 80,
+    right: 15,
+    zIndex: 100,
   },
   createButton: {
     backgroundColor: theme.colors.primary,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 5,
-    elevation: 6,
-    borderWidth: 2,
-    borderColor: theme.colors.textPrimary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
   },
 });
