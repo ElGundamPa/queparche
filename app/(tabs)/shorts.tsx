@@ -31,10 +31,49 @@ export default function ShortsScreen() {
   const lastValidIndexRef = useRef(0);
   const flashListRef = useRef<FlashList<any>>(null);
 
+  // Filtrar y validar shorts antes de usar
+  const validShorts = React.useMemo(() => {
+    if (!shorts || !Array.isArray(shorts)) {
+      if (DEBUG) console.warn('[Shorts] shorts no es un array válido:', shorts);
+      return [];
+    }
+    
+    const filtered = shorts.filter((short: any) => {
+      const isValid = 
+        short &&
+        short.id &&
+        typeof short.id === 'string' &&
+        short.videoUrl &&
+        typeof short.videoUrl === 'string' &&
+        short.videoUrl.length > 0;
+      
+      if (!isValid && DEBUG) {
+        console.warn('[Shorts] Short inválido filtrado:', {
+          id: short?.id,
+          hasVideoUrl: !!short?.videoUrl,
+          videoUrlType: typeof short?.videoUrl,
+          videoUrlLength: short?.videoUrl?.length
+        });
+      }
+      
+      return isValid;
+    });
+    
+    if (DEBUG && filtered.length !== shorts.length) {
+      console.warn(`[Shorts] Filtrados ${shorts.length - filtered.length} shorts inválidos de ${shorts.length} totales`);
+    }
+    
+    return filtered;
+  }, [shorts]);
+
   // Log de inicialización
   useEffect(() => {
     console.log('🛡️ Shorts hardening applied: isFocused, appState, throttleMs (120ms)');
-  }, []);
+    if (DEBUG) {
+      console.log('[Shorts] Shorts totales:', shorts?.length);
+      console.log('[Shorts] Shorts válidos:', validShorts.length);
+    }
+  }, [shorts?.length, validShorts.length]);
 
   // Pausar todos los videos cuando la pantalla pierde foco
   useEffect(() => {
@@ -200,7 +239,7 @@ export default function ShortsScreen() {
     );
   }
 
-  if (!shorts || shorts.length === 0) {
+  if (!validShorts || validShorts.length === 0) {
     return (
       <View style={styles.emptyContainer}>
         <EmptyState
@@ -218,7 +257,7 @@ export default function ShortsScreen() {
 
       <FlashList
         ref={flashListRef}
-        data={shorts}
+        data={validShorts}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
         estimatedItemSize={SCREEN_HEIGHT}
