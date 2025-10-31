@@ -9,12 +9,8 @@ import {
   Dimensions,
 } from "react-native";
 import { FlashList } from "@shopify/flash-list";
-import Animated, { useSharedValue, useAnimatedStyle, withSpring } from "react-native-reanimated";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { Plus } from "lucide-react-native";
-import * as Haptics from "expo-haptics";
-import Toast from "react-native-toast-message";
 
 import theme from "@/lib/theme";
 import EmptyState from "@/components/EmptyState";
@@ -28,12 +24,6 @@ export default function ShortsScreen() {
   const { shorts, isLoading } = usePlansStore();
   const [activeIndex, setActiveIndex] = useState(0);
   const flashListRef = useRef<FlashList<any>>(null);
-  
-  // Animación del botón de upload
-  const buttonScale = useSharedValue(1);
-  const buttonStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: buttonScale.value }],
-  }));
 
   // Debug: Log shorts data
   console.log('=== TIKTOK SHORTS DEBUG ===');
@@ -99,23 +89,6 @@ export default function ShortsScreen() {
 
   const keyExtractor = useCallback((item: any) => item.id, []);
 
-  const handleCreatePress = () => {
-    // Animación de rebote
-    buttonScale.value = withSpring(0.9, {}, () => {
-      buttonScale.value = withSpring(1);
-    });
-    
-    // Haptic feedback
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    
-    Toast.show({
-      type: "success",
-      text1: "¡Crear Short!",
-      text2: "Redirigiendo al creador de videos...",
-    });
-    router.push("/create-short");
-  };
-
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -162,15 +135,6 @@ export default function ShortsScreen() {
         testID="tiktok-shorts-list"
         drawDistance={SCREEN_HEIGHT * 2}
       />
-
-      {/* Botón de crear */}
-      <View style={styles.createButtonContainer} pointerEvents="box-none">
-        <Animated.View style={buttonStyle}>
-          <TouchableOpacity style={styles.createButton} onPress={handleCreatePress}>
-            <Plus size={28} color="white" />
-          </TouchableOpacity>
-        </Animated.View>
-      </View>
     </View>
   );
 }
@@ -197,24 +161,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 20,
     backgroundColor: "#0A0A0A",
-  },
-  createButtonContainer: {
-    position: "absolute",
-    bottom: 25,
-    alignSelf: "center",
-    zIndex: 100,
-  },
-  createButton: {
-    backgroundColor: theme.colors.primary,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: '#FF3B30',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-    elevation: 10,
   },
 });

@@ -1,301 +1,147 @@
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 import {
   StyleSheet,
   Text,
   View,
-  ScrollView,
-  TextInput,
+  Modal,
   TouchableOpacity,
-  Alert,
-  Platform,
+  Dimensions,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Image } from "expo-image";
-import * as ImagePicker from "expo-image-picker";
-import * as Location from "expo-location";
 import { StatusBar } from "expo-status-bar";
-import { LinearGradient } from "expo-linear-gradient";
-import { Animated } from "react-native";
-import { Camera, MapPin, Upload, ArrowLeft } from "lucide-react-native";
+import { Plus, Video, MapPin, X } from "lucide-react-native";
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from "react-native-reanimated";
+import * as Haptics from "expo-haptics";
+import { BlurView } from "expo-blur";
 
 import theme from "@/lib/theme";
-import { categories } from "@/mocks/categories";
-import { usePlansStore } from "@/hooks/use-plans-store";
-import { useUserStore } from "@/hooks/use-user-store";
 
-export default function CreatePlanScreen() {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
+const { width, height } = Dimensions.get('window');
 
-  const onPublishPressIn = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 0.98,
-      useNativeDriver: true,
-      friction: 6,
-      tension: 150,
-    }).start();
-  };
-
-  const onPublishPressOut = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      useNativeDriver: true,
-      friction: 6,
-      tension: 150,
-    }).start();
-  };
+export default function CreateScreen() {
   const router = useRouter();
-  const { addPlan } = usePlansStore();
-  const { user } = useUserStore();
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("");
-  const [maxPeople, setMaxPeople] = useState("");
-  const [images, setImages] = useState<string[]>([]);
-  const [location, setLocation] = useState<Location.LocationObject | null>(null);
-  const [address, setAddress] = useState("");
+  const [modalVisible, setModalVisible] = useState(false);
+  
+  // Animación del botón principal
+  const buttonScale = useSharedValue(1);
+  const buttonStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: buttonScale.value }],
+  }));
 
-  const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
-    if (status !== "granted") {
-      Alert.alert(
-        "Permission Required",
-        "Please grant permission to access your photo library."
-      );
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
+  const handleCreatePress = () => {
+    // Animación de rebote
+    buttonScale.value = withSpring(0.9, {}, () => {
+      buttonScale.value = withSpring(1);
     });
-
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      setImages([...images, result.assets[0].uri]);
-    }
+    
+    // Haptic feedback
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
+    // Abrir modal
+    setModalVisible(true);
   };
 
-  const getLocation = async () => {
-    if (Platform.OS === "web") {
-      Alert.alert(
-        "Not Available",
-        "Location picking is not available on web. Please use the mobile app."
-      );
-      return;
-    }
-
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    
-    if (status !== "granted") {
-      Alert.alert(
-        "Permission Required",
-        "Please grant permission to access your location."
-      );
-      return;
-    }
-
-    const currentLocation = await Location.getCurrentPositionAsync({});
-    setLocation(currentLocation);
-
-    // Reverse geocode to get address
-    try {
-      const addressResponse = await Location.reverseGeocodeAsync({
-        latitude: currentLocation.coords.latitude,
-        longitude: currentLocation.coords.longitude,
-      });
-
-      if (addressResponse && addressResponse.length > 0) {
-        const addressDetails = addressResponse[0];
-        const formattedAddress = `${addressDetails.street || ""}, ${
-          addressDetails.city || ""
-        }, ${addressDetails.region || ""}, ${addressDetails.country || ""}`;
-        setAddress(formattedAddress);
-      }
-    } catch (error) {
-      console.error("Error getting address:", error);
-    }
+  const handleUploadShort = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setModalVisible(false);
+    router.push("/create-short");
   };
 
   const handleCreatePlan = () => {
-    if (!name || !description || !category || !maxPeople || images.length === 0 || !location || !user) {
-      Alert.alert(
-        "Missing Information",
-        "Please fill in all fields and add at least one image."
-      );
-      return;
-    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setModalVisible(false);
+    // Mantener el formulario de crear plan aquí o navegar a otra pantalla
+    // Por ahora mostramos el modal original
+    setTimeout(() => {
+      // Aquí puedes agregar tu lógica para crear plan
+      setModalVisible(false);
+    }, 100);
+  };
 
-    const planData = {
-      name,
-      description,
-      category,
-      maxPeople: parseInt(maxPeople, 10),
-      images,
-      location: {
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        address,
-      },
-      userId: user.id,
-      createdBy: user.name,
-    };
-
-    addPlan(planData);
-    Alert.alert("Success", "Your plan has been published!");
-    router.push("/");
+  const handleClose = () => {
+    setModalVisible(false);
   };
 
   return (
     <View style={styles.container}>
-      <StatusBar style="dark" />
+      <StatusBar style="light" />
       
-      {/* Header with back button */}
-      <View style={styles.topHeader}>
+      {/* Botón principal flotante */}
+      <Animated.View style={buttonStyle}>
         <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-          testID="back-button"
+          style={styles.createButton}
+          onPress={handleCreatePress}
+          activeOpacity={0.9}
         >
-          <ArrowLeft size={24} color={theme.colors.textPrimary} />
+          <Plus size={40} color="white" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Crear Parche</Text>
-        <View style={styles.placeholder} />
-      </View>
+      </Animated.View>
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
+      {/* Modal de opciones */}
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={handleClose}
       >
-        <View style={styles.header}>
-          <Text style={styles.title}>Publish your plan</Text>
-          <Text style={styles.subtitle}>
-            Share your favorite places and plans with others
-          </Text>
-        </View>
-
-        <View style={styles.formContainer}>
-          <Text style={styles.label}>Name of the place or plan</Text>
-          <TextInput
-            style={styles.input}
-            value={name}
-            onChangeText={setName}
-            placeholder="Enter a name for your plan"
-            placeholderTextColor={theme.colors.textSecondary}
-            testID="plan-name-input"
-          />
-
-          <Text style={styles.label}>Description</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            value={description}
-            onChangeText={setDescription}
-            placeholder="Describe your plan in detail"
-            placeholderTextColor={theme.colors.textSecondary}
-            multiline
-            numberOfLines={4}
-            testID="plan-description-input"
-          />
-
-          <Text style={styles.label}>Category</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoriesContainer}
-          >
-            {categories.map((cat) => (
-              <TouchableOpacity
-                key={cat.id}
-                style={[
-                  styles.categoryButton,
-                  category === cat.name && styles.selectedCategoryButton,
-                ]}
-                onPress={() => setCategory(cat.name)}
-              >
-                <Text
-                  style={[
-                    styles.categoryText,
-                    category === cat.name && styles.selectedCategoryText,
-                  ]}
-                >
-                  {cat.name}
-                </Text>
+        <View style={styles.modalContainer}>
+          <BlurView intensity={10} style={StyleSheet.absoluteFill} />
+          
+          {/* Contenido del modal */}
+          <View style={styles.modalContent}>
+            {/* Header */}
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>¿Qué quieres crear?</Text>
+              <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
+                <X size={24} color={theme.colors.textSecondary} />
               </TouchableOpacity>
-            ))}
-          </ScrollView>
-
-          <Text style={styles.label}>Maximum number of people</Text>
-          <TextInput
-            style={styles.input}
-            value={maxPeople}
-            onChangeText={setMaxPeople}
-            placeholder="Enter maximum number of people"
-            placeholderTextColor={theme.colors.textSecondary}
-            keyboardType="number-pad"
-            testID="plan-max-people-input"
-          />
-
-          <Text style={styles.label}>Location</Text>
-          <TouchableOpacity
-            style={styles.locationButton}
-            onPress={getLocation}
-            testID="get-location-button"
-          >
-            <MapPin size={20} color={theme.colors.primary} />
-            <Text style={styles.locationButtonText}>
-              {location ? "Location selected" : "Use current location"}
-            </Text>
-          </TouchableOpacity>
-
-          {address ? (
-            <View style={styles.addressContainer}>
-              <Text style={styles.addressText}>{address}</Text>
             </View>
-          ) : null}
 
-          <Text style={styles.label}>Photos</Text>
-          <View style={styles.imagesContainer}>
-            {images.map((image, index) => (
-              <Image
-                key={index}
-                source={{ uri: image }}
-                style={styles.imagePreview}
-                contentFit="cover"
-              />
-            ))}
+            {/* Opción 1: Subir Parche */}
             <TouchableOpacity
-              style={styles.addImageButton}
-              onPress={pickImage}
-              testID="add-image-button"
+              style={[styles.optionButton, styles.primaryOption]}
+              onPress={handleUploadShort}
+              activeOpacity={0.8}
             >
-              <Camera size={24} color={theme.colors.primary} />
-              <Text style={styles.addImageText}>Add Photo</Text>
+              <View style={styles.optionIconContainer}>
+                <Video size={28} color="white" />
+              </View>
+              <View style={styles.optionTextContainer}>
+                <Text style={styles.optionTitle}>Subir Parche</Text>
+                <Text style={styles.optionDescription}>
+                  Comparte un video corto
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* Opción 2: Crear Parche */}
+            <TouchableOpacity
+              style={[styles.optionButton, styles.secondaryOption]}
+              onPress={handleCreatePlan}
+              activeOpacity={0.8}
+            >
+              <View style={styles.optionIconContainerSecondary}>
+                <MapPin size={28} color={theme.colors.primary} />
+              </View>
+              <View style={styles.optionTextContainer}>
+                <Text style={styles.optionTitleSecondary}>Crear Parche</Text>
+                <Text style={styles.optionDescriptionSecondary}>
+                  Publica un plan con ubicación
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* Botón cancelar */}
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={handleClose}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.cancelText}>Cancelar</Text>
             </TouchableOpacity>
           </View>
         </View>
-      </ScrollView>
-
-      <Animated.View style={[styles.publishButton, { transform: [{ scale: scaleAnim }] }]}>
-        <TouchableOpacity
-          activeOpacity={0.9}
-          onPressIn={onPublishPressIn}
-          onPressOut={onPublishPressOut}
-          onPress={handleCreatePlan}
-          testID="publish-plan-button"
-        >
-          <LinearGradient
-            colors={["#FF3B30", "#FF5252"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.publishGradient}
-          >
-            <Upload size={20} color={theme.colors.textPrimary} />
-            <Text style={styles.publishButtonText}>Publish Plan</Text>
-          </LinearGradient>
-        </TouchableOpacity>
-      </Animated.View>
+      </Modal>
     </View>
   );
 }
@@ -304,182 +150,121 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  topHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: theme.spacing.horizontal,
-    paddingTop: 60,
-    paddingBottom: 16,
-    backgroundColor: theme.colors.background,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+  createButton: {
+    backgroundColor: theme.colors.primary,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: theme.colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 12,
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.1)",
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: theme.colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...theme.shadows.button,
-  },
-  headerTitle: {
-    ...theme.typography.h2,
-    color: theme.colors.textPrimary,
-  },
-  placeholder: {
-    width: 40,
-  },
-  scrollView: {
+  modalContainer: {
     flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
   },
-  contentContainer: {
-    paddingBottom: 100,
-  },
-  header: {
-    paddingHorizontal: theme.spacing.horizontal,
-    paddingTop: theme.spacing.section,
-    paddingBottom: theme.spacing.md,
-  },
-  title: {
-    ...theme.typography.h1,
-    color: theme.colors.textPrimary,
-  },
-  subtitle: {
-    ...theme.typography.body,
-    color: theme.colors.textSecondary,
-    marginTop: 8,
-  },
-  formContainer: {
-    paddingHorizontal: theme.spacing.horizontal,
-  },
-  label: {
-    ...theme.typography.caption,
-    color: theme.colors.textSecondary,
-    marginTop: theme.spacing.section,
-    marginBottom: theme.spacing.sm,
-  },
-  input: {
+  modalContent: {
+    width: width * 0.85,
     backgroundColor: theme.colors.surface,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: theme.colors.textPrimary,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderRadius: 24,
+    padding: 24,
+    alignItems: "center",
     ...theme.shadows.card,
   },
-  textArea: {
-    height: 120,
-    textAlignVertical: "top",
-  },
-  categoriesContainer: {
+  modalHeader: {
     flexDirection: "row",
-    paddingVertical: 8,
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
+    marginBottom: 24,
   },
-  categoryButton: {
-    backgroundColor: theme.colors.surface,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    marginRight: 8,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: theme.colors.textPrimary,
   },
-  selectedCategoryButton: {
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  optionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    width: "100%",
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 16,
+  },
+  primaryOption: {
     backgroundColor: theme.colors.primary,
   },
-  categoryText: {
-    fontSize: 14,
-    color: theme.colors.textPrimary,
-  },
-  selectedCategoryText: {
-    color: theme.colors.background,
-  },
-  locationButton: {
-    flexDirection: "row",
-    alignItems: "center",
+  secondaryOption: {
     backgroundColor: theme.colors.surface,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: theme.colors.border,
   },
-  locationButtonText: {
-    fontSize: 16,
-    color: theme.colors.textPrimary,
-    marginLeft: 8,
+  optionIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 16,
   },
-  addressContainer: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+  optionIconContainerSecondary: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "rgba(255, 59, 48, 0.1)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 16,
   },
-  addressText: {
+  optionTextContainer: {
+    flex: 1,
+  },
+  optionTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "white",
+    marginBottom: 4,
+  },
+  optionDescription: {
     fontSize: 14,
+    color: "rgba(255, 255, 255, 0.8)",
+  },
+  optionTitleSecondary: {
+    fontSize: 18,
+    fontWeight: "700",
     color: theme.colors.textPrimary,
+    marginBottom: 4,
   },
-  imagesContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+  optionDescriptionSecondary: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+  },
+  cancelButton: {
     marginTop: 8,
+    paddingVertical: 12,
   },
-  imagePreview: {
-    width: 100,
-    height: 100,
-    borderRadius: 8,
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  addImageButton: {
-    width: 100,
-    height: 100,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: theme.colors.primary,
-    borderStyle: "dashed",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  addImageText: {
-    fontSize: 12,
-    color: theme.colors.primary,
-    marginTop: 4,
-  },
-  publishButton: {
-    position: "absolute",
-    bottom: 20,
-    left: 20,
-    right: 20,
-    borderRadius: 16,
-    paddingVertical: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    ...theme.shadows.button,
-  },
-  publishGradient: {
-    borderRadius: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-  publishButtonText: {
+  cancelText: {
     fontSize: 16,
+    color: theme.colors.textSecondary,
     fontWeight: "600",
-    color: theme.colors.textPrimary,
-    marginLeft: 8,
   },
-// removed extra closing brace
 });
