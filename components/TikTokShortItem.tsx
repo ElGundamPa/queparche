@@ -50,10 +50,19 @@ const TikTokShortItem: React.FC<TikTokShortItemProps> = ({
   }, [isActive, isPaused, item?.placeName]);
 
   // Validar que el item tenga las propiedades necesarias
-  if (!item || !item.videoUrl) {
+  if (!item || !item.videoUrl || typeof item.videoUrl !== 'string') {
+    if (DEBUG_ITEM) {
+      console.error('[TikTokShortItem] Item inválido:', { 
+        hasItem: !!item, 
+        hasVideoUrl: !!item?.videoUrl,
+        videoUrlType: typeof item?.videoUrl 
+      });
+    }
     return (
       <View style={styles.container}>
-        <Text style={{ color: 'white', textAlign: 'center' }}>Error: Video no disponible</Text>
+        <Text style={{ color: 'white', textAlign: 'center', padding: 20 }}>
+          Error: Video no disponible
+        </Text>
       </View>
     );
   }
@@ -66,6 +75,17 @@ const TikTokShortItem: React.FC<TikTokShortItemProps> = ({
     autoPlay: true,
     loop: true,
   });
+
+  // Validar que player exista antes de renderizar
+  if (!player) {
+    return (
+      <View style={styles.container}>
+        <Text style={{ color: 'white', textAlign: 'center', padding: 20 }}>
+          Error: No se pudo cargar el reproductor
+        </Text>
+      </View>
+    );
+  }
 
   // Animación de barra de progreso
   const progressWidth = useSharedValue(0);

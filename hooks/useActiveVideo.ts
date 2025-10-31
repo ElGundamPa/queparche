@@ -21,6 +21,23 @@ export function useActiveVideo({
   autoPlay = true,
   loop = true 
 }: UseActiveVideoOptions) {
+  // Validar que videoUrl sea un string válido
+  if (!videoUrl || typeof videoUrl !== 'string') {
+    if (DEBUG) console.error('[useActiveVideo] videoUrl inválido:', videoUrl);
+    // Retornar valores por defecto seguros
+    return {
+      player: null as any,
+      togglePlayPause: () => {},
+      pause: () => {},
+      play: () => {},
+      isPlaying: false,
+      isPaused: true,
+      progress: 0,
+      playbackRate: 1,
+      setSpeed: () => {},
+    };
+  }
+
   const [progress, setProgress] = useState(0);
   const [playbackRate, setPlaybackRate] = useState(1);
   
@@ -31,7 +48,12 @@ export function useActiveVideo({
 
   const wasActiveRef = useRef(false);
   const lastProgressUpdateRef = useRef(0);
-  const videoIdRef = useRef(videoUrl.substring(videoUrl.length - 20)); // Para debug
+  // Validar que videoUrl sea string antes de usar substring
+  const videoIdRef = useRef(
+    typeof videoUrl === 'string' && videoUrl.length > 0
+      ? videoUrl.substring(Math.max(0, videoUrl.length - 20))
+      : 'unknown'
+  ); // Para debug
 
   // Control de reproducción basado en visibilidad - más agresivo
   useEffect(() => {

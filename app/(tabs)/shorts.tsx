@@ -165,6 +165,26 @@ export default function ShortsScreen() {
   ShortAnimatedItem.displayName = 'ShortAnimatedItem';
 
   const renderItem = useCallback(({ item, index }: { item: any; index: number }) => {
+    // Validar item antes de renderizar
+    if (!item || !item.id) {
+      if (DEBUG) console.error('[Shorts] Item inválido en índice:', index, item);
+      return (
+        <View style={{ height: SCREEN_HEIGHT, justifyContent: 'center', alignItems: 'center' }}>
+          <Text style={{ color: theme.colors.textSecondary }}>Item no disponible</Text>
+        </View>
+      );
+    }
+
+    // Validar videoUrl
+    if (!item.videoUrl || typeof item.videoUrl !== 'string') {
+      if (DEBUG) console.error('[Shorts] videoUrl inválido en item:', item.id, 'videoUrl:', item.videoUrl);
+      return (
+        <View style={{ height: SCREEN_HEIGHT, justifyContent: 'center', alignItems: 'center' }}>
+          <Text style={{ color: theme.colors.textSecondary }}>Video URL no válido</Text>
+        </View>
+      );
+    }
+
     const isActive = isScreenFocused && index === activeIndex;
     return <ShortAnimatedItem item={item} isActive={isActive} />;
   }, [activeIndex, isScreenFocused, handleLike, handleComment, handleSave, handleShare]);
