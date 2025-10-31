@@ -62,9 +62,11 @@ export default function ShortsScreen() {
     }
   }, [shorts]);
 
-  const viewabilityConfig = {
-    itemVisiblePercentThreshold: 50,
-  };
+  // Configuración optimizada para viewability
+  const viewabilityConfigRef = useRef({
+    itemVisiblePercentThreshold: 80,
+    minimumViewTime: 100,
+  });
 
   const ShortAnimatedItem = memo(({ item, isActive }: { item: any; isActive: boolean }) => {
     return (
@@ -138,27 +140,28 @@ export default function ShortsScreen() {
         renderItem={renderItem}
         keyExtractor={keyExtractor}
         getItemLayout={getItemLayout}
-        pagingEnabled
+        pagingEnabled={true}
         showsVerticalScrollIndicator={false}
         snapToInterval={SCREEN_HEIGHT}
         snapToAlignment="start"
         decelerationRate="fast"
-        viewabilityConfig={viewabilityConfig}
+        viewabilityConfig={viewabilityConfigRef.current}
         onViewableItemsChanged={handleViewableItemsChanged}
         removeClippedSubviews={false}
-        maxToRenderPerBatch={3}
-        windowSize={5}
+        maxToRenderPerBatch={2}
+        windowSize={3}
         initialNumToRender={2}
-        scrollEnabled={true}
+        scrollEventThrottle={16}
+        maintainVisibleContentPosition={null}
         testID="tiktok-shorts-list"
       />
 
       {/* Botón de crear */}
-      <Animated.View style={styles.createButtonContainer}>
+      <View style={styles.createButtonContainer} pointerEvents="box-only">
         <TouchableOpacity style={styles.createButton} onPress={handleCreatePress}>
-          <Plus size={24} color="white" />
+          <Plus size={28} color="white" />
         </TouchableOpacity>
-      </Animated.View>
+      </View>
     </View>
   );
 }

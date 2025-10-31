@@ -1,23 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   StyleSheet,
   View,
-  Text,
   TouchableOpacity,
   Dimensions,
-  Platform,
 } from "react-native";
-import { VideoView, useVideoPlayer } from "expo-video";
-import Animated, {
-  FadeInUp,
-  Easing,
-} from "react-native-reanimated";
-import { LinearGradient } from "expo-linear-gradient";
-import { Heart, MessageCircle, Bookmark, Share } from "lucide-react-native";
+import { VideoView } from "expo-video";
+import Animated, { FadeInUp } from "react-native-reanimated";
 
-import Colors from "@/constants/colors";
 import { Short } from "@/types/plan";
-import { scaleTap } from "@/lib/animations";
+import { useActiveVideo } from "@/hooks/useActiveVideo";
+import { ShortOverlay } from "./ShortOverlay";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -44,32 +37,16 @@ const TikTokShortItem: React.FC<TikTokShortItemProps> = ({
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
 
-  const player = useVideoPlayer(item.videoUrl, (player) => {
-    player.loop = true;
-    player.muted = !isActive; // Solo el video activo tiene audio
-    
-    if (isActive && !isPaused) {
-      player.play();
-    } else {
-      player.pause();
-    }
+  // Hook optimizado para manejo de video
+  const { player, togglePlayPause } = useActiveVideo({
+    videoUrl: item.videoUrl,
+    isActive: isActive && !isPaused,
+    autoPlay: true,
+    loop: true,
   });
 
-  // Control de reproducción basado en visibilidad
-  useEffect(() => {
-    if (isActive && !isPaused) {
-      player.play();
-    } else {
-      player.pause();
-    }
-  }, [isActive, isPaused, player]);
-
-  // Control de audio basado en visibilidad
-  useEffect(() => {
-    player.muted = !isActive;
-  }, [isActive, player]);
-
   const handleTap = () => {
+    togglePlayPause();
     setIsPaused(!isPaused);
     onTap();
   };
@@ -83,12 +60,6 @@ const TikTokShortItem: React.FC<TikTokShortItemProps> = ({
     setIsSaved(!isSaved);
     onSave(item.id);
   };
-
-  // Animación scaleTap para cada botón
-  const likeAnimation = scaleTap(0.9);
-  const commentAnimation = scaleTap(0.9);
-  const saveAnimation = scaleTap(0.9);
-  const shareAnimation = scaleTap(0.9);
 
   return (
     <View style={styles.container}>
@@ -108,7 +79,7 @@ const TikTokShortItem: React.FC<TikTokShortItemProps> = ({
         {/* Overlay de pausa */}
         {isPaused && (
           <Animated.View
-            entering={FadeInUp.duration(200).easing(Easing.out(Easing.cubic))}
+            entering={FadeInUp.duration(200)}
             style={styles.pauseOverlay}
           >
             <View style={styles.pauseIcon}>
@@ -119,87 +90,17 @@ const TikTokShortItem: React.FC<TikTokShortItemProps> = ({
         )}
       </TouchableOpacity>
 
-      {/* Gradient fade inferior */}
-      <LinearGradient
-        colors={["transparent", "rgba(0,0,0,0.3)", "rgba(0,0,0,0.8)"]}
-        style={styles.gradient}
-        pointerEvents="none"
+      {/* Overlay desacoplado */}
+      <ShortOverlay
+        short={item}
+        isActive={isActive}
+        isLiked={isLiked}
+        isSaved={isSaved}
+        onLike={handleLike}
+        onComment={onComment}
+        onSave={handleSave}
+        onShare={onShare}
       />
-
-      {/* Descripción y hashtags (izquierda) */}
-      <Animated.View
-        entering={FadeInUp.delay(300).duration(400).easing(Easing.out(Easing.cubic))}
-        style={styles.descriptionContainer}
-      >
-        <Text style={styles.placeName}>{item.placeName}</Text>
-        <Text style={styles.description} numberOfLines={3}>{item.description}</Text>
-        <Text style={styles.hashtag}>#{item.category}</Text>
-      </Animated.View>
-
-      {/* Íconos de interacción (derecha) */}
-      <Animated.View
-        entering={FadeInUp.delay(400).duration(400).easing(Easing.out(Easing.cubic))}
-        style={styles.actionsContainer}
-      >
-        {/* Like */}
-        <Animated.View style={likeAnimation.style}>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={handleLike}
-            onPressIn={likeAnimation.onPressIn}
-            onPressOut={likeAnimation.onPressOut}
-          >
-            <Heart
-              size={28}
-              color={isLiked ? "#FF3B30" : "white"}
-              fill={isLiked ? "#FF3B30" : "transparent"}
-            />
-            <Text style={styles.actionCount}>{item.likes}</Text>
-          </TouchableOpacity>
-        </Animated.View>
-
-        {/* Comment */}
-        <Animated.View style={commentAnimation.style}>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => onComment(item.id)}
-            onPressIn={commentAnimation.onPressIn}
-            onPressOut={commentAnimation.onPressOut}
-          >
-            <MessageCircle size={28} color="white" />
-            <Text style={styles.actionCount}>{item.comments}</Text>
-          </TouchableOpacity>
-        </Animated.View>
-
-        {/* Save */}
-        <Animated.View style={saveAnimation.style}>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={handleSave}
-            onPressIn={saveAnimation.onPressIn}
-            onPressOut={saveAnimation.onPressOut}
-          >
-            <Bookmark
-              size={28}
-              color={isSaved ? "#FF3B30" : "white"}
-              fill={isSaved ? "#FF3B30" : "transparent"}
-            />
-            <Text style={styles.actionCount}>{item.favorites}</Text>
-          </TouchableOpacity>
-        </Animated.View>
-
-        {/* Share */}
-        <Animated.View style={shareAnimation.style}>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => onShare(item.id)}
-            onPressIn={shareAnimation.onPressIn}
-            onPressOut={shareAnimation.onPressOut}
-          >
-            <Share size={28} color="white" />
-          </TouchableOpacity>
-        </Animated.View>
-      </Animated.View>
     </View>
   );
 };
@@ -216,13 +117,6 @@ const styles = StyleSheet.create({
   video: {
     width: "100%",
     height: "100%",
-  },
-  gradient: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: "40%",
   },
   pauseOverlay: {
     position: "absolute",
@@ -247,47 +141,6 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     marginHorizontal: 2,
     borderRadius: 2,
-  },
-  // Descripción a la izquierda
-  descriptionContainer: {
-    position: "absolute",
-    bottom: 90,
-    left: 12,
-    right: 70,
-  },
-  placeName: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "white",
-    marginBottom: 4,
-  },
-  description: {
-    fontSize: 14,
-    color: "white",
-    lineHeight: 20,
-    marginBottom: 4,
-  },
-  hashtag: {
-    fontSize: 14,
-    color: "#FF3B30",
-    fontWeight: "600",
-  },
-  // Íconos a la derecha
-  actionsContainer: {
-    position: "absolute",
-    right: 15,
-    bottom: 100,
-    alignItems: "center",
-    gap: 20,
-  },
-  actionButton: {
-    alignItems: "center",
-  },
-  actionCount: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "600",
-    marginTop: 4,
   },
 });
 
