@@ -19,7 +19,7 @@ import TikTokShortItem from "@/components/TikTokShortItem";
 import { usePlansStore } from "@/hooks/use-plans-store";
 import { videoStateManager } from "@/lib/videoStateManager";
 
-const DEBUG = false; // Cambiar a true para logs de desarrollo
+const DEBUG = true; // Cambiar a false para producción
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -73,20 +73,52 @@ export default function ShortsScreen() {
   }, []);
 
   const handleViewableItemsChanged = useCallback(({ viewableItems }: any) => {
-    if (viewableItems.length > 0 && isScreenFocused) {
-      const newIndex = viewableItems[0].index || 0;
-      if (newIndex !== activeIndex) {
-        setActiveIndex(newIndex);
-        lastValidIndexRef.current = newIndex;
-        if (DEBUG) console.log('[Shorts] Active video changed to:', newIndex);
+    if (!isScreenFocused) {
+      // Si la pantalla no está enfocada, pausar todo
+      if (activeIndex !== -1) {
+        setActiveIndex(-1);
+      }
+      return;
+    }
+
+    // Encontrar el item más visible basado en viewability
+    if (viewableItems.length > 0) {
+      // Buscar el primer item que esté marcado como viewable
+      const viewableItem = viewableItems.find((item: any) => item.isViewable);
+      
+      if (viewableItem && viewableItem.index !== null && viewableItem.index !== undefined) {
+        const newIndex = viewableItem.index;
+        if (newIndex !== activeIndex) {
+          if (DEBUG) console.log(`[Shorts] 🔄 Active video: ${activeIndex} → ${newIndex}`);
+          setActiveIndex(newIndex);
+          lastValidIndexRef.current = newIndex;
+        }
+      } else if (viewableItems.length > 0) {
+        // Si hay items pero ninguno está marcado como viewable, usar el primero
+        const firstItem = viewableItems[0];
+        if (firstItem && firstItem.index !== null && firstItem.index !== undefined) {
+          const newIndex = firstItem.index;
+          if (newIndex !== activeIndex) {
+            if (DEBUG) console.log(`[Shorts] 🔄 Active video (fallback): ${activeIndex} → ${newIndex}`);
+            setActiveIndex(newIndex);
+            lastValidIndexRef.current = newIndex;
+          }
+        }
+      }
+    } else {
+      // Si no hay items visibles, pausar todo
+      if (activeIndex !== -1) {
+        if (DEBUG) console.log('[Shorts] ⏸️ No visible items, pausing all');
+        setActiveIndex(-1);
       }
     }
-  }, [shorts, isScreenFocused, activeIndex]);
+  }, [isScreenFocused, activeIndex]);
 
-  // Configuración optimizada para viewability
+  // Configuración optimizada para viewability - más estricta
   const viewabilityConfigRef = useRef({
-    itemVisiblePercentThreshold: 80,
-    minimumViewTime: 100,
+    itemVisiblePercentThreshold: 90, // Solo considerar visible si está 90% visible
+    minimumViewTime: 200, // Esperar 200ms antes de considerar visible
+    waitForInteraction: false,
   });
 
   const handleLike = useCallback((id: string) => {

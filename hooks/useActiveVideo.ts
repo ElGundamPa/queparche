@@ -8,7 +8,7 @@ interface UseActiveVideoOptions {
   loop?: boolean;
 }
 
-const DEBUG = false; // Cambiar a true para logs de desarrollo
+const DEBUG = true; // Cambiar a false para producción
 const PROGRESS_THROTTLE_MS = 120; // Throttling del progreso para reducir renders
 
 /**
@@ -26,37 +26,45 @@ export function useActiveVideo({
   
   const player = useVideoPlayer(videoUrl, (player) => {
     player.loop = loop;
-    player.muted = false;
+    player.muted = true; // Iniciar mutado para evitar audio no deseado
   });
 
   const wasActiveRef = useRef(false);
   const lastProgressUpdateRef = useRef(0);
+  const videoIdRef = useRef(videoUrl.substring(videoUrl.length - 20)); // Para debug
 
-  // Control de reproducción basado en visibilidad
+  // Control de reproducción basado en visibilidad - más agresivo
   useEffect(() => {
-    if (isActive) {
-      // Video está activo - reanudación segura
-      if (DEBUG) console.log(`[useActiveVideo] Video activo`);
-      player.muted = false;
-      
-      if (autoPlay) {
-        // Pausar primero y luego reproducir para evitar "doble play"
-        if (wasActiveRef.current) {
-          player.pause();
-          requestAnimationFrame(() => {
-            player.play();
-          });
-        } else {
-          player.play();
-        }
+    // SIEMPRE pausar primero si no está activo (incluso si ya estaba pausado)
+    if (!isActive) {
+      if (wasActiveRef.current || player.playing) {
+        if (DEBUG) console.log(`[useActiveVideo] PAUSANDO video ${videoIdRef.current}`);
+        player.pause();
+        player.muted = true;
       }
-      wasActiveRef.current = true;
-    } else {
-      // Video NO está activo - pausar siempre
-      if (DEBUG) console.log(`[useActiveVideo] Pausando video`);
-      player.pause();
-      player.muted = true;
       wasActiveRef.current = false;
+      return; // Salir temprano si no está activo
+    }
+
+    // Solo aquí isActive === true
+    if (DEBUG) console.log(`[useActiveVideo] ACTIVANDO video ${videoIdRef.current}`);
+    player.muted = false;
+    
+    // Asegurar que otros videos están pausados primero
+    if (autoPlay) {
+      // Pausar primero para resetear cualquier estado previo
+      player.pause();
+      // Usar setTimeout para asegurar que la pausa se aplicó antes de reproducir
+      const playTimer = setTimeout(() => {
+        if (DEBUG) console.log(`[useActiveVideo] Reproduciendo video ${videoIdRef.current}`);
+        player.play();
+      }, 50); // Pequeño delay para asegurar pausa previa
+      
+      wasActiveRef.current = true;
+      
+      return () => {
+        clearTimeout(playTimer);
+      };
     }
   }, [isActive, player, autoPlay]);
 

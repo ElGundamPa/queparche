@@ -26,6 +26,8 @@ interface TikTokShortItemProps {
   onTap: () => void;
 }
 
+const DEBUG_ITEM = true; // Cambiar a false para producción
+
 const TikTokShortItem: React.FC<TikTokShortItemProps> = ({
   item,
   isActive,
@@ -40,10 +42,18 @@ const TikTokShortItem: React.FC<TikTokShortItemProps> = ({
   const [isSaved, setIsSaved] = useState(false);
   const [isFastForwarding, setIsFastForwarding] = useState(false);
 
+  // Debug: Log cuando isActive cambia
+  React.useEffect(() => {
+    if (DEBUG_ITEM) {
+      console.log(`[TikTokShortItem] ${item.placeName} - isActive: ${isActive}, isPaused: ${isPaused}`);
+    }
+  }, [isActive, isPaused, item.placeName]);
+
   // Hook optimizado para manejo de video
+  // Pasar isActive directamente (sin considerar isPaused aquí, el hook lo maneja)
   const { player, togglePlayPause, progress, setSpeed } = useActiveVideo({
     videoUrl: item.videoUrl,
-    isActive: isActive && !isPaused,
+    isActive: isActive && !isPaused, // Solo activo si está visible Y no está pausado manualmente
     autoPlay: true,
     loop: true,
   });
