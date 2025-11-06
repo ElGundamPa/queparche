@@ -1,6 +1,6 @@
 export interface Location {
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
   address?: string;
   city?: string;
   zone?: string;
@@ -25,10 +25,12 @@ export interface Plan {
   isPremium?: boolean;
   isSponsored?: boolean;
   price?: number;
-  priceType?: 'free' | 'paid' | 'minimum_consumption';
+  priceType?: 'free' | 'paid' | 'minimum_consumption' | string;
   tags?: string[];
   eventDate?: string;
   endDate?: string;
+  vibe?: string;
+  bestTime?: string;
 }
 
 export interface Short {

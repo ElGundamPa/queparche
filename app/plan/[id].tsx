@@ -125,7 +125,21 @@ export default function PlanDetailScreen() {
   }
 
   const handleOpenMaps = () => {
-    const address = plan.location.address || `${plan.location.latitude},${plan.location.longitude}`;
+    let address = plan.location.address;
+    
+    // Si no hay address, construir desde zone y city
+    if (!address) {
+      const parts = [];
+      if (plan.location.zone) parts.push(plan.location.zone);
+      if (plan.location.city) parts.push(plan.location.city);
+      address = parts.length > 0 ? parts.join(', ') : 'Medellín, Colombia';
+    }
+    
+    // Si hay coordenadas, usarlas; si no, usar la dirección
+    if (plan.location.latitude && plan.location.longitude) {
+      address = `${plan.location.latitude},${plan.location.longitude}`;
+    }
+    
     const encodedAddress = encodeURIComponent(address);
     const url = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
     
@@ -136,16 +150,24 @@ export default function PlanDetailScreen() {
   };
 
   const getPriceTypeLabel = (priceType?: string) => {
-    switch (priceType) {
-      case 'free':
-        return 'Gratis';
-      case 'paid':
-        return plan.price ? `$${plan.price.toLocaleString()}` : 'Económico';
-      case 'minimum_consumption':
-        return 'Consumo mínimo';
-      default:
-        return plan.price === 0 ? 'Gratis' : 'Económico';
+    if (!priceType) {
+      return plan.price === 0 ? 'Gratis' : 'Económico';
     }
+    
+    // Manejar los nuevos valores de priceType
+    if (priceType === 'free' || priceType === 'gratis') {
+      return 'Gratis';
+    }
+    if (priceType === 'paid') {
+      return plan.price ? `$${plan.price.toLocaleString()}` : 'Económico';
+    }
+    if (priceType === 'minimum_consumption') {
+      return 'Consumo mínimo';
+    }
+    
+    // Para los nuevos valores como "medio-alto", "bajo-medio", etc.
+    // Capitalizar la primera letra
+    return priceType.charAt(0).toUpperCase() + priceType.slice(1);
   };
 
   const renderStars = (rating: number) => {
@@ -298,9 +320,9 @@ export default function PlanDetailScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Description */}
+          {/* Description - usar vibe si existe, sino description */}
           <Text style={styles.description}>
-            {plan.description || "Plan perfecto si buscas ambiente chill, luces cálidas y música suave."}
+            {plan.vibe || plan.description || "Plan perfecto si buscas ambiente chill, luces cálidas y música suave."}
           </Text>
 
           {/* Photo Carousel (horizontal, 120px) */}
