@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, ImageBackground } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { Star, MapPin } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -94,11 +94,12 @@ const PatchGridItem = memo(function PatchGridItem({ plan, onPress }: PatchGridIt
         onPressOut={tapAnimation.onPressOut}
         activeOpacity={0.95}
       >
-        <ImageBackground
-          source={{ uri: imageUrl }}
-          style={styles.planImageBackground}
-          imageStyle={styles.planImageStyle}
-        >
+        <View style={styles.planImageContainer}>
+          <Image
+            source={{ uri: imageUrl }}
+            style={styles.planImage}
+            contentFit="cover"
+          />
           <LinearGradient
             colors={['rgba(0,0,0,0.0)', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.8)']}
             style={styles.planGradient}
@@ -138,7 +139,7 @@ const PatchGridItem = memo(function PatchGridItem({ plan, onPress }: PatchGridIt
               </View>
             )}
           </View>
-        </ImageBackground>
+        </View>
       </AnimatedTouchable>
     </Animated.View>
   );
@@ -173,15 +174,21 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   // Estilos para planes reales con imagen de fondo completa
-  planImageBackground: {
+  planImageContainer: {
     width: '100%',
     height: '100%',
+    position: 'relative',
     borderRadius: 16,
     overflow: 'hidden',
   },
-  planImageStyle: {
-    borderRadius: 16,
-    resizeMode: 'cover',
+  planImage: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   planGradient: {
     position: 'absolute',
