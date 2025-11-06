@@ -61,8 +61,26 @@ const ZoneChip = memo(({ label, onPress, active = false }: ZoneChipProps) => {
   );
 });
 
-const ZoneSelector = () => {
+interface ZoneSelectorProps {
+  selectedZone?: string;
+  onZoneSelect?: (zone: string) => void;
+  navigateOnPress?: boolean;
+}
+
+const ZoneSelector = ({ 
+  selectedZone = 'medellin', 
+  onZoneSelect,
+  navigateOnPress = false 
+}: ZoneSelectorProps) => {
   const router = useRouter();
+
+  const handleZonePress = (zoneKey: string) => {
+    if (navigateOnPress) {
+      router.push(`/zones/${zoneKey}`);
+    } else if (onZoneSelect) {
+      onZoneSelect(zoneKey);
+    }
+  };
 
   return (
     <ScrollView
@@ -74,8 +92,8 @@ const ZoneSelector = () => {
         <ZoneChip
           key={zone.key}
           label={zone.label}
-          active={zone.key === 'medellin'}
-          onPress={() => router.push(`/zones/${zone.key}`)}
+          active={zone.key === selectedZone}
+          onPress={() => handleZonePress(zone.key)}
         />
       ))}
     </ScrollView>
@@ -95,7 +113,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 1,
     marginRight: 10,
-    backgroundColor: '#0E0E0E',
+    backgroundColor: '#0B0B0B',
   },
   chipInactive: {
     borderColor: '#2A2A2A',

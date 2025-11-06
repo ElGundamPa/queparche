@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -24,7 +24,7 @@ import SearchBar from "@/components/SearchBar";
 import FABSpeedDial from "@/components/FABSpeedDial";
 import UserGreeting from "@/components/UserGreeting";
 import TopPlansCarousel from "@/components/TopPlansCarousel";
-import TrendingStrip from "@/components/TrendingStrip";
+import TrendingTags from "@/components/TrendingTags";
 import ZoneSelector from "@/components/ZoneSelector";
 import PatchGridItem from "@/components/PatchGridItem";
 import theme from "@/lib/theme";
@@ -37,6 +37,8 @@ export default function HomeScreen() {
   const router = useRouter();
   const { user } = useUserStore();
   const { searchQuery, performSearch } = useSearchStore();
+  const [selectedZone, setSelectedZone] = useState<string>('medellin');
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
 
   const headerOpacity = useSharedValue(0);
   const headerTranslateY = useSharedValue(-30);
@@ -50,7 +52,48 @@ export default function HomeScreen() {
     },
   });
 
-  const allPlans = useMemo(() => mockPlans, []);
+  // Filtrar planes por zona y tag
+  const allPlans = useMemo(() => {
+    let filtered = mockPlans;
+
+    // Filtrar por zona
+    if (selectedZone && selectedZone !== 'medellin') {
+      const normalizeZoneName = (name: string) => {
+        return name
+          .toLowerCase()
+          .replace(/[áàäâ]/g, 'a')
+          .replace(/[éèëê]/g, 'e')
+          .replace(/[íìïî]/g, 'i')
+          .replace(/[óòöô]/g, 'o')
+          .replace(/[úùüû]/g, 'u')
+          .replace(/[ñ]/g, 'n')
+          .replace(/[ç]/g, 'c')
+          .replace(/[-–]/g, ' ')
+          .trim();
+      };
+      
+      const normalizedSelected = normalizeZoneName(selectedZone);
+      filtered = filtered.filter(plan => {
+        const planZone = plan.location.zone || plan.location.city || '';
+        const normalizedPlanZone = normalizeZoneName(planZone);
+        
+        // Buscar coincidencia parcial o completa
+        return normalizedPlanZone.includes(normalizedSelected) || 
+               normalizedSelected.includes(normalizedPlanZone) ||
+               normalizedPlanZone.split(' ').some(word => normalizedSelected.includes(word)) ||
+               normalizedSelected.split(' ').some(word => normalizedPlanZone.includes(word));
+      });
+    }
+
+    // Filtrar por tag
+    if (selectedTag) {
+      filtered = filtered.filter(plan => 
+        plan.tags && plan.tags.includes(selectedTag)
+      );
+    }
+
+    return filtered;
+  }, [selectedZone, selectedTag]);
 
   const handlePlanPress = (plan: Plan) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -123,14 +166,20 @@ export default function HomeScreen() {
           />
         </Animated.View>
 
+        {/* ZoneSelector arriba */}
+        <View style={styles.zoneSelectorContainer}>
+          <ZoneSelector 
+            selectedZone={selectedZone}
+            onZoneSelect={setSelectedZone}
+            navigateOnPress={false}
+          />
+        </View>
+
         <Text style={styles.sectionTitle}>🔥 Top 5 del día</Text>
         <TopPlansCarousel />
 
         <Text style={styles.sectionTitle}>⭐ Tendencias en Medellín</Text>
-        <TrendingStrip />
-
-        <Text style={styles.sectionTitle}>📍 Elige tu zona</Text>
-        <ZoneSelector />
+        <TrendingTags onTagSelect={setSelectedTag} />
 
         <Text style={styles.sectionTitle}>🌍 Todos los parches</Text>
         <View>
@@ -165,7 +214,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0E0E0E',
+    backgroundColor: '#0B0B0B',
   },
   scrollView: {
     flex: 1,
@@ -221,7 +270,7 @@ const styles = StyleSheet.create({
   statText: {
     ...theme.typography.caption,
     fontWeight: '600',
-    color: theme.colors.textPrimary,
+    color: '#FFFFFF',
   },
   searchContainer: {
     paddingHorizontal: 16,
@@ -242,6 +291,10 @@ const styles = StyleSheet.create({
   },
   gridContent: {
     paddingBottom: 12,
+  },
+  zoneSelectorContainer: {
+    paddingVertical: 8,
+    marginBottom: 8,
   },
   bottomSpacing: {
     height: 60,

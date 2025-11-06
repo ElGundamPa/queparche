@@ -15,7 +15,7 @@ import { mockPlans } from '@/mocks/plans';
 import { Plan } from '@/types/plan';
 
 const { width } = Dimensions.get('window');
-const CARD_WIDTH = width * 0.88;
+const CARD_WIDTH = width * 0.85;
 const CARD_HEIGHT = 280;
 const ACCENT_COLOR = '#FF3B30';
 
@@ -34,10 +34,6 @@ const TopPlansCarouselComponent = () => {
 
   const data = useMemo(() => {
     return mockPlans
-      .filter((plan) => {
-        const normalizedCity = normalizeCity(plan.location.city);
-        return normalizedCity === 'medellin' && plan.rating >= 4.6;
-      })
       .sort((a, b) => b.rating - a.rating)
       .slice(0, 5);
   }, []);
@@ -58,6 +54,7 @@ const TopPlansCarouselComponent = () => {
       keyExtractor={(item) => `top-plan-${item.id}`}
       showsHorizontalScrollIndicator={false}
       snapToInterval={CARD_WIDTH + 16}
+      pagingEnabled={false}
       decelerationRate="fast"
       contentContainerStyle={styles.listContent}
       ItemSeparatorComponent={() => <View style={{ width: 16 }} />}
@@ -109,7 +106,8 @@ const TopPlanCard = memo(function TopPlanCard({ plan, onPress, index }: TopPlanC
           cachePolicy="memory-disk"
         />
         <LinearGradient
-          colors={['rgba(255, 195, 113, 0)', 'rgba(255, 155, 77, 0.35)', 'rgba(0,0,0,0.9)']}
+          colors={['transparent', '#000000', '#8B0000']}
+          locations={[0, 0.65, 1]}
           style={styles.gradient}
         />
 
@@ -189,12 +187,18 @@ const styles = StyleSheet.create({
   rating: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#FFD54F',
+    color: '#FFFFFF',
     marginBottom: 6,
+    textShadowColor: 'rgba(0,0,0,0.45)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   zone: {
     fontSize: 14,
-    color: '#E6DACF',
+    color: '#BBBBBB',
+    textShadowColor: 'rgba(0,0,0,0.45)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
 });
 
