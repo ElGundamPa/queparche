@@ -29,9 +29,29 @@ const normalizeZoneName = (zoneName: string): string => {
 const getPlanZone = (plan: Plan): string | null => {
   // Prioridad: zone > city > extraer desde address
   if (plan.location.zone) {
+    // Normalizar el nombre de la zona del plan
+    const normalizedPlanZone = normalizeZoneName(plan.location.zone);
+    
+    // Buscar coincidencia exacta en ZONES
+    for (const zone of ZONES) {
+      const normalizedZoneName = normalizeZoneName(zone.name);
+      if (normalizedPlanZone === normalizedZoneName || normalizedPlanZone.includes(normalizedZoneName) || normalizedZoneName.includes(normalizedPlanZone)) {
+        return zone.name;
+      }
+    }
+    
+    // Si no se encuentra en ZONES, devolver el zone original (podría ser una comuna)
+    // Esto permitirá que funcione con comunas como "El Poblado", "Laureles–Estadio", etc.
     return plan.location.zone;
   }
   if (plan.location.city) {
+    const normalizedCity = normalizeZoneName(plan.location.city);
+    for (const zone of ZONES) {
+      const normalizedZoneName = normalizeZoneName(zone.name);
+      if (normalizedCity === normalizedZoneName) {
+        return zone.name;
+      }
+    }
     return plan.location.city;
   }
   // Fallback: extraer desde address si no hay zone/city

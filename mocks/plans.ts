@@ -4,7 +4,7 @@ export const mockPlans: Plan[] = [
   {
     id: "rooftop-001",
     name: "Cielo Abierto Rooftop",
-    location: { zone: "Poblado", city: "Medellín", address: "Cra 37 #10" },
+    location: { zone: "El Poblado", city: "Medellín", address: "Cra 37 #10" },
     description: "Rooftop chill, música suave, conversación rica. Si vas con alguien… algo pasa 😉🔥",
     category: "Rooftops",
     maxPeople: 30,
@@ -25,7 +25,7 @@ export const mockPlans: Plan[] = [
   {
     id: "cafe-001",
     name: "Café La Esquina",
-    location: { zone: "Laureles", city: "Medellín" },
+    location: { zone: "Laureles–Estadio", city: "Medellín" },
     description: "Suavecito, olor a café fresco, gente bonita escribiendo cosas que no terminan.",
     category: "Cafés",
     maxPeople: 20,
@@ -46,7 +46,7 @@ export const mockPlans: Plan[] = [
   {
     id: "bar-001",
     name: "El Patio 70",
-    location: { zone: "La 70", city: "Medellín" },
+    location: { zone: "Laureles–Estadio", city: "Medellín", address: "La 70, Medellín" },
     description: "Mesas afuera, risas, humo y la vida pasando. Aquí empieza la noche.",
     category: "Bares",
     maxPeople: 40,
@@ -67,7 +67,7 @@ export const mockPlans: Plan[] = [
   {
     id: "mirador-001",
     name: "Mirador Las Palmas",
-    location: { zone: "Las Palmas", city: "Medellín" },
+    location: { zone: "Medellín", city: "Medellín", address: "Las Palmas, Medellín" },
     description: "Luz bajita, viento fresco y esa conversación donde se mira a los ojos.",
     category: "Miradores",
     maxPeople: 15,
@@ -89,7 +89,7 @@ export const mockPlans: Plan[] = [
   {
     id: "club-001",
     name: "Luna Negra Club",
-    location: { zone: "Provenza", city: "Medellín" },
+    location: { zone: "El Poblado", city: "Medellín", address: "Provenza, El Poblado" },
     description: "Perreo que huele a perfume caro y decisiones peligrosas.",
     category: "Clubes",
     maxPeople: 50,
