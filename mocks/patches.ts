@@ -1,3 +1,17 @@
+/**
+ * @deprecated Este archivo está deprecado.
+ * 
+ * TODOS los datos de parches ahora deben usar: mockPlans de @/mocks/plans
+ * 
+ * Este archivo se mantiene solo para compatibilidad temporal con componentes legacy
+ * como PatchCard y PatchesScreen que aún no han sido migrados.
+ * 
+ * Por favor, actualiza todos los componentes para usar el tipo Plan y mockPlans.
+ * 
+ * El tipo Plan está definido en: @/types/plan
+ * Los datos están en: @/mocks/plans
+ */
+
 export interface Patch {
   id: string;
   name: string;
@@ -14,6 +28,9 @@ export interface Patch {
   longitude?: number;
 }
 
+/**
+ * @deprecated Usar mockPlans de @/mocks/plans en su lugar
+ */
 export const mockPatches: Patch[] = [
   {
     id: '1',

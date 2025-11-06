@@ -505,12 +505,6 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   
-  // Events Section - Horizontal scroll
-  eventCard: {
-    width: 260,
-    minWidth: 260,
-  },
-  
   // Top Plans Section - Improved horizontal scrolling
   topPlansContainer: {
     paddingHorizontal: theme.spacing.horizontal,
