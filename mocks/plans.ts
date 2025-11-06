@@ -123,7 +123,7 @@ export const mockPlans: Plan[] = [
   {
     id: "restaurante-001",
     name: "Almendra Cocina Viva",
-    location: { zone: "Laureles", city: "Medellín" },
+    location: { zone: "Laureles–Estadio", city: "Medellín" },
     description: "Todo suavecito. Buena conversación. Risa bajita. Manos que se acercan.",
     category: "Restaurantes",
     maxPeople: 25,
