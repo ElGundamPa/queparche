@@ -5,6 +5,7 @@ import createContextHook from "@nkzw/create-context-hook";
 
 import { Plan, Short, Event } from "@/types/plan";
 import { trpc } from "@/lib/trpc";
+import { mockPlans } from "@/mocks/plans";
 import { mockEvents } from "@/mocks/events";
 import { mockShorts } from "@/mocks/shorts";
 
