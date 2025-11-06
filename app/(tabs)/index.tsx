@@ -21,7 +21,6 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 import { useRouter } from "expo-router";
-import { FlashList } from '@shopify/flash-list';
 
 import SearchBar from "@/components/SearchBar";
 import FABSpeedDial from "@/components/FABSpeedDial";
@@ -112,11 +111,10 @@ export default function HomeScreen() {
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>🔥 Top 5 del día</Text>
       </View>
-      <FlashList
+      <FlatList
         data={spotlightPlans}
         horizontal
         showsHorizontalScrollIndicator={false}
-        estimatedItemSize={width - 40}
         renderItem={({ item, index }) => (
           <View style={{ width: width - 40, marginRight: 20 }}>
             <SpotlightCard 
@@ -141,11 +139,10 @@ export default function HomeScreen() {
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>⭐ Tendencias</Text>
       </View>
-      <FlashList
+      <FlatList
         data={trendingPlans}
         horizontal
         showsHorizontalScrollIndicator={false}
-        estimatedItemSize={260}
         renderItem={({ item, index }) => (
           <View style={{ width: 260, marginRight: 16 }}>
             <TrendingCard 
