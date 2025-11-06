@@ -1,0 +1,200 @@
+import React, { memo, useMemo } from 'react';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity, FlatList } from 'react-native';
+import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, {
+  FadeIn,
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
+
+import { mockPlans } from '@/mocks/plans';
+import { Plan } from '@/types/plan';
+
+const { width } = Dimensions.get('window');
+const CARD_WIDTH = width * 0.88;
+const CARD_HEIGHT = 280;
+const ACCENT_COLOR = '#FF3B30';
+
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
+
+function normalizeCity(city?: string) {
+  if (!city) return '';
+  return city
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+const TopPlansCarouselComponent = () => {
+  const router = useRouter();
+
+  const data = useMemo(() => {
+    return mockPlans
+      .filter((plan) => {
+        const normalizedCity = normalizeCity(plan.location.city);
+        return normalizedCity === 'medellin' && plan.rating >= 4.6;
+      })
+      .sort((a, b) => b.rating - a.rating)
+      .slice(0, 5);
+  }, []);
+
+  const renderItem = ({ item, index }: { item: Plan; index: number }) => (
+    <TopPlanCard
+      plan={item}
+      index={index}
+      onPress={() => router.push(`/plan/${item.id}`)}
+    />
+  );
+
+  return (
+    <FlatList
+      horizontal
+      data={data}
+      renderItem={renderItem}
+      keyExtractor={(item) => `top-plan-${item.id}`}
+      showsHorizontalScrollIndicator={false}
+      snapToInterval={CARD_WIDTH + 16}
+      decelerationRate="fast"
+      contentContainerStyle={styles.listContent}
+      ItemSeparatorComponent={() => <View style={{ width: 16 }} />}
+    />
+  );
+};
+
+interface TopPlanCardProps {
+  plan: Plan;
+  onPress: () => void;
+  index: number;
+}
+
+const TopPlanCard = memo(function TopPlanCard({ plan, onPress, index }: TopPlanCardProps) {
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    scale.value = withSpring(0.97, { damping: 15, stiffness: 250 });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 12, stiffness: 220 });
+  };
+
+  const imageUrl = plan.images?.[0];
+  const location = plan.location.zone || plan.location.city || 'Medellín';
+
+  return (
+    <AnimatedTouchable
+      activeOpacity={0.9}
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      style={styles.cardWrapper}
+    >
+      <Animated.View
+        entering={FadeIn.delay(index * 80).duration(350)}
+        style={[styles.card, animatedStyle]}
+      >
+        <Image
+          source={{ uri: imageUrl }}
+          style={styles.image}
+          contentFit="cover"
+          cachePolicy="memory-disk"
+        />
+        <LinearGradient
+          colors={['rgba(255, 195, 113, 0)', 'rgba(255, 155, 77, 0.35)', 'rgba(0,0,0,0.9)']}
+          style={styles.gradient}
+        />
+
+        <View style={styles.content}>
+          <Text style={styles.title} numberOfLines={2}>
+            {plan.name}
+          </Text>
+
+          <View style={styles.accentLine} />
+
+          <Text style={styles.rating}>⭐ {plan.rating.toFixed(1)}</Text>
+          <Text style={styles.zone} numberOfLines={1}>
+            {location}
+          </Text>
+        </View>
+      </Animated.View>
+    </AnimatedTouchable>
+  );
+});
+
+export default memo(TopPlansCarouselComponent);
+
+const styles = StyleSheet.create({
+  listContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+  },
+  cardWrapper: {
+    width: CARD_WIDTH,
+  },
+  card: {
+    width: CARD_WIDTH,
+    height: CARD_HEIGHT,
+    borderRadius: 22,
+    overflow: 'hidden',
+    backgroundColor: '#111111',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+  },
+  gradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    top: 0,
+  },
+  content: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 8,
+    textShadowColor: 'rgba(0,0,0,0.45)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 6,
+    lineHeight: 26,
+  },
+  accentLine: {
+    width: '60%',
+    height: 2,
+    backgroundColor: ACCENT_COLOR,
+    borderRadius: 1,
+    marginBottom: 12,
+  },
+  rating: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFD54F',
+    marginBottom: 6,
+  },
+  zone: {
+    fontSize: 14,
+    color: '#E6DACF',
+  },
+});
+

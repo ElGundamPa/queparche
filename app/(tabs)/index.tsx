@@ -1,17 +1,15 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect } from "react";
 import {
   StyleSheet,
   Text,
   View,
   FlatList,
-  Dimensions,
   TouchableOpacity,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import * as Haptics from "expo-haptics";
 import { Search, Bell, Star, Crown } from "lucide-react-native";
-import Animated, { 
-  FadeInUp,
+import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
@@ -25,8 +23,8 @@ import { useRouter } from "expo-router";
 import SearchBar from "@/components/SearchBar";
 import FABSpeedDial from "@/components/FABSpeedDial";
 import UserGreeting from "@/components/UserGreeting";
-import SpotlightCard from "@/components/SpotlightCard";
-import TrendingCard from "@/components/TrendingCard";
+import TopPlansCarousel from "@/components/TopPlansCarousel";
+import TrendingStrip from "@/components/TrendingStrip";
 import PatchGridItem from "@/components/PatchGridItem";
 import theme from "@/lib/theme";
 import { mockPlans } from "@/mocks/plans";
@@ -34,20 +32,16 @@ import { Plan } from "@/types/plan";
 import { useUserStore } from "@/hooks/use-user-store";
 import { useSearchStore } from "@/hooks/use-search-store";
 
-const { width } = Dimensions.get('window');
-
 export default function HomeScreen() {
   const router = useRouter();
   const { user } = useUserStore();
   const { searchQuery, performSearch } = useSearchStore();
 
-  // Animaciones de entrada
   const headerOpacity = useSharedValue(0);
   const headerTranslateY = useSharedValue(-30);
   const searchOpacity = useSharedValue(0);
   const searchTranslateY = useSharedValue(20);
 
-  // Parallax global
   const scrollY = useSharedValue(0);
   const onScroll = useAnimatedScrollHandler({
     onScroll: (e) => {
@@ -55,40 +49,17 @@ export default function HomeScreen() {
     },
   });
 
-  // Spotlight: Top 5 del día (isSpotlight === true)
-  const spotlightPlans = useMemo(() => {
-    return mockPlans
-      .filter(p => p.isSpotlight === true)
-      .slice(0, 5);
-  }, []);
-
-  // Trending: Ordenados por rating, visits, saves
-  const trendingPlans = useMemo(() => {
-    return mockPlans
-      .filter(p => !p.isSpotlight)
-      .sort((a, b) => {
-        const scoreA = (a.rating * 2) + (a.visits || 0) + (a.saves || 0);
-        const scoreB = (b.rating * 2) + (b.visits || 0) + (b.saves || 0);
-        return scoreB - scoreA;
-      })
-      .slice(0, 10);
-  }, []);
-
-  // All Plans Grid: Todos los planes sin spotlight
-  const allPlans = useMemo(() => {
-    return mockPlans.filter(p => !p.isSpotlight);
-  }, []);
+  const allPlans = useMemo(() => mockPlans, []);
 
   const handlePlanPress = (plan: Plan) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push(`/plan/${plan.id}`);
   };
 
-  // Estilos animados
-  React.useEffect(() => {
+  useEffect(() => {
     headerOpacity.value = withTiming(1, { duration: 600, easing: Easing.out(Easing.ease) });
     headerTranslateY.value = withDelay(0, withTiming(0, { duration: 600, easing: Easing.out(Easing.ease) }));
-    
+
     searchOpacity.value = withDelay(200, withTiming(1, { duration: 500, easing: Easing.out(Easing.ease) }));
     searchTranslateY.value = withDelay(200, withTiming(0, { duration: 500, easing: Easing.out(Easing.ease) }));
   }, []);
@@ -105,89 +76,6 @@ export default function HomeScreen() {
     transform: [{ translateY: searchTranslateY.value }],
   }));
 
-  // Render Spotlight Section
-  const renderSpotlightSection = () => (
-    <Animated.View entering={FadeInUp.delay(300)}>
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>🔥 Top 5 del día</Text>
-      </View>
-      <FlatList
-        data={spotlightPlans}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        renderItem={({ item, index }) => (
-          <View style={{ width: width - 40, marginRight: 20 }}>
-            <SpotlightCard 
-              plan={item} 
-              onPress={() => handlePlanPress(item)} 
-              index={index}
-            />
-          </View>
-        )}
-        keyExtractor={(item) => `spotlight-${item.id}`}
-        contentContainerStyle={styles.spotlightContent}
-        removeClippedSubviews={false}
-        initialNumToRender={5}
-        windowSize={7}
-      />
-    </Animated.View>
-  );
-
-  // Render Trending Section
-  const renderTrendingSection = () => (
-    <Animated.View entering={FadeInUp.delay(500)}>
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>⭐ Tendencias</Text>
-      </View>
-      <FlatList
-        data={trendingPlans}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        renderItem={({ item, index }) => (
-          <View style={{ width: 260, marginRight: 16 }}>
-            <TrendingCard 
-              plan={item} 
-              onPress={() => handlePlanPress(item)} 
-              index={index}
-            />
-          </View>
-        )}
-        keyExtractor={(item) => `trending-${item.id}`}
-        contentContainerStyle={styles.trendingContent}
-        removeClippedSubviews={false}
-        initialNumToRender={5}
-        windowSize={7}
-      />
-    </Animated.View>
-  );
-
-  // Render All Plans Grid
-  const renderAllPlansGrid = () => (
-    <Animated.View entering={FadeInUp.delay(700)}>
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>🌍 Todos los parches</Text>
-      </View>
-      <FlatList
-        data={allPlans}
-        numColumns={3}
-        keyExtractor={(item) => `grid-${item.id}`}
-        renderItem={({ item, index }) => (
-          <PatchGridItem 
-            plan={item} 
-            onPress={() => handlePlanPress(item)} 
-            index={index}
-          />
-        )}
-        columnWrapperStyle={styles.gridRow}
-        contentContainerStyle={styles.gridContent}
-        scrollEnabled={false}
-        removeClippedSubviews={false}
-        initialNumToRender={12}
-        windowSize={7}
-      />
-    </Animated.View>
-  );
-
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
@@ -198,7 +86,6 @@ export default function HomeScreen() {
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
         <Animated.View style={[styles.header, headerStyle]}>
           <View style={styles.headerContent}>
             <View style={styles.headerIcons}>
@@ -224,7 +111,6 @@ export default function HomeScreen() {
           </View>
         </Animated.View>
 
-        {/* Search */}
         <Animated.View style={[styles.searchContainer, searchStyle]}>
           <SearchBar
             value={searchQuery}
@@ -236,20 +122,37 @@ export default function HomeScreen() {
           />
         </Animated.View>
 
-        {/* Spotlight Section */}
-        {spotlightPlans.length > 0 && renderSpotlightSection()}
+        <Text style={styles.sectionLabel}>🔥 Top 5 del día</Text>
+        <TopPlansCarousel />
 
-        {/* Trending Section */}
-        {trendingPlans.length > 0 && renderTrendingSection()}
+        <Text style={styles.sectionLabel}>⭐ Tendencias en Medellín</Text>
+        <TrendingStrip />
 
-        {/* All Plans Grid */}
-        {allPlans.length > 0 && renderAllPlansGrid()}
+        <Text style={styles.sectionLabel}>🌍 Todos los parches</Text>
+        <View>
+          <FlatList
+            data={allPlans}
+            numColumns={3}
+            keyExtractor={(item) => `grid-${item.id}`}
+            renderItem={({ item, index }) => (
+              <PatchGridItem
+                plan={item}
+                onPress={() => handlePlanPress(item)}
+                index={index}
+              />
+            )}
+            columnWrapperStyle={styles.gridRow}
+            contentContainerStyle={styles.gridContent}
+            scrollEnabled={false}
+            removeClippedSubviews={false}
+            initialNumToRender={12}
+            windowSize={7}
+          />
+        </View>
 
-        {/* Bottom Spacing */}
         <View style={styles.bottomSpacing} />
       </Animated.ScrollView>
 
-      {/* Floating Action Button */}
       <FABSpeedDial />
     </View>
   );
@@ -317,26 +220,16 @@ const styles = StyleSheet.create({
     color: theme.colors.textPrimary,
   },
   searchContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     marginBottom: 24,
   },
-  sectionHeader: {
-    marginTop: 24,
-    marginBottom: 16,
-    paddingHorizontal: 20,
-  },
-  sectionTitle: {
-    fontSize: 20,
+  sectionLabel: {
+    fontSize: 22,
     fontWeight: '700',
     color: '#FFFFFF',
-  },
-  spotlightContent: {
-    paddingHorizontal: 20,
-    paddingRight: 20,
-  },
-  trendingContent: {
-    paddingHorizontal: 20,
-    paddingRight: 20,
+    marginLeft: 16,
+    marginTop: 28,
+    marginBottom: 16,
   },
   gridRow: {
     gap: 12,
@@ -344,10 +237,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   gridContent: {
-    paddingTop: 8,
-    paddingBottom: 8,
+    paddingBottom: 12,
   },
   bottomSpacing: {
-    height: 40,
+    height: 60,
   },
 });
