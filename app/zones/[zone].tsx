@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, FlatList, Dimensions } from '
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { ArrowLeft, MapPin } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ZONES } from '@/data/zones';
+import { ZONES, MEDELLIN_COMUNAS } from '@/data/zones';
 import { mockPlans } from '@/mocks/plans';
 import { Plan } from '@/types/plan';
 import PatchGridItem from '@/components/PatchGridItem';
@@ -123,11 +123,33 @@ export default function ZoneDetail() {
     
     const normalizedZoneName = normalizeZoneName(zoneItem.name);
     
+    // Si es Medellín, también incluir comunas de Medellín
+    const isMedellin = normalizedZoneName === normalizeZoneName('Medellín');
+    const medellinComunaNames = isMedellin 
+      ? MEDELLIN_COMUNAS.map(c => normalizeZoneName(c.name))
+      : [];
+    
     const filtered = mockPlans.filter((plan) => {
       const planZone = getPlanZone(plan);
       if (!planZone) return false;
+      
       const normalizedPlanZone = normalizeZoneName(planZone);
-      return normalizedPlanZone === normalizedZoneName;
+      
+      // Coincidencia exacta con la zona
+      if (normalizedPlanZone === normalizedZoneName) return true;
+      
+      // Si es Medellín, también buscar en comunas
+      if (isMedellin && medellinComunaNames.includes(normalizedPlanZone)) {
+        return true;
+      }
+      
+      // Verificar si el plan tiene city = zoneItem.name
+      if (plan.location.city) {
+        const normalizedCity = normalizeZoneName(plan.location.city);
+        if (normalizedCity === normalizedZoneName) return true;
+      }
+      
+      return false;
     });
     
     // Si no hay planes, crear un placeholder
