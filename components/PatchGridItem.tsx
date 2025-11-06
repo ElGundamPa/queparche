@@ -2,6 +2,7 @@ import React, { memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { Star, MapPin } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Plan } from '@/types/plan';
@@ -18,34 +19,69 @@ interface PatchGridItemProps {
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 const PatchGridItem = memo(function PatchGridItem({ plan, onPress }: PatchGridItemProps) {
+  const isPlaceholder = plan.id.startsWith('placeholder-');
   const tapAnimation = scaleTap(0.96);
 
   const handlePress = () => {
     // Si es placeholder, no hacer nada
-    if (plan.id.startsWith('placeholder-')) {
+    if (isPlaceholder) {
       return;
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onPress();
   };
 
-  // Extraer zona desde la dirección
-  const getZoneFromAddress = (address?: string): string => {
-    if (!address) return 'Medellín';
-    // Buscar nombres de zonas conocidas en la dirección
-    const zones = ['Medellín', 'Bello', 'Itagüí', 'Envigado', 'Sabaneta', 'La Estrella', 'Copacabana'];
-    for (const zone of zones) {
-      if (address.includes(zone)) {
-        return zone;
+  // Extraer zona desde la dirección o location
+  const getZoneFromPlan = (): string => {
+    if (plan.location.zone) return plan.location.zone;
+    if (plan.location.city) return plan.location.city;
+    if (plan.location.address) {
+      const zones = ['Medellín', 'Bello', 'Itagüí', 'Envigado', 'Sabaneta', 'La Estrella', 'Copacabana'];
+      for (const zone of zones) {
+        if (plan.location.address.includes(zone)) {
+          return zone;
+        }
       }
     }
     return 'Medellín';
   };
 
-  const zone = getZoneFromAddress(plan.location.address);
+  const zone = getZoneFromPlan();
   const imageUrl = plan.images && plan.images.length > 0 ? plan.images[0] : 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800';
   const displayTags = plan.tags?.slice(0, 2) || [];
 
+  // Renderizado para placeholder
+  if (isPlaceholder) {
+    return (
+      <Animated.View
+        entering={FadeInUp.delay(200).duration(300).easing((t) => t * (2 - t))}
+      >
+        <View style={styles.container}>
+          <View style={styles.placeholderImageContainer}>
+            <Image
+              source={{ uri: imageUrl }}
+              style={styles.placeholderImage}
+              contentFit="cover"
+            />
+            <LinearGradient
+              colors={['rgba(0,0,0,0.2)', 'rgba(0,0,0,0.7)']}
+              style={styles.placeholderGradient}
+            />
+            <View style={styles.placeholderContent}>
+              <Text style={styles.placeholderTitle} numberOfLines={2}>
+                {plan.name}
+              </Text>
+              <Text style={styles.placeholderSubtitle}>
+                Próximamente más parches 🌙
+              </Text>
+            </View>
+          </View>
+        </View>
+      </Animated.View>
+    );
+  }
+
+  // Renderizado para plan normal
   return (
     <Animated.View
       entering={FadeInUp.delay(200).duration(300).easing((t) => t * (2 - t))}
@@ -54,10 +90,9 @@ const PatchGridItem = memo(function PatchGridItem({ plan, onPress }: PatchGridIt
       <AnimatedTouchable
         style={styles.container}
         onPress={handlePress}
-        onPressIn={plan.id.startsWith('placeholder-') ? undefined : tapAnimation.onPressIn}
-        onPressOut={plan.id.startsWith('placeholder-') ? undefined : tapAnimation.onPressOut}
-        activeOpacity={plan.id.startsWith('placeholder-') ? 1 : 0.95}
-        disabled={plan.id.startsWith('placeholder-')}
+        onPressIn={tapAnimation.onPressIn}
+        onPressOut={tapAnimation.onPressOut}
+        activeOpacity={0.95}
       >
         <View style={styles.imageContainer}>
           <Image
@@ -99,10 +134,6 @@ const PatchGridItem = memo(function PatchGridItem({ plan, onPress }: PatchGridIt
                 </View>
               ))}
             </View>
-          )}
-          
-          {plan.id.startsWith('placeholder-') && (
-            <Text style={styles.placeholderText}>Próximamente más parches 🌙</Text>
           )}
         </View>
       </AnimatedTouchable>
@@ -202,11 +233,45 @@ const styles = StyleSheet.create({
     color: '#A1A1A1',
     fontWeight: '500',
   },
-  placeholderText: {
-    fontSize: 10,
+  placeholderImageContainer: {
+    width: '100%',
+    height: '100%',
+    position: 'relative',
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  placeholderImage: {
+    width: '100%',
+    height: '100%',
+  },
+  placeholderGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  placeholderContent: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  placeholderTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  placeholderSubtitle: {
+    fontSize: 11,
     color: '#A1A1A1',
-    marginTop: 4,
-    fontStyle: 'italic',
+    textAlign: 'center',
   },
 });
 
