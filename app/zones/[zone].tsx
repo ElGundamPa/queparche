@@ -211,7 +211,7 @@ export default function ZoneDetail() {
       <FlatList
         data={zonePlans}
         renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item, index) => `${item.id}-${index}`}
         numColumns={3}
         columnWrapperStyle={styles.row}
         contentContainerStyle={styles.listContent}
