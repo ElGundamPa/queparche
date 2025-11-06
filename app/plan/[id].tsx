@@ -259,23 +259,24 @@ export default function PlanDetailScreen() {
               isMuted={true}
             />
           </View>
-        ) : (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.photoCarousel}
-            style={styles.photoCarouselContainer}
-          >
-            {plan.images.map((image, index) => (
-              <Image
-                key={index}
-                source={{ uri: image }}
-                style={styles.photoCarouselItem}
-                contentFit="cover"
-              />
-            ))}
-          </ScrollView>
-        )}
+        ) : plan.images.length > 1 ? (
+          <View style={styles.photoCarouselWrapper}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.photoCarousel}
+            >
+              {plan.images.map((image, index) => (
+                <Image
+                  key={index}
+                  source={{ uri: image }}
+                  style={styles.photoCarouselItem}
+                  contentFit="cover"
+                />
+              ))}
+            </ScrollView>
+          </View>
+        ) : null}
 
         <View style={styles.contentContainer}>
           {/* Info Block */}
@@ -302,12 +303,12 @@ export default function PlanDetailScreen() {
             {plan.description || "Plan perfecto si buscas ambiente chill, luces cálidas y música suave."}
           </Text>
 
-          {/* Photo Carousel (if not shown above) */}
-          {hasVideo && plan.images.length > 1 && (
+          {/* Photo Carousel (horizontal, 120px) */}
+          {plan.images.length > 1 && (
             <>
               <Text style={styles.sectionTitle}>Fotos</Text>
               <FlatList
-                data={plan.images.slice(1)}
+                data={plan.images}
                 renderItem={renderPhoto}
                 keyExtractor={(item, index) => `photo-${index}`}
                 horizontal
@@ -457,9 +458,10 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  photoCarouselContainer: {
+  photoCarouselWrapper: {
     marginTop: -20,
     marginHorizontal: 16,
+    marginBottom: 20,
   },
   photoCarousel: {
     gap: 12,
