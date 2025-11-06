@@ -58,8 +58,9 @@ const createPlaceholderPlan = (zoneName: string): Plan => {
     favorites: 0,
     rating: 0,
     reviewCount: 0,
+    price: 0,
     priceType: 'free',
-    tags: ['Ambiente agradable'],
+    tags: ['Ambiente agradable', 'Espacios abiertos'],
   };
 };
 
@@ -105,13 +106,9 @@ export default function ZoneDetail() {
     router.push(`/plan/${plan.id}`);
   };
 
-  const renderItem = ({ item, index }: { item: Plan; index: number }) => {
-    // Calcular si es la última columna para ajustar el margen
-    const isLastInRow = (index + 1) % 3 === 0;
+  const renderItem = ({ item }: { item: Plan }) => {
     return (
-      <View style={[styles.itemContainer, isLastInRow && styles.itemLastInRow]}>
-        <PatchGridItem plan={item} onPress={() => handlePlanPress(item)} />
-      </View>
+      <PatchGridItem plan={item} onPress={() => handlePlanPress(item)} />
     );
   };
 
@@ -209,6 +206,7 @@ const styles = StyleSheet.create({
   row: {
     justifyContent: 'space-between',
     marginBottom: 0,
+    gap: 12, // Espaciado horizontal entre items
   },
   itemContainer: {
     marginBottom: 12,

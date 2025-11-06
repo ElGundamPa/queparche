@@ -6,7 +6,7 @@ import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-na
 import { Plan } from '@/types/plan';
 
 const { width } = Dimensions.get('window');
-const itemWidth = (width - 48) / 3; // 3 columnas con padding
+const itemWidth = (width - 48) / 3; // 3 columnas con padding (16px padding cada lado + 12px espaciado entre items)
 
 interface PatchGridItemProps {
   plan: Plan;
@@ -72,10 +72,12 @@ export default function PatchGridItem({ plan, onPress }: PatchGridItemProps) {
           {plan.name}
         </Text>
         
-        <View style={styles.ratingRow}>
-          <Star size={12} color="#FFD700" fill="#FFD700" />
-          <Text style={styles.rating}>{plan.rating.toFixed(1)}</Text>
-        </View>
+        {plan.rating > 0 && (
+          <View style={styles.ratingRow}>
+            <Star size={12} color="#FFD700" fill="#FFD700" />
+            <Text style={styles.rating}>{plan.rating.toFixed(1)}</Text>
+          </View>
+        )}
         
         <View style={styles.locationRow}>
           <MapPin size={10} color="#999999" />
@@ -92,15 +94,20 @@ const styles = StyleSheet.create({
   container: {
     width: itemWidth,
     backgroundColor: '#111111',
-    borderRadius: 12,
+    borderRadius: 14,
     overflow: 'hidden',
     marginBottom: 12,
     borderWidth: 1,
     borderColor: '#1A1A1A',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   imageContainer: {
     width: '100%',
-    height: itemWidth * 0.75,
+    height: itemWidth, // Hace la imagen cuadrada
     position: 'relative',
   },
   image: {
@@ -120,19 +127,21 @@ const styles = StyleSheet.create({
     fontSize: 10,
   },
   content: {
-    padding: 8,
+    padding: 10,
+    minHeight: 70, // Asegura altura mínima consistente
   },
   name: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     color: '#FFFFFF',
-    marginBottom: 4,
-    lineHeight: 16,
+    marginBottom: 6,
+    lineHeight: 18,
+    minHeight: 36, // 2 líneas aprox
   },
   ratingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 6,
     gap: 4,
   },
   rating: {
