@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { Star, MapPin } from 'lucide-react-native';
@@ -26,6 +26,7 @@ const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 const PatchGridItem = memo(function PatchGridItem({ plan, onPress, index = 0 }: PatchGridItemProps) {
   const isPlaceholder = plan.id.startsWith('placeholder-');
+  const hasAnimated = useRef(false);
   
   // Animación de presión estilo Apple para planes reales
   const pressScale = useSharedValue(1);
@@ -39,8 +40,8 @@ const PatchGridItem = memo(function PatchGridItem({ plan, onPress, index = 0 }: 
   const handlePressIn = () => {
     if (isPlaceholder) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    pressScale.value = withSpring(0.97, { damping: 15, stiffness: 250 });
-    shadowOpacity.value = withSpring(0.5, { damping: 15, stiffness: 250 });
+    pressScale.value = withSpring(0.96, { damping: 15, stiffness: 250 });
+    shadowOpacity.value = withSpring(0.55, { damping: 15, stiffness: 250 });
   };
 
   const handlePressOut = () => {
@@ -78,9 +79,12 @@ const PatchGridItem = memo(function PatchGridItem({ plan, onPress, index = 0 }: 
 
   // Renderizado para placeholder
   if (isPlaceholder) {
+    const shouldAnimate = !hasAnimated.current;
+    if (shouldAnimate) hasAnimated.current = true;
+    
     return (
       <Animated.View
-        entering={FadeInUp.delay(index * 60).duration(300).easing((t) => t * (2 - t))}
+        entering={shouldAnimate ? FadeInUp.delay(index * 65).duration(320).easing((t) => t * (2 - t)) : undefined}
       >
         <View style={styles.container}>
           <View style={styles.placeholderImageContainer}>
@@ -108,9 +112,12 @@ const PatchGridItem = memo(function PatchGridItem({ plan, onPress, index = 0 }: 
   }
 
   // Renderizado para plan normal
+  const shouldAnimate = !hasAnimated.current;
+  if (shouldAnimate) hasAnimated.current = true;
+  
   return (
     <Animated.View
-      entering={FadeInUp.delay(index * 60).duration(300).easing((t) => t * (2 - t))}
+      entering={shouldAnimate ? FadeInUp.delay(index * 65).duration(320).easing((t) => t * (2 - t)) : undefined}
     >
       <AnimatedTouchable
         style={[styles.container, animatedStyle]}
@@ -126,7 +133,7 @@ const PatchGridItem = memo(function PatchGridItem({ plan, onPress, index = 0 }: 
             contentFit="cover"
           />
           <LinearGradient
-            colors={['rgba(0,0,0,0.0)', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.8)']}
+            colors={['rgba(0,0,0,0.0)', 'rgba(0,0,0,0.55)', 'rgba(0,0,0,0.9)']}
             style={styles.planGradient}
           />
           {plan.isPremium && (
@@ -267,14 +274,14 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   planTag: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
     borderRadius: 14,
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
   },
   planTagText: {
     fontSize: 9,
-    color: '#A1A1A1',
+    color: '#EAEAEA',
     fontWeight: '500',
   },
   premiumBadge: {

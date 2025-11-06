@@ -138,19 +138,27 @@ export default function ZoneDetail() {
   };
 
   // Obtener imagen de la zona para el hero header
+  // Prioridad: imagen del primer plan real → imagen de la zona → Unsplash nocturno
   const zoneImageUrl = useMemo(() => {
-    if (!zoneItem?.image) {
-      return `https://source.unsplash.com/800x600/?${encodeURIComponent(zoneItem?.name || 'city')},city,night`;
+    // Si hay planes reales, usar la primera imagen
+    const realPlans = zonePlans.filter(p => !p.id.startsWith('placeholder-'));
+    if (realPlans.length > 0 && realPlans[0].images && realPlans[0].images.length > 0) {
+      return realPlans[0].images[0];
     }
-    // Si es un objeto ImageSource, extraer la URI
-    if (typeof zoneItem.image === 'string') {
-      return zoneItem.image;
+    
+    // Si la zona tiene imagen propia
+    if (zoneItem?.image) {
+      if (typeof zoneItem.image === 'string') {
+        return zoneItem.image;
+      }
+      if (zoneItem.image && 'uri' in zoneItem.image && zoneItem.image.uri) {
+        return zoneItem.image.uri;
+      }
     }
-    if (zoneItem.image && 'uri' in zoneItem.image) {
-      return zoneItem.image.uri || `https://source.unsplash.com/800x600/?${encodeURIComponent(zoneItem?.name || 'city')},city,night`;
-    }
-    return `https://source.unsplash.com/800x600/?${encodeURIComponent(zoneItem?.name || 'city')},city,night`;
-  }, [zoneItem]);
+    
+    // Fallback: Unsplash nocturno con keywords específicos
+    return `https://source.unsplash.com/1200x900/?medellin,night,rooftop,bokeh,warm`;
+  }, [zoneItem, zonePlans]);
 
   if (!zoneItem) {
     return (
@@ -178,7 +186,7 @@ export default function ZoneDetail() {
           contentFit="cover"
         />
         <LinearGradient
-          colors={['rgba(0,0,0,0.15)', 'rgba(0,0,0,0.85)']}
+          colors={['rgba(0,0,0,0.05)', 'rgba(0,0,0,0.85)']}
           style={styles.heroGradient}
         />
         
@@ -194,14 +202,14 @@ export default function ZoneDetail() {
         {/* Hero Content */}
         <View style={styles.heroContent}>
           <Text style={styles.heroTitle}>¿Qué parche hay hoy en {zoneItem.name}? 🔥</Text>
-          <Text style={styles.heroSubtitle}>Explora experiencias recomendadas en esta zona.</Text>
+          <Text style={styles.heroSubtitle}>Experiencias nocturnas recomendadas en esta zona.</Text>
           
           {/* Map Button */}
           <TouchableOpacity
             style={styles.mapButton}
             onPress={() => router.push(`/map?zone=${encodeURIComponent(zoneItem.name)}`)}
           >
-            <MapPin size={16} color="#FFFFFF" />
+            <MapPin size={14} color="#FFFFFF" />
             <Text style={styles.mapButtonText}>Ver en el mapa</Text>
           </TouchableOpacity>
         </View>
@@ -234,10 +242,10 @@ const styles = StyleSheet.create({
     flex: 1, 
     backgroundColor: '#0E0E0E',
   },
-  // Hero Header Styles
+  // Hero Header Styles - Nightlife Cinematic
   heroContainer: {
     width: '100%',
-    height: 220,
+    height: 260,
     position: 'relative',
     overflow: 'hidden',
   },
@@ -260,7 +268,7 @@ const styles = StyleSheet.create({
   heroBackButton: {
     position: 'absolute',
     top: 50,
-    left: 20,
+    left: 16,
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -279,8 +287,9 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 20,
+    paddingHorizontal: 16,
     paddingBottom: 24,
+    paddingTop: 16,
   },
   heroTitle: {
     fontSize: 24,
@@ -288,30 +297,28 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     marginBottom: 8,
     lineHeight: 30,
+    textShadowColor: 'rgba(0, 0, 0, 0.6)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   heroSubtitle: {
     fontSize: 14,
-    color: '#CCCCCC',
-    marginBottom: 16,
+    color: '#D9D9D9',
+    marginBottom: 12,
     lineHeight: 20,
   },
   mapButton: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    backgroundColor: '#1A1A1A',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 24,
-    gap: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 6,
   },
   mapButtonText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: '#FFFFFF',
   },
