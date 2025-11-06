@@ -25,6 +25,7 @@ import FABSpeedDial from "@/components/FABSpeedDial";
 import UserGreeting from "@/components/UserGreeting";
 import TopPlansCarousel from "@/components/TopPlansCarousel";
 import TrendingStrip from "@/components/TrendingStrip";
+import ZoneSelector from "@/components/ZoneSelector";
 import PatchGridItem from "@/components/PatchGridItem";
 import theme from "@/lib/theme";
 import { mockPlans } from "@/mocks/plans";
@@ -122,13 +123,16 @@ export default function HomeScreen() {
           />
         </Animated.View>
 
-        <Text style={styles.sectionLabel}>🔥 Top 5 del día</Text>
+        <Text style={styles.sectionTitle}>🔥 Top 5 del día</Text>
         <TopPlansCarousel />
 
-        <Text style={styles.sectionLabel}>⭐ Tendencias en Medellín</Text>
+        <Text style={styles.sectionTitle}>⭐ Tendencias en Medellín</Text>
         <TrendingStrip />
 
-        <Text style={styles.sectionLabel}>🌍 Todos los parches</Text>
+        <Text style={styles.sectionTitle}>📍 Elige tu zona</Text>
+        <ZoneSelector />
+
+        <Text style={styles.sectionTitle}>🌍 Todos los parches</Text>
         <View>
           <FlatList
             data={allPlans}
@@ -223,7 +227,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 24,
   },
-  sectionLabel: {
+  sectionTitle: {
     fontSize: 22,
     fontWeight: '700',
     color: '#FFFFFF',
