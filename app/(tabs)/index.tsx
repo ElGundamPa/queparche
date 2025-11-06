@@ -14,7 +14,7 @@ import {
 
 import { StatusBar } from "expo-status-bar";
 import * as Haptics from "expo-haptics";
-import { Calendar, Star, Crown, Search, Bell } from "lucide-react-native";
+import { Star, Crown, Search, Bell } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, { 
   FadeInDown, 
@@ -33,19 +33,16 @@ import { useRouter } from "expo-router";
 
 import PlanCard from "@/components/PlanCard";
 import SearchBar from "@/components/SearchBar";
-import EventCard from "@/components/EventCard";
 import FABSpeedDial from "@/components/FABSpeedDial";
 import HorizontalCategories from "@/components/HorizontalCategories";
 import ZoneSection from "@/components/ZoneSection";
 import EmptyState from "@/components/EmptyState";
 import { PlanCardSkeleton } from "@/components/SkeletonLoader";
-import Logo3VB from "@/components/Logo3VB";
-import PatchCard from "@/components/PatchCard";
 import UserGreeting from "@/components/UserGreeting";
 import theme from "@/lib/theme";
-// use entering delays por item en lugar de hooks variables
 import { categories } from "@/mocks/categories";
-import { mockPatches, Patch } from "@/mocks/patches";
+import { mockPlans } from "@/mocks/plans";
+import { Plan } from "@/types/plan";
 import { useFilteredPlans, usePlansStore, useTopPlans } from "@/hooks/use-plans-store";
 import { useUserStore } from "@/hooks/use-user-store";
 import { useSearchStore } from "@/hooks/use-search-store";
@@ -59,23 +56,25 @@ const { width, height } = Dimensions.get('window');
 type SectionType = 
   | { type: 'header' }
   | { type: 'search' }
-  | { type: 'patches'; data: Patch[] }
-  | { type: 'events'; data: any[] }
-  | { type: 'featured'; data: any[] }
-  | { type: 'topPlans'; data: any[] }
-  | { type: 'filteredPlans'; data: any[] }
+  | { type: 'patches'; data: Plan[] }
+  | { type: 'featured'; data: Plan[] }
+  | { type: 'topPlans'; data: Plan[] }
+  | { type: 'filteredPlans'; data: Plan[] }
   | { type: 'categories' }
   | { type: 'zones' }
   | { type: 'spacing' };
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { selectedCategory, setSelectedCategory, events, isLoading } = usePlansStore();
+  const { selectedCategory, setSelectedCategory, isLoading } = usePlansStore();
   const { user } = useUserStore();
   const { searchQuery, performSearch, filteredPlans: searchFilteredPlans } = useSearchStore();
   const topPlans = useTopPlans();
   const defaultFilteredPlans = useFilteredPlans();
   const filteredPlans = searchQuery ? searchFilteredPlans : defaultFilteredPlans;
+  
+  // Usar mockPlans - primeros 6 para la sección de parches
+  const homePlans = useMemo(() => mockPlans.slice(0, 6), []);
   
   // Animaciones de entrada
   const headerOpacity = useSharedValue(0);
@@ -91,19 +90,15 @@ export default function HomeScreen() {
     },
   });
 
-  // Usar mock de parches
-  const patches = mockPatches;
-
   const handleCategoryPress = (categoryName: string) => {
     Haptics.selectionAsync();
     const newCategory = selectedCategory === categoryName ? null : categoryName;
     setSelectedCategory(newCategory);
   };
 
-  const handlePatchPress = (patch: Patch) => {
+  const handlePlanPress = (plan: Plan) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Navegar directamente al plan
-    router.push(`/plan/${patch.id}`);
+    router.push(`/plan/${plan.id}`);
   };
 
   // Animaciones de entrada
@@ -132,11 +127,6 @@ export default function HomeScreen() {
 
 
 
-  const todayEvents = events.filter(event => {
-    const today = new Date().toDateString();
-    const eventDate = new Date(event.startDate).toDateString();
-    return today === eventDate;
-  });
 
   const prefetchNextImages = useCallback((items: any[], startIndex: number, batch: number = 6) => {
     try {
@@ -158,13 +148,9 @@ export default function HomeScreen() {
       { type: 'search' },
     ];
 
-    // Agregar sección de parches destacados
-    if (patches.length > 0) {
-      sectionList.push({ type: 'patches', data: patches });
-    }
-
-    if (todayEvents.length > 0) {
-      sectionList.push({ type: 'events', data: todayEvents.slice(0, 3) });
+    // Agregar sección de parches destacados (primeros 6 de mockPlans)
+    if (homePlans.length > 0) {
+      sectionList.push({ type: 'patches', data: homePlans });
     }
 
     if (topPlans.length > 0) {
@@ -183,7 +169,7 @@ export default function HomeScreen() {
     sectionList.push({ type: 'zones' });
     sectionList.push({ type: 'spacing' });
     return sectionList;
-  }, [patches, todayEvents, topPlans, filteredPlans]);
+  }, [homePlans, topPlans, filteredPlans]);
 
   // Stagger por item con entering delays (sin hooks variables)
 
@@ -238,53 +224,29 @@ export default function HomeScreen() {
               <Star size={20} color={theme.colors.primary} />
               <Text style={styles.sectionTitle}>¿Qué parche hay hoy en Medellín? 🔥</Text>
             </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.patchesScroll}
-            >
-                  {item.data.map((patch, index) => (
-                    <Animated.View key={patch.id} entering={FadeInUp.delay(350 + index * 70)}>
-                      <View style={styles.patchCardContainer}>
-                        <PatchCard
-                          patch={patch}
-                          onPress={() => {}}
-                          delay={index * 50}
-                        />
-                      </View>
-                    </Animated.View>
-                  ))}
-            </ScrollView>
-            <View style={styles.seeAllContainer}>
-              <TouchableOpacity style={styles.seeAllButton}>
-                <Text style={styles.seeAllText}>Ver todos los parches</Text>
-                <Text style={styles.seeAllIcon}>→</Text>
-              </TouchableOpacity>
-            </View>
-          </Animated.View>
-        );
-
-      case 'events':
-        return (
-          <Animated.View entering={FadeInUp.delay(300)}>
-            <View style={styles.sectionHeader}>
-              <Calendar size={20} color={theme.colors.primary} />
-              <Text style={styles.sectionTitle}>Eventos de hoy</Text>
-            </View>
             <HorizontalCards
               data={item.data}
-              keyExtractor={(ev) => ev.id}
+              keyExtractor={(plan) => plan.id}
               itemWidth={280}
-              renderItem={({ item: event, index }) => (
-                <Animated.View entering={FadeInUp.delay(400 + index * 100)}>
-                  <EventCard event={event} />
+              renderItem={({ item: plan, index }) => (
+                <Animated.View entering={FadeInUp.delay(350 + index * 70)}>
+                  <PlanCard plan={plan} horizontal={false} />
                 </Animated.View>
               )}
               gap={16}
               contentPaddingHorizontal={20}
-              testID="events-horizontal"
+              testID="patches-horizontal"
               onEndReached={() => prefetchNextImages(item.data, 6)}
             />
+            <View style={styles.seeAllContainer}>
+              <TouchableOpacity 
+                style={styles.seeAllButton}
+                onPress={() => router.push('/zones/medellin')}
+              >
+                <Text style={styles.seeAllText}>Ver todos los parches</Text>
+                <Text style={styles.seeAllIcon}>→</Text>
+              </TouchableOpacity>
+            </View>
           </Animated.View>
         );
 

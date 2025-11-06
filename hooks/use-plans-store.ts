@@ -17,7 +17,7 @@ const CACHE_KEYS = {
 export const [PlansProvider, usePlansStore] = createContextHook(() => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [events] = useState<Event[]>(mockEvents);
-  const [cachedPlans, setCachedPlans] = useState<Plan[]>([]);
+  const [cachedPlans, setCachedPlans] = useState<Plan[]>(mockPlans);
   const [cachedShorts, setCachedShorts] = useState<Short[]>(mockShorts);
   const queryClient = useQueryClient();
 
@@ -212,7 +212,7 @@ export const [PlansProvider, usePlansStore] = createContextHook(() => {
   });
 
   // Use cached data as fallback while loading, or mock data if no backend
-  const plans = plansQuery.data || cachedPlans || [];
+  const plans = plansQuery.data || cachedPlans || mockPlans;
   const shorts = shortsQuery.data || cachedShorts || mockShorts;
 
   // Add a new plan
