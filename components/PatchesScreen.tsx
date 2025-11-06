@@ -26,7 +26,6 @@ import * as Haptics from 'expo-haptics';
 import PatchCard from './PatchCard';
 import theme from '@/lib/theme';
 import { mockPatches, Patch } from '@/mocks/patches';
-import { extractZoneFromLocationString } from '@/lib/zone-utils';
 
 const { width, height } = Dimensions.get('window');
 
@@ -93,9 +92,8 @@ const PatchesScreen = () => {
 
   const handlePatchPress = (patch: Patch) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Navegar a la zona correspondiente
-    const zoneKey = extractZoneFromLocationString(patch.location);
-    router.push({ pathname: '/zones/[zone]', params: { zone: zoneKey } });
+    // Navegar directamente al plan
+    router.push(`/plan/${patch.id}`);
   };
 
   // Estilos animados

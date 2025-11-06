@@ -6,7 +6,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Heart, MessageCircle, Bookmark, Share } from 'lucide-react-native';
 import { scaleTap } from '@/lib/animations';
 import { Short } from '@/types/plan';
-import { extractZoneFromLocationString } from '@/lib/zone-utils';
 
 interface ShortOverlayProps {
   short: Short;
@@ -67,7 +66,7 @@ export const ShortOverlay = memo(({
         entering={FadeInUp.delay(200).duration(300).easing(Easing.out(Easing.cubic))}
         style={styles.descriptionContainer}
       >
-        <TouchableOpacity onPress={handlePlaceNamePress} disabled={!short?.placeName}>
+        <TouchableOpacity onPress={handlePlaceNamePress} disabled={!short?.id}>
           <Text style={styles.placeName} numberOfLines={1}>{short?.placeName || 'Sin nombre'}</Text>
         </TouchableOpacity>
         <Text style={styles.description} numberOfLines={2}>{short?.description || ''}</Text>

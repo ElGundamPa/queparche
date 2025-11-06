@@ -301,19 +301,14 @@ Response format: Provide a natural, conversational response that mentions specif
               key={plan.id}
               plan={plan}
               onPress={() => {
-                const zoneKey = extractZoneFromAddress(plan.location.address);
-                if (zoneKey) {
-                  Toast.show({
-                    type: 'info',
-                    text1: 'Abriendo zona...',
-                    text2: plan.name,
-                    position: 'bottom',
-                    visibilityTime: 1000,
-                  });
-                  router.push({ pathname: '/zones/[zone]', params: { zone: zoneKey } });
-                } else {
-                  router.push({ pathname: '/zones/[zone]', params: { zone: 'medellin' } });
-                }
+                Toast.show({
+                  type: 'info',
+                  text1: 'Abriendo parche...',
+                  text2: plan.name,
+                  position: 'bottom',
+                  visibilityTime: 1000,
+                });
+                router.push(`/plan/${plan.id}`);
               }}
             />
           ))}

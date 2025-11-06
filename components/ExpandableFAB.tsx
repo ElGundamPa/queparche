@@ -42,13 +42,8 @@ export default function ExpandableFAB({ position = 'bottom-right' }: ExpandableF
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const randomPlan = getRandomPlan();
     
-    if (randomPlan && randomPlan.location?.address) {
-      const zoneKey = extractZoneFromAddress(randomPlan.location.address);
-      if (zoneKey) {
-        router.push({ pathname: '/zones/[zone]', params: { zone: zoneKey } });
-      } else {
-        router.push({ pathname: '/zones/[zone]', params: { zone: 'medellin' } });
-      }
+    if (randomPlan) {
+      router.push(`/plan/${randomPlan.id}`);
     }
     
     toggleExpanded();

@@ -25,7 +25,6 @@ import { fadeIn, slideUp, scaleTap } from "@/lib/animations";
 import theme from "@/lib/theme";
 import { categories } from "@/mocks/categories";
 import { usePlansStore } from "@/hooks/use-plans-store";
-import { extractZoneFromAddress } from "@/lib/zone-utils";
 
 const { width } = Dimensions.get("window");
 
@@ -104,19 +103,8 @@ export default function MapScreen() {
   }, []);
 
   const handleMarkerPress = (planId: string) => {
-    // Buscar el plan para obtener su ubicación y zona
-    const plan = plans.find((p) => p.id === planId);
-    if (plan?.location?.address) {
-      const zoneKey = extractZoneFromAddress(plan.location.address);
-      if (zoneKey) {
-        router.push({ pathname: '/zones/[zone]', params: { zone: zoneKey } });
-      } else {
-        router.push({ pathname: '/zones/[zone]', params: { zone: 'medellin' } });
-      }
-    } else {
-      // Fallback si no se encuentra el plan
-      router.push({ pathname: '/zones/[zone]', params: { zone: 'medellin' } });
-    }
+    // Navegar directamente al plan
+    router.push(`/plan/${planId}`);
   };
 
   const handleCreatePress = () => {

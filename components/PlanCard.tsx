@@ -19,7 +19,6 @@ import Toast from "react-native-toast-message";
 
 import Colors from "@/constants/colors";
 import { Plan } from "@/types/plan";
-import { extractZoneFromAddress } from "@/lib/zone-utils";
 
 interface PlanCardProps {
   plan: Plan;
@@ -58,29 +57,17 @@ const PlanCard = memo(function PlanCard({ plan, horizontal = true, animationDela
   }, [glowOpacity]);
 
   const handlePress = () => {
-    if (plan?.location?.address) {
-      const zoneKey = extractZoneFromAddress(plan.location.address);
-      if (zoneKey) {
-        Toast.show({
-          type: 'info',
-          text1: 'Abriendo zona...',
-          text2: plan.name,
-          position: 'bottom',
-          visibilityTime: 1000,
-        });
-        router.push({ pathname: '/zones/[zone]', params: { zone: zoneKey } });
-      } else {
-        console.warn('Zone not found for address:', plan.location.address);
-        Toast.show({
-          type: 'error',
-          text1: 'Error',
-          text2: 'No se pudo encontrar la zona',
-          position: 'bottom',
-          visibilityTime: 2000,
-        });
-      }
+    if (plan?.id) {
+      Toast.show({
+        type: 'info',
+        text1: 'Abriendo parche...',
+        text2: plan.name,
+        position: 'bottom',
+        visibilityTime: 1000,
+      });
+      router.push(`/plan/${plan.id}`);
     } else {
-      console.warn('Plan location is missing:', plan);
+      console.warn('Plan ID is missing:', plan);
       Toast.show({
         type: 'error',
         text1: 'Error',

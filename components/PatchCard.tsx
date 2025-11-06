@@ -19,7 +19,6 @@ import Animated, {
   interpolate,
   withSequence,
 } from 'react-native-reanimated';
-import { extractZoneFromLocationString } from '@/lib/zone-utils';
 
 const { width } = Dimensions.get('window');
 
@@ -54,9 +53,8 @@ const PatchCard = ({ patch, onPress, delay = 0 }: PatchCardProps) => {
   const isPressed = useSharedValue(false);
   
   const handlePatchPress = () => {
-    // Navegar a la zona correspondiente
-    const zoneKey = extractZoneFromLocationString(patch.location);
-    router.push({ pathname: '/zones/[zone]', params: { zone: zoneKey } });
+    // Navegar directamente al plan
+    router.push(`/plan/${patch.id}`);
     if (onPress) {
       onPress();
     }

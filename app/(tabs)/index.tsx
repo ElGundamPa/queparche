@@ -46,7 +46,6 @@ import theme from "@/lib/theme";
 // use entering delays por item en lugar de hooks variables
 import { categories } from "@/mocks/categories";
 import { mockPatches, Patch } from "@/mocks/patches";
-import { extractZoneFromLocationString } from "@/lib/zone-utils";
 import { useFilteredPlans, usePlansStore, useTopPlans } from "@/hooks/use-plans-store";
 import { useUserStore } from "@/hooks/use-user-store";
 import { useSearchStore } from "@/hooks/use-search-store";
@@ -103,9 +102,8 @@ export default function HomeScreen() {
 
   const handlePatchPress = (patch: Patch) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Navegar a la zona correspondiente
-    const zoneKey = extractZoneFromLocationString(patch.location);
-    router.push({ pathname: '/zones/[zone]', params: { zone: zoneKey } });
+    // Navegar directamente al plan
+    router.push(`/plan/${patch.id}`);
   };
 
   // Animaciones de entrada
