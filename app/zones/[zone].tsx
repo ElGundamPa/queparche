@@ -1,11 +1,12 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import { ZONES } from '@/data/zones';
 import { mockPlans } from '@/mocks/plans';
 import { Plan } from '@/types/plan';
 import PatchGridItem from '@/components/PatchGridItem';
+import theme from '@/lib/theme';
 
 // Función para normalizar nombres de zona
 const normalizeZoneName = (zoneName: string): string => {
@@ -50,7 +51,7 @@ const createPlaceholderPlan = (zoneName: string): Plan => {
     category: 'Experiencias',
     maxPeople: 30,
     currentPeople: 0,
-    images: [`https://source.unsplash.com/random/1080x720/?${encodeURIComponent(normalizedZone)},city,night`],
+    images: [`https://source.unsplash.com/random/600x600/?${encodeURIComponent(normalizedZone)},night,city`],
     createdAt: new Date().toISOString(),
     createdBy: 'Sistema',
     userId: 'system',
@@ -139,7 +140,10 @@ export default function ZoneDetail() {
         >
           <ArrowLeft size={24} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{zoneItem.name}</Text>
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>¿Qué parche hay hoy en {zoneItem.name}? 🔥</Text>
+          <Text style={styles.headerSubtitle}>Explora experiencias recomendadas en esta zona.</Text>
+        </View>
         <View style={styles.placeholder} />
       </View>
 
@@ -152,6 +156,9 @@ export default function ZoneDetail() {
         columnWrapperStyle={styles.row}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        removeClippedSubviews={false}
+        initialNumToRender={12}
+        windowSize={7}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>No hay planes disponibles</Text>
@@ -169,11 +176,10 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     paddingHorizontal: 20,
     paddingTop: 60,
-    paddingBottom: 16,
+    paddingBottom: 24,
     backgroundColor: '#0E0E0E',
     borderBottomWidth: 1,
     borderBottomColor: '#1A1A1A',
@@ -185,16 +191,26 @@ const styles = StyleSheet.create({
     backgroundColor: '#1A1A1A',
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 12,
+    marginTop: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 4,
   },
+  headerContent: {
+    flex: 1,
+  },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    ...theme.typography.h1,
     color: '#FFFFFF',
+    marginBottom: 8,
+  },
+  headerSubtitle: {
+    ...theme.typography.body,
+    color: '#A1A1A1',
+    marginBottom: 16,
   },
   placeholder: {
     width: 40,
@@ -206,7 +222,7 @@ const styles = StyleSheet.create({
   row: {
     justifyContent: 'space-between',
     marginBottom: 0,
-    gap: 12, // Espaciado horizontal entre items
+    gap: 12,
   },
   itemContainer: {
     marginBottom: 12,
