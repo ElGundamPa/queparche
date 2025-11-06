@@ -232,12 +232,13 @@ const styles = StyleSheet.create({
     width: 40,
   },
   listContent: { 
-    padding: 16,
-    paddingBottom: 24,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 100,
   },
   row: {
     justifyContent: 'space-between',
-    marginBottom: 12, // Espaciado vertical entre filas
+    marginBottom: 12,
     gap: 12,
   },
   itemContainer: {

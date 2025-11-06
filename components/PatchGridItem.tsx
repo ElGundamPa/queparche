@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, ImageBackground } from 'react-native';
 import { Image } from 'expo-image';
 import { Star, MapPin } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -94,48 +94,51 @@ const PatchGridItem = memo(function PatchGridItem({ plan, onPress }: PatchGridIt
         onPressOut={tapAnimation.onPressOut}
         activeOpacity={0.95}
       >
-        <View style={styles.imageContainer}>
-          <Image
-            source={{ uri: imageUrl }}
-            style={styles.image}
-            contentFit="cover"
+        <ImageBackground
+          source={{ uri: imageUrl }}
+          style={styles.planImageBackground}
+          imageStyle={styles.planImageStyle}
+        >
+          <LinearGradient
+            colors={['rgba(0,0,0,0.0)', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.8)']}
+            style={styles.planGradient}
           />
           {plan.isPremium && (
             <View style={styles.premiumBadge}>
               <Text style={styles.premiumText}>⭐</Text>
             </View>
           )}
-        </View>
-        
-        <View style={styles.content}>
-          <Text style={styles.name} numberOfLines={2}>
-            {plan.name}
-          </Text>
           
-          {plan.rating > 0 && (
-            <View style={styles.ratingRow}>
-              <Star size={12} color="#FFD54F" fill="#FFD54F" />
-              <Text style={styles.rating}>{plan.rating.toFixed(1)}</Text>
-            </View>
-          )}
-          
-          <View style={styles.locationRow}>
-            <MapPin size={12} color="#A1A1A1" />
-            <Text style={styles.location} numberOfLines={1}>
-              {zone}
+          <View style={styles.planContent}>
+            <Text style={styles.planName} numberOfLines={2}>
+              {plan.name}
             </Text>
-          </View>
-          
-          {displayTags.length > 0 && (
-            <View style={styles.tagsContainer}>
-              {displayTags.map((tag, index) => (
-                <View key={index} style={styles.tag}>
-                  <Text style={styles.tagText}>{tag}</Text>
-                </View>
-              ))}
+            
+            {plan.rating > 0 && (
+              <View style={styles.planRatingRow}>
+                <Star size={12} color="#FFD54F" fill="#FFD54F" />
+                <Text style={styles.planRating}>{plan.rating.toFixed(1)}</Text>
+              </View>
+            )}
+            
+            <View style={styles.planLocationRow}>
+              <MapPin size={12} color="#A1A1A1" />
+              <Text style={styles.planLocation} numberOfLines={1}>
+                {zone}
+              </Text>
             </View>
-          )}
-        </View>
+            
+            {displayTags.length > 0 && (
+              <View style={styles.planTagsContainer}>
+                {displayTags.map((tag, index) => (
+                  <View key={index} style={styles.planTag}>
+                    <Text style={styles.planTagText}>{tag}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+        </ImageBackground>
       </AnimatedTouchable>
     </Animated.View>
   );
@@ -168,6 +171,79 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: 16,
+  },
+  // Estilos para planes reales con imagen de fondo completa
+  planImageBackground: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  planImageStyle: {
+    borderRadius: 16,
+    resizeMode: 'cover',
+  },
+  planGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  planContent: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 12,
+    paddingTop: 24, // Espacio superior para gradiente
+  },
+  planName: {
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 18,
+    color: '#FFFFFF',
+    marginBottom: 6,
+    minHeight: 36,
+  },
+  planRatingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+    gap: 4,
+  },
+  planRating: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#FFD54F',
+  },
+  planLocationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 4,
+  },
+  planLocation: {
+    fontSize: 11,
+    color: '#A1A1A1',
+    flex: 1,
+  },
+  planTagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+    marginTop: 2,
+  },
+  planTag: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 14,
+    backgroundColor: 'rgba(26, 26, 26, 0.8)',
+  },
+  planTagText: {
+    fontSize: 9,
+    color: '#A1A1A1',
+    fontWeight: '500',
   },
   premiumBadge: {
     position: 'absolute',
