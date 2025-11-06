@@ -31,6 +31,9 @@ export interface Plan {
   endDate?: string;
   vibe?: string;
   bestTime?: string;
+  isSpotlight?: boolean;
+  visits?: number;
+  saves?: number;
 }
 
 export interface Short {

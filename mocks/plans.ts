@@ -21,6 +21,9 @@ export const mockPlans: Plan[] = [
     tags: ["luces cálidas", "cita suave", "vista linda"],
     vibe: "Rooftop chill, música suave, conversación rica. Si vas con alguien… algo pasa 😉🔥",
     bestTime: "8:00pm — 12:00am",
+    isSpotlight: true,
+    visits: 342,
+    saves: 89,
   },
   {
     id: "cafe-001",
@@ -42,6 +45,8 @@ export const mockPlans: Plan[] = [
     tags: ["chill", "lectura", "primera cita"],
     vibe: "Suavecito, olor a café fresco, gente bonita escribiendo cosas que no terminan.",
     bestTime: "4:00pm — 7:00pm",
+    visits: 234,
+    saves: 56,
   },
   {
     id: "bar-001",
@@ -63,6 +68,8 @@ export const mockPlans: Plan[] = [
     tags: ["cerveza fría", "amigos", "previa"],
     vibe: "Mesas afuera, risas, humo y la vida pasando. Aquí empieza la noche.",
     bestTime: "7:00pm — 11:00pm",
+    visits: 289,
+    saves: 67,
   },
   {
     id: "mirador-001",
@@ -85,6 +92,9 @@ export const mockPlans: Plan[] = [
     tags: ["puesta de sol", "charla profunda", "panorámica"],
     vibe: "Luz bajita, viento fresco y esa conversación donde se mira a los ojos.",
     bestTime: "5:30pm — 9:00pm",
+    isSpotlight: true,
+    visits: 423,
+    saves: 98,
   },
   {
     id: "club-001",
@@ -106,6 +116,9 @@ export const mockPlans: Plan[] = [
     tags: ["reggaeton suave", "perreo fino", "luces cálidas"],
     vibe: "Perreo que huele a perfume caro y decisiones peligrosas.",
     bestTime: "11:00pm — 3:00am",
+    isSpotlight: true,
+    visits: 567,
+    saves: 142,
   },
   {
     id: "restaurante-001",
@@ -127,6 +140,9 @@ export const mockPlans: Plan[] = [
     tags: ["romántico", "tranquilo", "buena comida"],
     vibe: "Todo suavecito. Buena conversación. Risa bajita. Manos que se acercan.",
     bestTime: "6:30pm — 9:30pm",
+    isSpotlight: true,
+    visits: 312,
+    saves: 78,
   },
   {
     id: "parque-001",
@@ -149,6 +165,8 @@ export const mockPlans: Plan[] = [
     tags: ["matecito", "hablar chill", "atardecer"],
     vibe: "Sentarse, conversar, existir. No hace falta más.",
     bestTime: "3:00pm — 7:00pm",
+    visits: 198,
+    saves: 45,
   },
   {
     id: "casa-001",
@@ -170,5 +188,8 @@ export const mockPlans: Plan[] = [
     tags: ["perreo sin testigos", "trago barato", "energía caótica"],
     vibe: "Aquí nadie es serio. El sofá es cama. El baño está ocupado. Nadie pregunta nada.",
     bestTime: "cuando se calienta el grupo",
+    isSpotlight: true,
+    visits: 678,
+    saves: 156,
   },
 ];
