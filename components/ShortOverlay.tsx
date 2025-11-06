@@ -1,10 +1,12 @@
 import React, { memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 import Animated, { FadeInUp, Easing } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Heart, MessageCircle, Bookmark, Share } from 'lucide-react-native';
 import { scaleTap } from '@/lib/animations';
 import { Short } from '@/types/plan';
+import { extractZoneFromLocationString } from '@/lib/zone-utils';
 
 interface ShortOverlayProps {
   short: Short;
@@ -31,11 +33,20 @@ export const ShortOverlay = memo(({
   onSave,
   onShare,
 }: ShortOverlayProps) => {
+  const router = useRouter();
   // Animaciones de tap para cada botón
   const likeAnimation = scaleTap(0.9);
   const commentAnimation = scaleTap(0.9);
   const saveAnimation = scaleTap(0.9);
   const shareAnimation = scaleTap(0.9);
+
+  // Navegar a la zona cuando se toca el título
+  const handlePlaceNamePress = () => {
+    if (short?.placeName) {
+      const zoneKey = extractZoneFromLocationString(short.placeName);
+      router.push({ pathname: '/zones/[zone]', params: { zone: zoneKey } });
+    }
+  };
 
   // Solo renderizar cuando el video es activo
   if (!isActive) {
@@ -56,7 +67,9 @@ export const ShortOverlay = memo(({
         entering={FadeInUp.delay(200).duration(300).easing(Easing.out(Easing.cubic))}
         style={styles.descriptionContainer}
       >
-        <Text style={styles.placeName} numberOfLines={1}>{short?.placeName || 'Sin nombre'}</Text>
+        <TouchableOpacity onPress={handlePlaceNamePress} disabled={!short?.placeName}>
+          <Text style={styles.placeName} numberOfLines={1}>{short?.placeName || 'Sin nombre'}</Text>
+        </TouchableOpacity>
         <Text style={styles.description} numberOfLines={2}>{short?.description || ''}</Text>
         <Text style={styles.hashtag}>#{short?.category || 'general'}</Text>
       </Animated.View>

@@ -8,6 +8,7 @@ import {
   Dimensions,
   Platform,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -18,6 +19,7 @@ import Animated, {
   interpolate,
   withSequence,
 } from 'react-native-reanimated';
+import { extractZoneFromLocationString } from '@/lib/zone-utils';
 
 const { width } = Dimensions.get('window');
 
@@ -41,6 +43,7 @@ interface PatchCardProps {
 }
 
 const PatchCard = ({ patch, onPress, delay = 0 }: PatchCardProps) => {
+  const router = useRouter();
   const scale = useSharedValue(0.8);
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(30);
@@ -49,6 +52,15 @@ const PatchCard = ({ patch, onPress, delay = 0 }: PatchCardProps) => {
   const heartGlow = useSharedValue(0);
   const shareGlow = useSharedValue(0);
   const isPressed = useSharedValue(false);
+  
+  const handlePatchPress = () => {
+    // Navegar a la zona correspondiente
+    const zoneKey = extractZoneFromLocationString(patch.location);
+    router.push({ pathname: '/zones/[zone]', params: { zone: zoneKey } });
+    if (onPress) {
+      onPress();
+    }
+  };
 
   useEffect(() => {
     // Animación de entrada más rápida y directa
@@ -137,7 +149,7 @@ const PatchCard = ({ patch, onPress, delay = 0 }: PatchCardProps) => {
     <Animated.View style={[styles.container, cardStyle]}>
       <TouchableOpacity
         style={styles.card}
-        onPress={onPress}
+        onPress={handlePatchPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         activeOpacity={0.9}

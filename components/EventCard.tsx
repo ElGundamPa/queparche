@@ -19,6 +19,7 @@ import Colors from "@/constants/colors";
 import { Event } from "@/types/plan";
 import { formatCOP, formatDateTimeCO, formatDistanceKm } from "@/lib/format";
 import useLocation from "@/hooks/useLocation";
+import { extractZoneFromAddress } from "@/lib/zone-utils";
 
 interface EventCardProps {
   event: Event;
@@ -59,7 +60,14 @@ const EventCard = memo(function EventCard({ event }: EventCardProps) {
   }, [coords, event.location, distanceFrom]);
 
   const handlePress = () => {
-    router.push({ pathname: "/plan/[id]", params: { id: event.id } });
+    // Navegar a la zona correspondiente del evento
+    const zoneKey = extractZoneFromAddress(event.location.address);
+    if (zoneKey) {
+      router.push({ pathname: '/zones/[zone]', params: { zone: zoneKey } });
+    } else {
+      // Fallback a Medellín si no se encuentra la zona
+      router.push({ pathname: '/zones/[zone]', params: { zone: 'medellin' } });
+    }
   };
 
   const handleShare = () => {

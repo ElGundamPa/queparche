@@ -74,7 +74,12 @@ export default function FABSpeedDial({ style }: FABSpeedDialProps) {
     if (pools.length > 0) {
       const pick = pools[Math.floor(Math.random() * pools.length)];
       setOpen(false);
-      router.push(`/plan/${pick.id}`);
+      const zoneKey = extractZoneFromAddress(pick.location?.address);
+      if (zoneKey) {
+        router.push({ pathname: '/zones/[zone]', params: { zone: zoneKey } });
+      } else {
+        router.push({ pathname: '/zones/[zone]', params: { zone: 'medellin' } });
+      }
     }
   };
 

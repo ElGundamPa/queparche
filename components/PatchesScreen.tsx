@@ -11,6 +11,7 @@ import {
   Image,
   TextInput,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -21,31 +22,18 @@ import Animated, {
   interpolate,
   useAnimatedScrollHandler,
 } from 'react-native-reanimated';
-import { BlurView } from 'expo-blur';
+import * as Haptics from 'expo-haptics';
 import PatchCard from './PatchCard';
 import theme from '@/lib/theme';
-import PatchDetailModal from './PatchDetailModal';
+import { mockPatches, Patch } from '@/mocks/patches';
+import { extractZoneFromLocationString } from '@/lib/zone-utils';
 
 const { width, height } = Dimensions.get('window');
 
-interface Patch {
-  id: string;
-  name: string;
-  location: string;
-  rating: number;
-  price: string;
-  description: string;
-  category: string;
-  image: string;
-  amenities: string[];
-  isFavorite?: boolean;
-}
-
 const PatchesScreen = () => {
+  const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedPatch, setSelectedPatch] = useState<Patch | null>(null);
-  const [isDetailVisible, setIsDetailVisible] = useState(false);
   
   // Animaciones de entrada
   const headerOpacity = useSharedValue(0);
@@ -57,11 +45,6 @@ const PatchesScreen = () => {
   const cardsOpacity = useSharedValue(0);
   const cardsTranslateY = useSharedValue(30);
   
-  // Animación de blur de fondo
-  const blurIntensity = useSharedValue(0);
-  const modalScale = useSharedValue(0.8);
-  const modalOpacity = useSharedValue(0);
-
   // Parallax scroll
   const scrollY = useSharedValue(0);
   const onScroll = useAnimatedScrollHandler({
@@ -81,85 +64,8 @@ const PatchesScreen = () => {
     { id: 'Shopping', name: 'Shopping', icon: '🛍️' },
   ];
 
-  const patches: Patch[] = [
-    {
-      id: '1',
-      name: 'La Taquería Urbana',
-      location: 'El Poblado, Medellín',
-      rating: 4.8,
-      price: '$$',
-      description: 'Comida mexicana moderna',
-      category: 'Restaurantes',
-      image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=800',
-      amenities: ['WiFi', 'Reservas', 'Terraza'],
-    },
-    {
-      id: '2',
-      name: 'Skyline Rooftop Bar',
-      location: 'Laureles',
-      rating: 4.9,
-      price: '$$',
-      description: 'Cócteles y vistas panorámicas',
-      category: 'Rooftops',
-      image: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800',
-      amenities: ['Música en vivo', 'Terraza', 'Vista panorámica'],
-    },
-    {
-      id: '3',
-      name: 'Picnic en el Jardín Botánico',
-      location: 'Centro',
-      rating: 4.6,
-      price: 'Gratis',
-      description: 'Familiar - Aire libre',
-      category: 'Planes Gratis',
-      image: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800',
-      amenities: ['Aire libre', 'Familiar', 'Naturaleza'],
-    },
-    {
-      id: '4',
-      name: 'Museo de Arte Moderno MAMM',
-      location: 'Ciudad del Río',
-      rating: 4.7,
-      price: '$$',
-      description: 'Arte, exposiciones y café cultural',
-      category: 'Cultura',
-      image: 'https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=800',
-      amenities: ['Exposiciones', 'Café', 'Cultura'],
-    },
-    {
-      id: '5',
-      name: 'Sendero de La Miel',
-      location: 'Envigado',
-      rating: 4.6,
-      price: '$$',
-      description: 'Caminata ecológica guiada',
-      category: 'Naturaleza',
-      image: 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=800',
-      amenities: ['Ecológico', 'Guía', 'Naturaleza'],
-    },
-    {
-      id: '6',
-      name: 'Bar El Social',
-      location: 'Provenza',
-      rating: 4.9,
-      price: '$$$',
-      description: 'DJ y cocteles exclusivos',
-      category: 'Vida Nocturna',
-      image: 'https://images.unsplash.com/photo-1572116469696-31de0f17cc34?w=800',
-      amenities: ['DJ', 'Cocteles', 'Música'],
-    },
-    {
-      id: '7',
-      name: 'Viva Envigado',
-      location: 'Envigado',
-      rating: 4.5,
-      price: '$$',
-      description: 'Compras, cine y gastronomía',
-      category: 'Shopping',
-      image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800',
-      amenities: ['Compras', 'Cine', 'Gastronomía'],
-    },
-  ];
+  // Usar mock de parches
+  const patches = mockPatches;
 
   const filteredPatches = patches.filter(patch => {
     const matchesCategory = selectedCategory === 'Todos' || patch.category === selectedCategory;
@@ -186,29 +92,10 @@ const PatchesScreen = () => {
   }, []);
 
   const handlePatchPress = (patch: Patch) => {
-    setSelectedPatch(patch);
-    
-    // Animación de blur y modal
-    blurIntensity.value = withTiming(10, { duration: 300, easing: Easing.out(Easing.ease) });
-    modalScale.value = withSpring(1, { damping: 15, stiffness: 100 });
-    modalOpacity.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.ease) });
-    
-    // Mostrar modal después de la animación
-    setTimeout(() => {
-      setIsDetailVisible(true);
-    }, 150);
-  };
-
-  const handleCloseDetail = () => {
-    // Animación de cierre
-    blurIntensity.value = withTiming(0, { duration: 300, easing: Easing.in(Easing.ease) });
-    modalScale.value = withSpring(0.8, { damping: 15, stiffness: 100 });
-    modalOpacity.value = withTiming(0, { duration: 300, easing: Easing.in(Easing.ease) });
-    
-    setTimeout(() => {
-      setIsDetailVisible(false);
-      setSelectedPatch(null);
-    }, 300);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // Navegar a la zona correspondiente
+    const zoneKey = extractZoneFromLocationString(patch.location);
+    router.push({ pathname: '/zones/[zone]', params: { zone: zoneKey } });
   };
 
   // Estilos animados
@@ -234,14 +121,6 @@ const PatchesScreen = () => {
     transform: [{ translateY: cardsTranslateY.value }],
   }));
 
-  const backgroundBlurStyle = useAnimatedStyle(() => ({
-    opacity: blurIntensity.value / 10,
-  }));
-
-  const modalStyle = useAnimatedStyle(() => ({
-    opacity: modalOpacity.value,
-    transform: [{ scale: modalScale.value }],
-  }));
 
   return (
     <View style={styles.container}>
@@ -330,22 +209,6 @@ const PatchesScreen = () => {
         </Animated.ScrollView>
       </Animated.View>
 
-      {/* Blur Background */}
-      {isDetailVisible && (
-        <Animated.View style={[styles.blurBackground, backgroundBlurStyle]}>
-          <BlurView intensity={blurIntensity.value} style={StyleSheet.absoluteFill} />
-        </Animated.View>
-      )}
-
-      {/* Detail Modal */}
-      {isDetailVisible && selectedPatch && (
-        <Animated.View style={[styles.modalContainer, modalStyle]}>
-          <PatchDetailModal
-            patch={selectedPatch}
-            onClose={handleCloseDetail}
-          />
-        </Animated.View>
-      )}
     </View>
   );
 };
@@ -500,22 +363,6 @@ const styles = StyleSheet.create({
   patchesScroll: {
     paddingHorizontal: 20,
     paddingBottom: 100,
-  },
-  blurBackground: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 10,
-  },
-  modalContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 20,
   },
 });
 

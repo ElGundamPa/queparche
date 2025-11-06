@@ -260,7 +260,18 @@ export default function CreateShortScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: "Crear Short" }} />
+      <Stack.Screen
+        options={{
+          title: "Crear Short",
+          headerStyle: { backgroundColor: Colors.light.background },
+          headerTintColor: Colors.light.text,
+          headerLeft: () => (
+            <TouchableOpacity onPress={() => router.back()} style={{ paddingHorizontal: 12 }}>
+              <Text style={{ color: Colors.light.primary, fontWeight: "700" }}>← Volver</Text>
+            </TouchableOpacity>
+          ),
+        }}
+      />
       <View style={styles.container}>
         <StatusBar style="dark" />
         

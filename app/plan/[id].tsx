@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   StyleSheet,
   Text,
@@ -36,6 +36,7 @@ import { useUserStore } from "@/hooks/use-user-store";
 import { trpc } from "@/lib/trpc";
 import FallbackScreen from "@/components/FallbackScreen";
 import { storage } from "@/lib/storage";
+import { mockPlans } from "@/mocks/plans";
 
 export default function PlanDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -48,7 +49,12 @@ export default function PlanDetailScreen() {
   const [rating, setRating] = useState(0);
   const [showReviewForm, setShowReviewForm] = useState(false);
   
-  const plan = plans.find((p) => p.id === id);
+  // Buscar plan en mockPlans primero, luego en plans del store
+  const plan = useMemo(() => {
+    const fromMocks = mockPlans.find((p) => p.id === id);
+    if (fromMocks) return fromMocks;
+    return plans.find((p) => p.id === id);
+  }, [id, plans]);
   
   // Add to recent plans when viewing
   useEffect(() => {
@@ -311,6 +317,20 @@ export default function PlanDetailScreen() {
                 ${plan.price.toLocaleString()} COP
               </Text>
             </View>
+          )}
+          
+          {/* Tags/Amenities */}
+          {plan.tags && plan.tags.length > 0 && (
+            <>
+              <Text style={styles.sectionTitle}>Amenidades</Text>
+              <View style={styles.tagsContainer}>
+                {plan.tags.map((tag, index) => (
+                  <View key={index} style={styles.tagItem}>
+                    <Text style={styles.tagText}>{tag}</Text>
+                  </View>
+                ))}
+              </View>
+            </>
           )}
           
           <Text style={styles.sectionTitle}>Descripción</Text>
@@ -785,5 +805,24 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontStyle: 'italic',
     marginVertical: 20,
+  },
+  tagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 20,
+    gap: 8,
+  },
+  tagItem: {
+    backgroundColor: Colors.light.card,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#2A2A2A',
+  },
+  tagText: {
+    fontSize: 12,
+    color: Colors.light.text,
+    fontWeight: '500',
   },
 });

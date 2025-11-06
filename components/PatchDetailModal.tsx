@@ -1,3 +1,11 @@
+/**
+ * @deprecated Este componente ya no se utiliza.
+ * Todas las vistas de detalle de parches ahora usan la pantalla unificada: app/parche/[id].tsx
+ * 
+ * Este archivo se mantiene solo para referencia histórica.
+ * Puede ser eliminado en una futura versión.
+ */
+
 import React, { useState } from 'react';
 import {
   View,

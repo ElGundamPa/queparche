@@ -1,128 +1,175 @@
-import React, { useMemo, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useMemo } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, FlatList } from 'react-native';
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
-import theme from '@/lib/theme';
-import { ZONES, MEDELLIN_COMUNAS } from '@/data/zones';
-import AreaCard from '@/components/AreaCard';
-import { useFilters } from '@/store/filters';
-import { Image as ExpoImage, type ImageSource } from 'expo-image';
 import { ArrowLeft } from 'lucide-react-native';
-import Animated, { useSharedValue, useAnimatedScrollHandler, useAnimatedStyle, interpolate, FadeInUp } from 'react-native-reanimated';
+import { ZONES } from '@/data/zones';
+import { mockPlans } from '@/mocks/plans';
+import { Plan } from '@/types/plan';
+import PatchGridItem from '@/components/PatchGridItem';
 
-function extractUri(src?: ImageSource): string | undefined {
-  if (!src) return undefined;
-  if (typeof src === 'string') return src;
-  const anySrc = src as unknown as { uri?: string };
-  return anySrc?.uri;
-}
+// Función para normalizar nombres de zona
+const normalizeZoneName = (zoneName: string): string => {
+  return zoneName.toLowerCase()
+    .replace(/[áàäâ]/g, 'a')
+    .replace(/[éèëê]/g, 'e')
+    .replace(/[íìïî]/g, 'i')
+    .replace(/[óòöô]/g, 'o')
+    .replace(/[úùüû]/g, 'u')
+    .replace(/[ñ]/g, 'n')
+    .replace(/[ç]/g, 'c')
+    .trim();
+};
+
+// Función para extraer zona desde la dirección
+const extractZoneFromAddress = (address?: string): string | null => {
+  if (!address) return null;
+  const normalizedAddress = normalizeZoneName(address);
+  
+  for (const zone of ZONES) {
+    const normalizedZoneName = normalizeZoneName(zone.name);
+    if (normalizedAddress.includes(normalizedZoneName)) {
+      return zone.name;
+    }
+  }
+  
+  return null;
+};
+
+// Función para crear un plan placeholder
+const createPlaceholderPlan = (zoneName: string): Plan => {
+  const normalizedZone = normalizeZoneName(zoneName);
+  return {
+    id: `placeholder-${normalizedZone}`,
+    name: `Plan recomendado en ${zoneName}`,
+    location: {
+      latitude: 6.2442,
+      longitude: -75.5812,
+      address: `${zoneName}, Colombia`,
+    },
+    description: `Explora experiencias únicas en ${zoneName}. Próximamente más parches subidos por la comunidad.`,
+    category: 'Experiencias',
+    maxPeople: 30,
+    currentPeople: 0,
+    images: [`https://source.unsplash.com/random/1080x720/?${encodeURIComponent(normalizedZone)},city,night`],
+    createdAt: new Date().toISOString(),
+    createdBy: 'Sistema',
+    userId: 'system',
+    likes: 0,
+    favorites: 0,
+    rating: 0,
+    reviewCount: 0,
+    priceType: 'free',
+    tags: ['Ambiente agradable'],
+  };
+};
 
 export default function ZoneDetail() {
   const { zone } = useLocalSearchParams<{ zone: string }>();
   const router = useRouter();
-  const { width } = Dimensions.get('window');
 
-  const zoneKey = useMemo(() => String(zone || '').toLowerCase().trim(), [zone]);
-  const zoneItem = useMemo(() => ZONES.find((z) => String(z.key).toLowerCase().trim() === zoneKey), [zoneKey]);
+  // Normalizar el parámetro de zona (puede venir como "Medellin" o "Medellín")
+  const zoneKey = useMemo(() => {
+    const param = String(zone || '').trim();
+    // Buscar la zona que coincida (por key o por name)
+    const found = ZONES.find((z) => 
+      z.key.toLowerCase() === param.toLowerCase() || 
+      normalizeZoneName(z.name) === normalizeZoneName(param)
+    );
+    return found ? found.key : param.toLowerCase();
+  }, [zone]);
 
-  const areas = useMemo(() => {
-    if (zoneKey === 'medellin') return MEDELLIN_COMUNAS;
-    return [];
-  }, [zoneKey]);
+  const zoneItem = useMemo(() => 
+    ZONES.find((z) => z.key.toLowerCase() === zoneKey), 
+    [zoneKey]
+  );
 
-  useEffect(() => {
-    if (zoneKey !== 'medellin') return;
-    try {
-      const first = MEDELLIN_COMUNAS.slice(0, 6);
-      first.forEach((a) => {
-        const uri = extractUri(a.image);
-        if (uri) {
-          ExpoImage.prefetch(uri).catch((e) => console.log('Comunas prefetch error', e?.message));
-        }
-      });
-    } catch (e: any) {
-      console.log('Comunas prefetch failed', e?.message);
+  // Filtrar planes por zona
+  const zonePlans = useMemo(() => {
+    if (!zoneItem) return [];
+    
+    const filtered = mockPlans.filter((plan) => {
+      const planZone = extractZoneFromAddress(plan.location.address);
+      return planZone === zoneItem.name;
+    });
+    
+    // Si no hay planes, crear un placeholder
+    if (filtered.length === 0) {
+      return [createPlaceholderPlan(zoneItem.name)];
     }
-  }, [zoneKey]);
+    
+    return filtered;
+  }, [zoneItem]);
 
-  const { setZone, setComuna } = useFilters();
+  const handlePlanPress = (plan: Plan) => {
+    // En la página de zona, al tocar un plan, navegar a su detalle
+    router.push(`/plan/${plan.id}`);
+  };
 
-  const onAreaPress = useCallback((slug: string) => {
-    if (!zoneItem) return;
-    setZone(zoneItem.key);
-    setComuna(slug);
-    router.push('/(tabs)');
-  }, [router, zoneItem, setZone, setComuna]);
+  const renderItem = ({ item, index }: { item: Plan; index: number }) => {
+    // Calcular si es la última columna para ajustar el margen
+    const isLastInRow = (index + 1) % 3 === 0;
+    return (
+      <View style={[styles.itemContainer, isLastInRow && styles.itemLastInRow]}>
+        <PatchGridItem plan={item} onPress={() => handlePlanPress(item)} />
+      </View>
+    );
+  };
 
   if (!zoneItem) {
     return (
       <View style={styles.container}>
         <Stack.Screen options={{ title: 'Zona no encontrada' }} />
-        <View style={{ padding: 16 }}>
-          <Text style={styles.empty}>Zona no encontrada</Text>
-          <View style={{ height: 12 }} />
-          <Text style={styles.empty}>Verifica tu conexión o vuelve a intentarlo.</Text>
-          <View style={{ height: 20 }} />
-          <Text onPress={() => router.back()} style={{ color: theme.colors.primary, fontWeight: '700' }} accessibilityRole="button">
-            ← Volver
-          </Text>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Zona no encontrada</Text>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Text style={styles.backButtonText}>← Volver</Text>
+          </TouchableOpacity>
         </View>
       </View>
     );
   }
 
-  // Parallax y stagger
-  const scrollY = useSharedValue(0);
-  const onScroll = useAnimatedScrollHandler({
-    onScroll: (e) => { scrollY.value = e.contentOffset.y; },
-  });
-  const headerStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: interpolate(scrollY.value, [0, 120], [0, -40], 'clamp') }],
-  }));
-
-  // Stagger mediante entering delays (sin hooks variables)
-
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ title: zoneItem.name }} />
 
-      {/* Header con back y parallax */}
-      <Animated.View style={[styles.header, headerStyle]}>
+      {/* Header */}
+      <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}
           testID="back-button"
         >
-          <ArrowLeft size={24} color={theme.colors.textPrimary} />
+          <ArrowLeft size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{zoneItem.name}</Text>
         <View style={styles.placeholder} />
-      </Animated.View>
+      </View>
 
-      <Animated.ScrollView
+      {/* Grid de planes */}
+      <FlatList
+        data={zonePlans}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id}
+        numColumns={3}
+        columnWrapperStyle={styles.row}
         contentContainerStyle={styles.listContent}
-        onScroll={onScroll}
-        scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.grid}>
-          {areas.map((item, index) => (
-            <Animated.View key={item.key} style={styles.col} entering={FadeInUp.delay(350 + index * 70)}>
-              <AreaCard
-                title={item.name}
-                image={item.image}
-                onPress={() => onAreaPress(item.key)}
-                testID={`area-${item.key}`}
-              />
-            </Animated.View>
-          ))}
-        </View>
-      </Animated.ScrollView>
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No hay planes disponibles</Text>
+          </View>
+        }
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#0E0E0E',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -130,15 +177,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 16,
-    backgroundColor: theme.colors.background,
+    backgroundColor: '#0E0E0E',
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    borderBottomColor: '#1A1A1A',
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: '#1A1A1A',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -150,13 +197,47 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: theme.colors.textPrimary,
+    color: '#FFFFFF',
   },
   placeholder: {
     width: 40,
   },
-  listContent: { padding: 16 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -6 },
-  col: { width: '50%', padding: 6 },
-  empty: { color: theme.colors.textSecondary, fontSize: 14 },
+  listContent: { 
+    padding: 16,
+    paddingBottom: 24,
+  },
+  row: {
+    justifyContent: 'space-between',
+    marginBottom: 0,
+  },
+  itemContainer: {
+    marginBottom: 12,
+  },
+  itemLastInRow: {
+    marginRight: 0,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    color: '#999999',
+    fontSize: 16,
+    marginBottom: 20,
+  },
+  backButtonText: {
+    color: '#FF3B30',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  emptyContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: '#999999',
+    fontSize: 14,
+  },
 });

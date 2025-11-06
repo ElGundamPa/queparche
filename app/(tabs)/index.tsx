@@ -28,7 +28,7 @@ import Animated, {
   interpolate,
   Easing,
 } from "react-native-reanimated";
-import { BlurView } from "expo-blur";
+import { useRouter } from "expo-router";
 
 
 import PlanCard from "@/components/PlanCard";
@@ -41,11 +41,12 @@ import EmptyState from "@/components/EmptyState";
 import { PlanCardSkeleton } from "@/components/SkeletonLoader";
 import Logo3VB from "@/components/Logo3VB";
 import PatchCard from "@/components/PatchCard";
-import PatchDetailModal from "@/components/PatchDetailModal";
 import UserGreeting from "@/components/UserGreeting";
 import theme from "@/lib/theme";
 // use entering delays por item en lugar de hooks variables
 import { categories } from "@/mocks/categories";
+import { mockPatches, Patch } from "@/mocks/patches";
+import { extractZoneFromLocationString } from "@/lib/zone-utils";
 import { useFilteredPlans, usePlansStore, useTopPlans } from "@/hooks/use-plans-store";
 import { useUserStore } from "@/hooks/use-user-store";
 import { useSearchStore } from "@/hooks/use-search-store";
@@ -55,22 +56,6 @@ import { Image as ExpoImage } from "expo-image";
 const { width, height } = Dimensions.get('window');
 
 
-
-interface Patch {
-  id: string;
-  name: string;
-  location: string;
-  rating: number;
-  price: string;
-  description: string;
-  category: string;
-  image: string;
-  images?: string[];
-  amenities: string[];
-  isFavorite?: boolean;
-  latitude?: number;
-  longitude?: number;
-}
 
 type SectionType = 
   | { type: 'header' }
@@ -85,6 +70,7 @@ type SectionType =
   | { type: 'spacing' };
 
 export default function HomeScreen() {
+  const router = useRouter();
   const { selectedCategory, setSelectedCategory, events, isLoading } = usePlansStore();
   const { user } = useUserStore();
   const { searchQuery, performSearch, filteredPlans: searchFilteredPlans } = useSearchStore();
@@ -92,20 +78,11 @@ export default function HomeScreen() {
   const defaultFilteredPlans = useFilteredPlans();
   const filteredPlans = searchQuery ? searchFilteredPlans : defaultFilteredPlans;
   
-  // Estado para parches y modal
-  const [selectedPatch, setSelectedPatch] = useState<Patch | null>(null);
-  const [isDetailVisible, setIsDetailVisible] = useState(false);
-  
   // Animaciones de entrada
   const headerOpacity = useSharedValue(0);
   const headerTranslateY = useSharedValue(-30);
   const searchOpacity = useSharedValue(0);
   const searchTranslateY = useSharedValue(20);
-  
-  // Animación de blur de fondo
-  const blurIntensity = useSharedValue(0);
-  const modalScale = useSharedValue(0.8);
-  const modalOpacity = useSharedValue(0);
 
   // Parallax global
   const scrollY = useSharedValue(0);
@@ -115,105 +92,8 @@ export default function HomeScreen() {
     },
   });
 
-  // Datos de parches de ejemplo - Más parches para mejor experiencia
-  const patches: Patch[] = [
-    {
-      id: '1',
-      name: 'La Taquería Urbana',
-      location: 'El Poblado, Medellín',
-      rating: 4.8,
-      price: '$$',
-      description: 'Comida mexicana moderna con ingredientes frescos y auténticos sabores. Ambiente casual y acogedor perfecto para una cena con amigos.',
-      category: 'Restaurantes',
-      image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=800',
-      amenities: ['WiFi', 'Reservas', 'Terraza'],
-      latitude: 6.2088,
-      longitude: -75.5656,
-    },
-    {
-      id: '2',
-      name: 'Skyline Rooftop Bar',
-      location: 'Laureles',
-      rating: 4.9,
-      price: '$$',
-      description: 'Cócteles artesanales y vistas panorámicas de la ciudad. El lugar perfecto para disfrutar de un atardecer inolvidable con música en vivo.',
-      category: 'Rooftops',
-      image: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800',
-      images: [
-        'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800',
-        'https://images.unsplash.com/photo-1572116469696-31de0f17cc34?w=800',
-        'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=800',
-      ],
-      amenities: ['Música en vivo', 'Terraza', 'Vista panorámica'],
-      latitude: 6.2442,
-      longitude: -75.5812,
-    },
-    {
-      id: '3',
-      name: 'Picnic en el Jardín Botánico',
-      location: 'Centro',
-      rating: 4.6,
-      price: 'Gratis',
-      description: 'Disfruta de un día familiar rodeado de naturaleza. Perfecto para relajarse, hacer ejercicio o simplemente disfrutar del aire libre.',
-      category: 'Planes Gratis',
-      image: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800',
-      amenities: ['Aire libre', 'Familiar', 'Naturaleza'],
-      latitude: 6.2442,
-      longitude: -75.5812,
-    },
-    {
-      id: '4',
-      name: 'Museo de Arte Moderno MAMM',
-      location: 'Ciudad del Río',
-      rating: 4.7,
-      price: '$$',
-      description: 'Arte contemporáneo, exposiciones temporales y un café cultural único. Un espacio para la creatividad y la reflexión en el corazón de la ciudad.',
-      category: 'Cultura',
-      image: 'https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=800',
-      amenities: ['Exposiciones', 'Café', 'Cultura'],
-      latitude: 6.2442,
-      longitude: -75.5812,
-    },
-    {
-      id: '5',
-      name: 'Sendero de La Miel',
-      location: 'Envigado',
-      rating: 4.6,
-      price: '$$',
-      description: 'Caminata ecológica guiada por senderos naturales. Conecta con la naturaleza y descubre la biodiversidad de la región.',
-      category: 'Naturaleza',
-      image: 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=800',
-      amenities: ['Ecológico', 'Guía', 'Naturaleza'],
-      latitude: 6.1667,
-      longitude: -75.5833,
-    },
-    {
-      id: '6',
-      name: 'Bar El Social',
-      location: 'Provenza',
-      rating: 4.9,
-      price: '$$$',
-      description: 'DJ sets exclusivos y cócteles de autor en el corazón de la vida nocturna de Medellín. El lugar perfecto para una noche inolvidable.',
-      category: 'Vida Nocturna',
-      image: 'https://images.unsplash.com/photo-1572116469696-31de0f17cc34?w=800',
-      amenities: ['DJ', 'Cocteles', 'Música'],
-      latitude: 6.2088,
-      longitude: -75.5656,
-    },
-    {
-      id: '7',
-      name: 'Centro Comercial Santafé',
-      location: 'El Poblado',
-      rating: 4.5,
-      price: '$$',
-      description: 'El centro comercial más exclusivo de Medellín con las mejores marcas internacionales, restaurantes gourmet y entretenimiento.',
-      category: 'Shopping',
-      image: 'https://images.unsplash.com/photo-1555529902-1a0a2a0a0a0a?w=800',
-      amenities: ['Parking', 'WiFi', 'Restaurantes'],
-      latitude: 6.2088,
-      longitude: -75.5656,
-    },
-  ];
+  // Usar mock de parches
+  const patches = mockPatches;
 
   const handleCategoryPress = (categoryName: string) => {
     Haptics.selectionAsync();
@@ -222,27 +102,10 @@ export default function HomeScreen() {
   };
 
   const handlePatchPress = (patch: Patch) => {
-    setSelectedPatch(patch);
-    
-    // Fade in rápido sin rebote
-    blurIntensity.value = withTiming(5, { duration: 150, easing: Easing.out(Easing.ease) });
-    modalScale.value = withTiming(1, { duration: 150, easing: Easing.out(Easing.ease) });
-    modalOpacity.value = withTiming(1, { duration: 150, easing: Easing.out(Easing.ease) });
-    
-    // Mostrar modal inmediatamente
-    setIsDetailVisible(true);
-  };
-
-  const handleCloseDetail = () => {
-    // Fade out rápido sin rebote
-    blurIntensity.value = withTiming(0, { duration: 150, easing: Easing.in(Easing.ease) });
-    modalScale.value = withTiming(0.95, { duration: 150, easing: Easing.in(Easing.ease) });
-    modalOpacity.value = withTiming(0, { duration: 150, easing: Easing.in(Easing.ease) });
-    
-    setTimeout(() => {
-      setIsDetailVisible(false);
-      setSelectedPatch(null);
-    }, 150);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // Navegar a la zona correspondiente
+    const zoneKey = extractZoneFromLocationString(patch.location);
+    router.push({ pathname: '/zones/[zone]', params: { zone: zoneKey } });
   };
 
   // Animaciones de entrada
@@ -267,15 +130,6 @@ export default function HomeScreen() {
   const searchStyle = useAnimatedStyle(() => ({
     opacity: searchOpacity.value,
     transform: [{ translateY: searchTranslateY.value }],
-  }));
-
-  const backgroundBlurStyle = useAnimatedStyle(() => ({
-    opacity: blurIntensity.value / 10,
-  }));
-
-  const modalStyle = useAnimatedStyle(() => ({
-    opacity: modalOpacity.value,
-    transform: [{ scale: modalScale.value }],
   }));
 
 
@@ -396,7 +250,7 @@ export default function HomeScreen() {
                       <View style={styles.patchCardContainer}>
                         <PatchCard
                           patch={patch}
-                          onPress={() => handlePatchPress(patch)}
+                          onPress={() => {}}
                           delay={index * 50}
                         />
                       </View>
@@ -607,23 +461,6 @@ export default function HomeScreen() {
 
       {/* Floating Action Button */}
       <FABSpeedDial />
-
-      {/* Blur Background */}
-      {isDetailVisible && (
-        <Animated.View style={[styles.blurBackground, backgroundBlurStyle]}>
-          <BlurView intensity={blurIntensity.value} style={StyleSheet.absoluteFill} />
-        </Animated.View>
-      )}
-
-      {/* Detail Modal */}
-      {isDetailVisible && selectedPatch && (
-        <Animated.View style={[styles.modalContainer, modalStyle]}>
-          <PatchDetailModal
-            patch={selectedPatch}
-            onClose={handleCloseDetail}
-          />
-        </Animated.View>
-      )}
     </View>
   );
 }
@@ -809,23 +646,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: theme.colors.primary,
     fontWeight: '600',
-  },
-  
-  // Modal and Blur
-  blurBackground: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 10,
-  },
-  modalContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 20,
   },
 });

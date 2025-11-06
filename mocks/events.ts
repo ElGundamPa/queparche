@@ -2,7 +2,7 @@ import { Event } from "@/types/plan";
 
 export const mockEvents: Event[] = [
   {
-    id: "1",
+    id: "event-1",
     title: "Festival de Flores 2025",
     description: "El evento más colorido de Medellín con desfiles, música y gastronomía local",
     category: "Culture",
@@ -23,7 +23,7 @@ export const mockEvents: Event[] = [
     isPremium: true,
   },
   {
-    id: "2",
+    id: "event-2",
     title: "Noche de Salsa en Café Havana",
     description: "Baila salsa con los mejores músicos de la ciudad",
     category: "Nightlife",
@@ -41,7 +41,7 @@ export const mockEvents: Event[] = [
     tags: ["salsa", "música", "baile", "nocturno"],
   },
   {
-    id: "3",
+    id: "event-3",
     title: "Tour Gastronómico El Poblado",
     description: "Descubre los mejores sabores de la gastronomía paisa",
     category: "Restaurants",
