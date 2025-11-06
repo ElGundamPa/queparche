@@ -21,6 +21,10 @@ const PatchGridItem = memo(function PatchGridItem({ plan, onPress }: PatchGridIt
   const tapAnimation = scaleTap(0.96);
 
   const handlePress = () => {
+    // Si es placeholder, no hacer nada
+    if (plan.id.startsWith('placeholder-')) {
+      return;
+    }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onPress();
   };
@@ -50,9 +54,10 @@ const PatchGridItem = memo(function PatchGridItem({ plan, onPress }: PatchGridIt
       <AnimatedTouchable
         style={styles.container}
         onPress={handlePress}
-        onPressIn={tapAnimation.onPressIn}
-        onPressOut={tapAnimation.onPressOut}
-        activeOpacity={0.95}
+        onPressIn={plan.id.startsWith('placeholder-') ? undefined : tapAnimation.onPressIn}
+        onPressOut={plan.id.startsWith('placeholder-') ? undefined : tapAnimation.onPressOut}
+        activeOpacity={plan.id.startsWith('placeholder-') ? 1 : 0.95}
+        disabled={plan.id.startsWith('placeholder-')}
       >
         <View style={styles.imageContainer}>
           <Image
@@ -110,10 +115,10 @@ export default PatchGridItem;
 const styles = StyleSheet.create({
   container: {
     width: itemWidth,
+    height: 230, // Altura fija total
     backgroundColor: '#121212',
     borderRadius: 16,
     overflow: 'hidden',
-    marginBottom: 12,
     borderWidth: 1,
     borderColor: '#1E1E1E',
     shadowColor: '#000',
@@ -124,7 +129,7 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     width: '100%',
-    height: itemWidth, // Hace la imagen cuadrada
+    height: itemWidth, // Imagen cuadrada
     position: 'relative',
     overflow: 'hidden',
   },
@@ -147,7 +152,8 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 12,
-    minHeight: 70,
+    flex: 1,
+    justifyContent: 'space-between',
   },
   name: {
     fontSize: 14,

@@ -21,18 +21,25 @@ const normalizeZoneName = (zoneName: string): string => {
     .trim();
 };
 
-// Función para extraer zona desde la dirección
-const extractZoneFromAddress = (address?: string): string | null => {
-  if (!address) return null;
-  const normalizedAddress = normalizeZoneName(address);
-  
-  for (const zone of ZONES) {
-    const normalizedZoneName = normalizeZoneName(zone.name);
-    if (normalizedAddress.includes(normalizedZoneName)) {
-      return zone.name;
+// Función para obtener la zona/ciudad de un plan
+const getPlanZone = (plan: Plan): string | null => {
+  // Prioridad: zone > city > extraer desde address
+  if (plan.location.zone) {
+    return plan.location.zone;
+  }
+  if (plan.location.city) {
+    return plan.location.city;
+  }
+  // Fallback: extraer desde address si no hay zone/city
+  if (plan.location.address) {
+    const normalizedAddress = normalizeZoneName(plan.location.address);
+    for (const zone of ZONES) {
+      const normalizedZoneName = normalizeZoneName(zone.name);
+      if (normalizedAddress.includes(normalizedZoneName)) {
+        return zone.name;
+      }
     }
   }
-  
   return null;
 };
 
@@ -46,12 +53,13 @@ const createPlaceholderPlan = (zoneName: string): Plan => {
       latitude: 6.2442,
       longitude: -75.5812,
       address: `${zoneName}, Colombia`,
+      city: zoneName,
     },
     description: `Explora experiencias únicas en ${zoneName}. Próximamente más parches subidos por la comunidad.`,
     category: 'Experiencias',
     maxPeople: 30,
     currentPeople: 0,
-    images: [`https://source.unsplash.com/random/600x600/?${encodeURIComponent(normalizedZone)},night,city`],
+    images: [`https://source.unsplash.com/600x600/?${encodeURIComponent(normalizedZone)},city,night`],
     createdAt: new Date().toISOString(),
     createdBy: 'Sistema',
     userId: 'system',
@@ -89,9 +97,13 @@ export default function ZoneDetail() {
   const zonePlans = useMemo(() => {
     if (!zoneItem) return [];
     
+    const normalizedZoneName = normalizeZoneName(zoneItem.name);
+    
     const filtered = mockPlans.filter((plan) => {
-      const planZone = extractZoneFromAddress(plan.location.address);
-      return planZone === zoneItem.name;
+      const planZone = getPlanZone(plan);
+      if (!planZone) return false;
+      const normalizedPlanZone = normalizeZoneName(planZone);
+      return normalizedPlanZone === normalizedZoneName;
     });
     
     // Si no hay planes, crear un placeholder
@@ -103,7 +115,11 @@ export default function ZoneDetail() {
   }, [zoneItem]);
 
   const handlePlanPress = (plan: Plan) => {
-    // En la página de zona, al tocar un plan, navegar a su detalle
+    // Si es placeholder, no navegar
+    if (plan.id.startsWith('placeholder-')) {
+      return;
+    }
+    // Navegar al detalle del plan
     router.push(`/plan/${plan.id}`);
   };
 
@@ -221,7 +237,7 @@ const styles = StyleSheet.create({
   },
   row: {
     justifyContent: 'space-between',
-    marginBottom: 0,
+    marginBottom: 12, // Espaciado vertical entre filas
     gap: 12,
   },
   itemContainer: {
