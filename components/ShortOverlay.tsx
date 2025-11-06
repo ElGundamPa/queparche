@@ -39,11 +39,10 @@ export const ShortOverlay = memo(({
   const saveAnimation = scaleTap(0.9);
   const shareAnimation = scaleTap(0.9);
 
-  // Navegar a la zona cuando se toca el título
+  // Navegar al short detail cuando se toca el título
   const handlePlaceNamePress = () => {
-    if (short?.placeName) {
-      const zoneKey = extractZoneFromLocationString(short.placeName);
-      router.push({ pathname: '/zones/[zone]', params: { zone: zoneKey } });
+    if (short?.id) {
+      router.push(`/short/${short.id}`);
     }
   };
 
