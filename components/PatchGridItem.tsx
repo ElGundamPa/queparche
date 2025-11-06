@@ -3,10 +3,15 @@ import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-nati
 import { Image } from 'expo-image';
 import { Star, MapPin } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { FadeInUp } from 'react-native-reanimated';
+import Animated, { 
+  FadeInUp, 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withSpring,
+  interpolate 
+} from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Plan } from '@/types/plan';
-import { scaleTap } from '@/lib/animations';
 
 const { width } = Dimensions.get('window');
 const itemWidth = (width - 48) / 3; // 3 columnas con padding (16px padding cada lado + 12px espaciado entre items)
@@ -14,20 +19,41 @@ const itemWidth = (width - 48) / 3; // 3 columnas con padding (16px padding cada
 interface PatchGridItemProps {
   plan: Plan;
   onPress: () => void;
+  index?: number; // Índice para animación escalonada
 }
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
-const PatchGridItem = memo(function PatchGridItem({ plan, onPress }: PatchGridItemProps) {
+const PatchGridItem = memo(function PatchGridItem({ plan, onPress, index = 0 }: PatchGridItemProps) {
   const isPlaceholder = plan.id.startsWith('placeholder-');
-  const tapAnimation = scaleTap(0.96);
+  
+  // Animación de presión estilo Apple para planes reales
+  const pressScale = useSharedValue(1);
+  const shadowOpacity = useSharedValue(0.35);
+  
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pressScale.value }],
+    shadowOpacity: shadowOpacity.value,
+  }));
+
+  const handlePressIn = () => {
+    if (isPlaceholder) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    pressScale.value = withSpring(0.97, { damping: 15, stiffness: 250 });
+    shadowOpacity.value = withSpring(0.5, { damping: 15, stiffness: 250 });
+  };
+
+  const handlePressOut = () => {
+    if (isPlaceholder) return;
+    pressScale.value = withSpring(1, { damping: 12, stiffness: 220 });
+    shadowOpacity.value = withSpring(0.35, { damping: 12, stiffness: 220 });
+  };
 
   const handlePress = () => {
     // Si es placeholder, no hacer nada
     if (isPlaceholder) {
       return;
     }
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onPress();
   };
 
@@ -54,7 +80,7 @@ const PatchGridItem = memo(function PatchGridItem({ plan, onPress }: PatchGridIt
   if (isPlaceholder) {
     return (
       <Animated.View
-        entering={FadeInUp.delay(200).duration(300).easing((t) => t * (2 - t))}
+        entering={FadeInUp.delay(index * 60).duration(300).easing((t) => t * (2 - t))}
       >
         <View style={styles.container}>
           <View style={styles.placeholderImageContainer}>
@@ -84,15 +110,14 @@ const PatchGridItem = memo(function PatchGridItem({ plan, onPress }: PatchGridIt
   // Renderizado para plan normal
   return (
     <Animated.View
-      entering={FadeInUp.delay(200).duration(300).easing((t) => t * (2 - t))}
-      style={tapAnimation.style}
+      entering={FadeInUp.delay(index * 60).duration(300).easing((t) => t * (2 - t))}
     >
       <AnimatedTouchable
-        style={styles.container}
+        style={[styles.container, animatedStyle]}
         onPress={handlePress}
-        onPressIn={tapAnimation.onPressIn}
-        onPressOut={tapAnimation.onPressOut}
-        activeOpacity={0.95}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        activeOpacity={1}
       >
         <View style={styles.planImageContainer}>
           <Image
@@ -245,7 +270,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 14,
-    backgroundColor: 'rgba(26, 26, 26, 0.8)',
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
   },
   planTagText: {
     fontSize: 9,

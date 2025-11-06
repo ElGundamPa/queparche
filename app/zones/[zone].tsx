@@ -1,12 +1,16 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, ImageBackground, Dimensions } from 'react-native';
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft, MapPin } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { ZONES } from '@/data/zones';
 import { mockPlans } from '@/mocks/plans';
 import { Plan } from '@/types/plan';
 import PatchGridItem from '@/components/PatchGridItem';
 import theme from '@/lib/theme';
+import { Image } from 'expo-image';
+
+const { width } = Dimensions.get('window');
 
 // Función para normalizar nombres de zona
 const normalizeZoneName = (zoneName: string): string => {
@@ -123,11 +127,30 @@ export default function ZoneDetail() {
     router.push(`/plan/${plan.id}`);
   };
 
-  const renderItem = ({ item }: { item: Plan }) => {
+  const renderItem = ({ item, index }: { item: Plan; index: number }) => {
     return (
-      <PatchGridItem plan={item} onPress={() => handlePlanPress(item)} />
+      <PatchGridItem 
+        plan={item} 
+        onPress={() => handlePlanPress(item)} 
+        index={index}
+      />
     );
   };
+
+  // Obtener imagen de la zona para el hero header
+  const zoneImageUrl = useMemo(() => {
+    if (!zoneItem?.image) {
+      return `https://source.unsplash.com/800x600/?${encodeURIComponent(zoneItem?.name || 'city')},city,night`;
+    }
+    // Si es un objeto ImageSource, extraer la URI
+    if (typeof zoneItem.image === 'string') {
+      return zoneItem.image;
+    }
+    if (zoneItem.image && 'uri' in zoneItem.image) {
+      return zoneItem.image.uri || `https://source.unsplash.com/800x600/?${encodeURIComponent(zoneItem?.name || 'city')},city,night`;
+    }
+    return `https://source.unsplash.com/800x600/?${encodeURIComponent(zoneItem?.name || 'city')},city,night`;
+  }, [zoneItem]);
 
   if (!zoneItem) {
     return (
@@ -147,20 +170,41 @@ export default function ZoneDetail() {
     <View style={styles.container}>
       <Stack.Screen options={{ title: zoneItem.name }} />
 
-      {/* Header */}
-      <View style={styles.header}>
+      {/* Hero Header */}
+      <View style={styles.heroContainer}>
+        <Image
+          source={{ uri: zoneImageUrl }}
+          style={styles.heroImage}
+          contentFit="cover"
+        />
+        <LinearGradient
+          colors={['rgba(0,0,0,0.15)', 'rgba(0,0,0,0.85)']}
+          style={styles.heroGradient}
+        />
+        
+        {/* Back Button */}
         <TouchableOpacity
-          style={styles.backButton}
+          style={styles.heroBackButton}
           onPress={() => router.back()}
           testID="back-button"
         >
           <ArrowLeft size={24} color="#FFFFFF" />
         </TouchableOpacity>
-        <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>¿Qué parche hay hoy en {zoneItem.name}? 🔥</Text>
-          <Text style={styles.headerSubtitle}>Explora experiencias recomendadas en esta zona.</Text>
+
+        {/* Hero Content */}
+        <View style={styles.heroContent}>
+          <Text style={styles.heroTitle}>¿Qué parche hay hoy en {zoneItem.name}? 🔥</Text>
+          <Text style={styles.heroSubtitle}>Explora experiencias recomendadas en esta zona.</Text>
+          
+          {/* Map Button */}
+          <TouchableOpacity
+            style={styles.mapButton}
+            onPress={() => router.push(`/map?zone=${encodeURIComponent(zoneItem.name)}`)}
+          >
+            <MapPin size={16} color="#FFFFFF" />
+            <Text style={styles.mapButtonText}>Ver en el mapa</Text>
+          </TouchableOpacity>
         </View>
-        <View style={styles.placeholder} />
       </View>
 
       {/* Grid de planes */}
@@ -190,6 +234,88 @@ const styles = StyleSheet.create({
     flex: 1, 
     backgroundColor: '#0E0E0E',
   },
+  // Hero Header Styles
+  heroContainer: {
+    width: '100%',
+    height: 220,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  heroGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  heroBackButton: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(26, 26, 26, 0.8)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  heroContent: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 20,
+    paddingBottom: 24,
+  },
+  heroTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 8,
+    lineHeight: 30,
+  },
+  heroSubtitle: {
+    fontSize: 14,
+    color: '#CCCCCC',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  mapButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: '#1A1A1A',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 24,
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  mapButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  // Legacy styles (keep for error states)
   header: {
     flexDirection: 'row',
     alignItems: 'flex-start',
