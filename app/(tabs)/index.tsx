@@ -24,7 +24,7 @@ import SearchBar from "@/components/SearchBar";
 import FABSpeedDial from "@/components/FABSpeedDial";
 import UserGreeting from "@/components/UserGreeting";
 import TopPlansCarousel from "@/components/TopPlansCarousel";
-import TrendingTags from "@/components/TrendingTags";
+import TrendingPlansCarousel from "@/components/TrendingPlansCarousel";
 import ZoneSelector from "@/components/ZoneSelector";
 import PatchGridItem from "@/components/PatchGridItem";
 import theme from "@/lib/theme";
@@ -38,7 +38,6 @@ export default function HomeScreen() {
   const { user } = useUserStore();
   const { searchQuery, performSearch } = useSearchStore();
   const [selectedZone, setSelectedZone] = useState<string>('medellin');
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
 
   const headerOpacity = useSharedValue(0);
   const headerTranslateY = useSharedValue(-30);
@@ -85,15 +84,8 @@ export default function HomeScreen() {
       });
     }
 
-    // Filtrar por tag
-    if (selectedTag) {
-      filtered = filtered.filter(plan => 
-        plan.tags && plan.tags.includes(selectedTag)
-      );
-    }
-
     return filtered;
-  }, [selectedZone, selectedTag]);
+  }, [selectedZone]);
 
   const handlePlanPress = (plan: Plan) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -178,8 +170,8 @@ export default function HomeScreen() {
         <Text style={styles.sectionTitle}>🔥 Top 5 del día</Text>
         <TopPlansCarousel />
 
-        <Text style={styles.sectionTitle}>⭐ Tendencias en Medellín</Text>
-        <TrendingTags onTagSelect={setSelectedTag} />
+        <Text style={styles.sectionTitle}>🔥 Tendencias en Medellín</Text>
+        <TrendingPlansCarousel />
 
         <Text style={styles.sectionTitle}>🌍 Todos los parches</Text>
         <View>
