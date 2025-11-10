@@ -80,7 +80,7 @@ export default function AIAssistantScreen() {
     try {
       // Create context about available plans with structured data
       const availablePlans = plans.map(plan => 
-        `ID: ${plan.id} | Name: ${plan.name} | Category: ${plan.category} | Description: ${plan.description.substring(0, 150)}... | Rating: ${plan.rating} | Likes: ${plan.likes}`
+        `ID: ${plan.id} | Name: ${plan.name} | Category: ${plan.primaryCategory || plan.category} | Description: ${plan.description.substring(0, 150)}... | Rating: ${plan.rating} | Likes: ${plan.likes}`
       ).join('\n');
 
       const systemPrompt = `You are "Parche AI", a friendly and professional AI assistant specialized in recommending plans and places in Medellín, Colombia.
@@ -268,7 +268,7 @@ Response format: Provide a natural, conversational response that mentions specif
       />
       <View style={styles.planCardContent}>
         <Text style={styles.planCardTitle} numberOfLines={1}>{plan.name}</Text>
-        <Text style={styles.planCardCategory}>{plan.category}</Text>
+        <Text style={styles.planCardCategory}>{plan.primaryCategory || plan.category}</Text>
         <View style={styles.planCardStats}>
           <View style={styles.planCardStat}>
             <Heart size={12} color={Colors.light.primary} />

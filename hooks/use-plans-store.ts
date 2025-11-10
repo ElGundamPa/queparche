@@ -249,7 +249,7 @@ export const [PlansProvider, usePlansStore] = createContextHook(() => {
   // Get a random plan
   const getRandomPlan = () => {
     const filteredPlans = selectedCategory
-      ? plans.filter((plan) => plan.category === selectedCategory)
+      ? plans.filter((plan) => (plan.primaryCategory || plan.category) === selectedCategory)
       : plans;
     
     if (filteredPlans.length === 0) return null;
@@ -292,7 +292,7 @@ export function useFilteredPlans(searchQuery: string = "") {
       : true;
     
     const matchesCategory = selectedCategory
-      ? plan.category === selectedCategory
+      ? (plan.primaryCategory || plan.category) === selectedCategory
       : true;
     
     return matchesSearch && matchesCategory;
@@ -308,8 +308,8 @@ export function useTopPlans() {
   // Sort by rating, likes, and favorites combined
   const sortedPlans = [...plans].sort(
     (a, b) => {
-      const scoreA = (a.rating * 2) + a.likes + a.favorites;
-      const scoreB = (b.rating * 2) + b.likes + b.favorites;
+      const scoreA = ((a.rating ?? 0) * 2) + (a.likes ?? 0) + (a.favorites ?? 0);
+      const scoreB = ((b.rating ?? 0) * 2) + (b.likes ?? 0) + (b.favorites ?? 0);
       return scoreB - scoreA;
     }
   );

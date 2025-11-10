@@ -1,33 +1,55 @@
-export interface Location {
-  latitude?: number;
-  longitude?: number;
+export interface PlanLocation {
   address?: string;
   city?: string;
   zone?: string;
+  lat?: number;
+  lng?: number;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface Plan {
   id: string;
   name: string;
-  location: Location;
+  primaryCategory: "barrio" | "mirador" | "rooftop" | "restaurante" | "cafe" | "bar" | "club" | "parque";
+
+  location: PlanLocation;
+
   description: string;
-  category: string;
-  maxPeople: number;
-  currentPeople: number;
+
+  capacity: number;
+  currentAttendees: number;
+  eventDate?: string;
+  averagePrice: number;
+  categories: string[];
+
+  maxPeople?: number;
+  currentPeople?: number;
+
+  date?: string | null;
+  priceAvg?: string;
+
+  tags?: string[];
   images: string[];
-  createdAt: string;
-  createdBy: string;
-  userId: string;
-  likes: number;
-  favorites: number;
-  rating: number;
-  reviewCount: number;
+  rating?: number;
+  reviews?: Array<{
+    user: string;
+    comment: string;
+    rating: number;
+  }>;
+
+  // Campos legacy opcionales para compatibilidad
+  category?: string;
+  createdAt?: string;
+  createdBy?: string;
+  userId?: string;
+  likes?: number;
+  favorites?: number;
+  reviewCount?: number;
   isPremium?: boolean;
   isSponsored?: boolean;
   price?: number;
   priceType?: 'free' | 'paid' | 'minimum_consumption' | string;
-  tags?: string[];
-  eventDate?: string;
   endDate?: string;
   vibe?: string;
   bestTime?: string;
@@ -82,7 +104,7 @@ export interface Event {
   title: string;
   description: string;
   category: string;
-  location: Location;
+  location: PlanLocation;
   startDate: string;
   endDate: string;
   image: string;

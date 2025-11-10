@@ -1,5 +1,5 @@
 import React, { memo, useMemo } from 'react';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -14,10 +14,20 @@ import { useRouter } from 'expo-router';
 import { mockPlans } from '@/mocks/plans';
 import { Plan } from '@/types/plan';
 
-const { width } = Dimensions.get('window');
-const CARD_WIDTH = width * 0.70;
-const CARD_HEIGHT = 220;
-const ACCENT_COLOR = '#FF3B30';
+const CARD_WIDTH = 230;
+const CARD_HEIGHT = 165;
+const ITEM_SPACING = 12;
+
+const CATEGORY_COLORS = {
+  barrio: '#E52D27',
+  mirador: '#FF725E',
+  rooftop: '#FF3B30',
+  restaurante: '#5FBF88',
+  cafe: '#CBAA7C',
+  bar: '#F39C12',
+  club: '#9B59B6',
+  parque: '#7ED957',
+} as const;
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
@@ -67,11 +77,11 @@ const TrendingPlansCarouselComponent = () => {
       renderItem={renderItem}
       keyExtractor={(item) => `trending-plan-${item.id}`}
       showsHorizontalScrollIndicator={false}
-      snapToInterval={CARD_WIDTH + 16}
+      snapToInterval={CARD_WIDTH + ITEM_SPACING}
       pagingEnabled={false}
       decelerationRate="fast"
       contentContainerStyle={styles.listContent}
-      ItemSeparatorComponent={() => <View style={{ width: 16 }} />}
+      ItemSeparatorComponent={() => <View style={{ width: ITEM_SPACING }} />}
     />
   );
 };
@@ -104,6 +114,7 @@ const TrendingPlanCard = memo(function TrendingPlanCard({
 
   const imageUrl = plan.images?.[0];
   const location = plan.location.zone || plan.location.city || 'Medellín';
+  const accent = plan.primaryCategory ? CATEGORY_COLORS[plan.primaryCategory] : '#8B0000';
 
   return (
     <AnimatedTouchable
@@ -124,7 +135,7 @@ const TrendingPlanCard = memo(function TrendingPlanCard({
           cachePolicy="memory-disk"
         />
         <LinearGradient
-          colors={['transparent', '#000000', '#8B0000']}
+          colors={['rgba(0,0,0,0)', `${accent}AA`, accent]}
           locations={[0, 0.65, 1]}
           style={styles.gradient}
         />
@@ -181,15 +192,15 @@ const styles = StyleSheet.create({
   },
   content: {
     position: 'absolute',
-    bottom: 16,
-    left: 16,
-    right: 16,
+    bottom: 14,
+    left: 14,
+    right: 14,
   },
   title: {
     fontSize: 18,
     fontWeight: '700',
     color: '#FFFFFF',
-    marginBottom: 10,
+    marginBottom: 6,
     textShadowColor: 'rgba(0,0,0,0.45)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 6,

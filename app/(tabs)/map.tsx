@@ -186,7 +186,7 @@ export default function MapScreen() {
   };
 
   const filteredPlans = selectedCategory
-    ? plans.filter((plan) => plan.category === selectedCategory)
+    ? plans.filter((plan) => (plan.primaryCategory || plan.category) === selectedCategory)
     : plans;
 
   return (
@@ -208,12 +208,12 @@ export default function MapScreen() {
             <Marker
               key={plan.id}
               coordinate={{
-                latitude: plan.location.latitude,
-                longitude: plan.location.longitude,
+                latitude: plan.location.lat ?? plan.location.latitude ?? initialRegion.latitude,
+                longitude: plan.location.lng ?? plan.location.longitude ?? initialRegion.longitude,
               }}
               title={plan.name}
-              description={plan.category}
-              pinColor={getCategoryColor(plan.category)}
+              description={plan.primaryCategory || plan.category}
+              pinColor={getCategoryColor(plan.primaryCategory || plan.category)}
               onPress={() => handleMarkerPress(plan.id)}
             />
           ))}
@@ -236,7 +236,7 @@ export default function MapScreen() {
                 onPress={() => handleMarkerPress(plan.id)}
               >
                 <Text style={styles.webPlanName}>{plan.name}</Text>
-                <Text style={styles.webPlanCategory}>{plan.category}</Text>
+                <Text style={styles.webPlanCategory}>{plan.primaryCategory || plan.category}</Text>
               </TouchableOpacity>
             ))}
           </View>

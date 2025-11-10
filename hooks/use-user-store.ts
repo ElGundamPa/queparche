@@ -29,15 +29,16 @@ export const [UserProvider, useUserStore] = createContextHook(() => {
         
         // Calculate user stats from mock plans
         const userPlans = mockPlans.filter(p => p.userId === currentUserId);
-        const totalLikes = userPlans.reduce((sum, plan) => sum + plan.likes, 0);
-        const totalReviews = userPlans.reduce((sum, plan) => sum + plan.reviewCount, 0);
+        const totalLikes = userPlans.reduce((sum, plan) => sum + (plan.likes ?? 0), 0);
+        const totalReviews = userPlans.reduce((sum, plan) => sum + (plan.reviewCount ?? 0), 0);
         const averageRating = userPlans.length > 0 
-          ? userPlans.reduce((sum, plan) => sum + plan.rating, 0) / userPlans.length 
+          ? userPlans.reduce((sum, plan) => sum + (plan.rating ?? 0), 0) / userPlans.length 
           : 0;
         
         const categoryCount: { [key: string]: number } = {};
         userPlans.forEach(plan => {
-          categoryCount[plan.category] = (categoryCount[plan.category] || 0) + 1;
+          const key = plan.primaryCategory || plan.category || 'otros';
+          categoryCount[key] = (categoryCount[key] || 0) + 1;
         });
         
         const favoriteCategories = Object.entries(categoryCount)

@@ -8,9 +8,9 @@ import {
   Pressable,
   AccessibilityRole,
   Animated as RNAnimated,
-  Easing,
   Platform,
 } from "react-native";
+import { Easing } from "react-native-reanimated";
 import { Image } from "expo-image";
 import { MapPin, Users, Clock, Share2, Star } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";

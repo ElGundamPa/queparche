@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import * as Haptics from "expo-haptics";
-import { Search, Bell, Star, Crown } from "lucide-react-native";
+import { Star, Crown } from "lucide-react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -18,7 +18,7 @@ import Animated, {
   interpolate,
   Easing,
 } from "react-native-reanimated";
-import { useRouter } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 
 import SearchBar from "@/components/SearchBar";
 import FABSpeedDial from "@/components/FABSpeedDial";
@@ -32,12 +32,13 @@ import { mockPlans } from "@/mocks/plans";
 import { Plan } from "@/types/plan";
 import { useUserStore } from "@/hooks/use-user-store";
 import { useSearchStore } from "@/hooks/use-search-store";
+import HomeHeaderActions from "@/components/HomeHeaderActions";
 
 export default function HomeScreen() {
   const router = useRouter();
   const { user } = useUserStore();
   const { searchQuery, performSearch } = useSearchStore();
-  const [selectedZone, setSelectedZone] = useState<string>('medellin');
+  const [selectedZone, setSelectedZone] = useState<string>("medellin");
 
   const headerOpacity = useSharedValue(0);
   const headerTranslateY = useSharedValue(-30);
@@ -56,31 +57,33 @@ export default function HomeScreen() {
     let filtered = mockPlans;
 
     // Filtrar por zona
-    if (selectedZone && selectedZone !== 'medellin') {
+    if (selectedZone && selectedZone !== "medellin") {
       const normalizeZoneName = (name: string) => {
         return name
           .toLowerCase()
-          .replace(/[áàäâ]/g, 'a')
-          .replace(/[éèëê]/g, 'e')
-          .replace(/[íìïî]/g, 'i')
-          .replace(/[óòöô]/g, 'o')
-          .replace(/[úùüû]/g, 'u')
-          .replace(/[ñ]/g, 'n')
-          .replace(/[ç]/g, 'c')
-          .replace(/[-–]/g, ' ')
+          .replace(/[áàäâ]/g, "a")
+          .replace(/[éèëê]/g, "e")
+          .replace(/[íìïî]/g, "i")
+          .replace(/[óòöô]/g, "o")
+          .replace(/[úùüû]/g, "u")
+          .replace(/[ñ]/g, "n")
+          .replace(/[ç]/g, "c")
+          .replace(/[-–]/g, " ")
           .trim();
       };
-      
+
       const normalizedSelected = normalizeZoneName(selectedZone);
-      filtered = filtered.filter(plan => {
-        const planZone = plan.location.zone || plan.location.city || '';
+      filtered = filtered.filter((plan) => {
+        const planZone = plan.location.zone || plan.location.city || "";
         const normalizedPlanZone = normalizeZoneName(planZone);
-        
+
         // Buscar coincidencia parcial o completa
-        return normalizedPlanZone.includes(normalizedSelected) || 
-               normalizedSelected.includes(normalizedPlanZone) ||
-               normalizedPlanZone.split(' ').some(word => normalizedSelected.includes(word)) ||
-               normalizedSelected.split(' ').some(word => normalizedPlanZone.includes(word));
+        return (
+          normalizedPlanZone.includes(normalizedSelected) ||
+          normalizedSelected.includes(normalizedPlanZone) ||
+          normalizedPlanZone.split(" ").some((word) => normalizedSelected.includes(word)) ||
+          normalizedSelected.split(" ").some((word) => normalizedPlanZone.includes(word))
+        );
       });
     }
 
@@ -103,7 +106,7 @@ export default function HomeScreen() {
   const headerStyle = useAnimatedStyle(() => ({
     opacity: headerOpacity.value,
     transform: [
-      { translateY: headerTranslateY.value + interpolate(scrollY.value, [0, 120], [0, -40], 'clamp') },
+      { translateY: headerTranslateY.value + interpolate(scrollY.value, [0, 120], [0, -40], "clamp") },
     ],
   }));
 
@@ -115,6 +118,15 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
+      <Stack.Screen
+        options={{
+          headerShown: true,
+          headerTitle: "",
+          headerTransparent: true,
+          headerRight: () => <HomeHeaderActions />,
+          headerStyle: { backgroundColor: "transparent" },
+        }}
+      />
       <Animated.ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.contentContainer}
@@ -123,16 +135,6 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Animated.View style={[styles.header, headerStyle]}>
-          <View style={styles.headerContent}>
-            <View style={styles.headerIcons}>
-              <TouchableOpacity style={styles.headerIcon}>
-                <Search size={18} color="#1A1A1A" />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.headerIcon}>
-                <Bell size={18} color="#1A1A1A" />
-              </TouchableOpacity>
-            </View>
-          </View>
           <View style={styles.greetingSection}>
             <UserGreeting />
           </View>
@@ -160,7 +162,7 @@ export default function HomeScreen() {
 
         {/* ZoneSelector arriba */}
         <View style={styles.zoneSelectorContainer}>
-          <ZoneSelector 
+          <ZoneSelector
             selectedZone={selectedZone}
             onZoneSelect={setSelectedZone}
             navigateOnPress={false}
@@ -226,19 +228,25 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     alignItems: 'center',
     marginBottom: 20,
+    paddingRight: 16,
   },
   headerIcons: {
     flexDirection: 'row',
-    gap: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
   },
   headerIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: "#121212",
     justifyContent: 'center',
     alignItems: 'center',
     ...theme.shadows.button,
+  },
+  headerEmoji: {
+    fontSize: 18,
   },
   greetingSection: {
     marginBottom: 16,

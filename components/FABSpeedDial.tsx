@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, memo, useCallback } from 'react';
-import { Pressable, View, ViewStyle, Animated, Easing, Platform, Text, TouchableWithoutFeedback } from 'react-native';
+import { Pressable, View, ViewStyle, Animated, Platform, Text, TouchableWithoutFeedback } from 'react-native';
+import { Easing } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Plus, MessageSquare, Wand2, CalendarPlus } from 'lucide-react-native';
 import { useRouter } from 'expo-router';

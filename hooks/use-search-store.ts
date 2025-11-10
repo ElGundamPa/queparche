@@ -103,14 +103,14 @@ export const [SearchProvider, useSearchStore] = createContextHook(() => {
       result = result.filter(plan =>
         plan.name.toLowerCase().includes(query) ||
         plan.description.toLowerCase().includes(query) ||
-        plan.category.toLowerCase().includes(query) ||
+        (plan.primaryCategory || plan.category || '').toLowerCase().includes(query) ||
         plan.location.address?.toLowerCase().includes(query)
       );
     }
 
     // Category filter
     if (filters.category) {
-      result = result.filter(plan => plan.category === filters.category);
+      result = result.filter(plan => (plan.primaryCategory || plan.category) === filters.category);
     }
 
     // Location filter
@@ -123,7 +123,7 @@ export const [SearchProvider, useSearchStore] = createContextHook(() => {
 
     // Rating filter
     if (filters.rating) {
-      result = result.filter(plan => plan.rating >= filters.rating!);
+      result = result.filter(plan => (plan.rating ?? 0) >= filters.rating!);
     }
 
     // Max people filter
@@ -191,8 +191,9 @@ export const [SearchProvider, useSearchStore] = createContextHook(() => {
 
     // Add matching categories
     plans.forEach(plan => {
-      if (plan.category.toLowerCase().includes(query)) {
-        suggestions.add(plan.category);
+      const categoryKey = (plan.primaryCategory || plan.category || '').toLowerCase();
+      if (categoryKey.includes(query)) {
+        suggestions.add(plan.primaryCategory || plan.category || '');
       }
     });
 

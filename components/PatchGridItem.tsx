@@ -1,5 +1,5 @@
 import React, { memo, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, ColorValue } from 'react-native';
 import { Image } from 'expo-image';
 import { Star, MapPin } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -8,13 +8,25 @@ import Animated, {
   useSharedValue, 
   useAnimatedStyle, 
   withSpring,
-  interpolate 
+  interpolate,
+  Easing,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Plan } from '@/types/plan';
 
 const { width } = Dimensions.get('window');
 const itemWidth = (width - 48) / 3; // 3 columnas con padding (16px padding cada lado + 12px espaciado entre items)
+
+const CATEGORY_COLORS = {
+  barrio: "#E52D27",
+  mirador: "#FF725E",
+  rooftop: "#FF3B30",
+  restaurante: "#5FBF88",
+  cafe: "#CBAA7C",
+  bar: "#F39C12",
+  club: "#9B59B6",
+  parque: "#7ED957",
+} as const;
 
 interface PatchGridItemProps {
   plan: Plan;
@@ -76,6 +88,13 @@ const PatchGridItem = memo(function PatchGridItem({ plan, onPress, index = 0 }: 
   const zone = getZoneFromPlan();
   const imageUrl = plan.images && plan.images.length > 0 ? plan.images[0] : 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800';
   const displayTags = plan.tags?.slice(0, 2) || [];
+  const accent = plan.primaryCategory ? CATEGORY_COLORS[plan.primaryCategory] : '#8B0000';
+  const gradientColors: [ColorValue, ColorValue, ColorValue] = ['rgba(0,0,0,0)', `${accent}AA`, accent];
+  const capacityText =
+    typeof plan.currentPeople === 'number' && typeof plan.maxPeople === 'number'
+      ? `${plan.currentPeople}/${plan.maxPeople}`
+      : undefined;
+  const priceText = plan.priceAvg;
 
   // Renderizado para placeholder
   if (isPlaceholder) {
@@ -117,7 +136,7 @@ const PatchGridItem = memo(function PatchGridItem({ plan, onPress, index = 0 }: 
   
   return (
     <Animated.View
-      entering={shouldAnimate ? FadeInUp.delay(index * 65).duration(320).easing((t) => t * (2 - t)) : undefined}
+      entering={shouldAnimate ? FadeInUp.delay(index * 65).duration(320).easing(Easing.out(Easing.quad)) : undefined}
     >
       <AnimatedTouchable
         style={[styles.container, animatedStyle]}
@@ -133,7 +152,7 @@ const PatchGridItem = memo(function PatchGridItem({ plan, onPress, index = 0 }: 
             contentFit="cover"
           />
           <LinearGradient
-            colors={['rgba(0,0,0,0.0)', 'rgba(0,0,0,0.55)', 'rgba(0,0,0,0.9)']}
+            colors={gradientColors}
             style={styles.planGradient}
           />
           {plan.isPremium && (
@@ -146,8 +165,24 @@ const PatchGridItem = memo(function PatchGridItem({ plan, onPress, index = 0 }: 
             <Text style={styles.planName} numberOfLines={2}>
               {plan.name}
             </Text>
+
+            <View style={styles.planMetaRow}>
+              <Text style={styles.planMetaText} numberOfLines={1}>
+                📍 {zone}
+              </Text>
+              {capacityText && (
+                <Text style={styles.planMetaText} numberOfLines={1}>
+                  👥 {capacityText}
+                </Text>
+              )}
+              {priceText && (
+                <Text style={styles.planMetaText} numberOfLines={1}>
+                  🎫 {priceText}
+                </Text>
+              )}
+            </View>
             
-            {plan.rating > 0 && (
+            {typeof plan.rating === 'number' && plan.rating > 0 && (
               <View style={styles.planRatingRow}>
                 <Star size={12} color="#FFD54F" fill="#FFD54F" />
                 <Text style={styles.planRating}>{plan.rating.toFixed(1)}</Text>
@@ -244,6 +279,17 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     marginBottom: 6,
     minHeight: 36,
+  },
+  planMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 6,
+  },
+  planMetaText: {
+    fontSize: 11,
+    color: '#DADADA',
   },
   planRatingRow: {
     flexDirection: 'row',

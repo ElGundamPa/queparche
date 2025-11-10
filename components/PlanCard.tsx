@@ -8,9 +8,9 @@ import {
   Dimensions,
   AccessibilityRole,
   Animated as RNAnimated,
-  Easing,
   Platform,
 } from "react-native";
+import { Easing } from "react-native-reanimated";
 import { Image } from "expo-image";
 import { Star, Crown, MapPin, Users, Heart } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -129,7 +129,7 @@ const PlanCard = memo(function PlanCard({ plan, horizontal = true, animationDela
                 {plan.name}
               </Text>
               <View style={styles.categoryContainer}>
-                <Text style={styles.category}>{plan.category}</Text>
+                <Text style={styles.category}>{plan.primaryCategory || plan.category}</Text>
               </View>
               <View style={styles.infoRow}>
                 <View style={styles.infoItem}>
@@ -204,7 +204,7 @@ const PlanCard = memo(function PlanCard({ plan, horizontal = true, animationDela
               </View>
             </View>
             <View style={styles.categoryContainer}>
-              <Text style={styles.category}>{plan.category}</Text>
+              <Text style={styles.category}>{plan.primaryCategory || plan.category}</Text>
             </View>
             <View style={styles.verticalInfoRow}>
               <View style={styles.infoItem}>

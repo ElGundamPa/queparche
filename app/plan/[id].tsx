@@ -16,11 +16,15 @@ import { Image } from "expo-image";
 import { StatusBar } from "expo-status-bar";
 import * as Haptics from "expo-haptics";
 import { VideoView, useVideoPlayer } from "expo-video";
-import { 
-  MapPin, 
-  Star, 
+import {
+  MapPin,
+  Star,
   ArrowLeft,
   Navigation,
+  Users,
+  DollarSign,
+  Calendar,
+  Hourglass,
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, { FadeInUp } from "react-native-reanimated";
@@ -32,9 +36,81 @@ import { mockPlans } from "@/mocks/plans";
 import { Plan } from "@/types/plan";
 import FallbackScreen from "@/components/FallbackScreen";
 import PatchGridItem from "@/components/PatchGridItem";
+import ImageViewerModal from "@/components/ImageViewerModal";
 import { trpc } from "@/lib/trpc";
 
 const { width } = Dimensions.get('window');
+
+const CATEGORY_COLORS = {
+  barrio: '#E52D27',
+  mirador: '#FF725E',
+  rooftop: '#FF3B30',
+  restaurante: '#5FBF88',
+  cafe: '#CBAA7C',
+  bar: '#F39C12',
+  club: '#9B59B6',
+  parque: '#7ED957',
+} as const;
+
+const WEEKDAYS = [
+  'domingo',
+  'lunes',
+  'martes',
+  'miércoles',
+  'jueves',
+  'viernes',
+  'sábado',
+] as const;
+
+const MONTHS = [
+  'ene',
+  'feb',
+  'mar',
+  'abr',
+  'may',
+  'jun',
+  'jul',
+  'ago',
+  'sep',
+  'oct',
+  'nov',
+  'dic',
+] as const;
+
+type EventInfo = {
+  formattedDate: string;
+  countdown: string;
+};
+
+const capitalizeWord = (value: string) =>
+  value.length > 0 ? value.charAt(0).toUpperCase() + value.slice(1) : value;
+
+export const getEventInfo = (eventDate?: string | null): EventInfo | null => {
+  if (!eventDate) return null;
+
+  const event = new Date(eventDate);
+  if (Number.isNaN(event.getTime())) {
+    return null;
+  }
+
+  const weekday = capitalizeWord(WEEKDAYS[event.getDay()]);
+  const day = event.getDate();
+  const month = capitalizeWord(MONTHS[event.getMonth()]);
+  const hours = event.getHours();
+  const minutes = event.getMinutes().toString().padStart(2, '0');
+  const hour12 = hours % 12 || 12;
+  const period = hours >= 12 ? 'PM' : 'AM';
+  const formattedDate = `${weekday} ${day} ${month} - ${hour12}:${minutes} ${period}`;
+
+  const dayDifference = Math.ceil((event.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  const daysRemaining = Math.max(dayDifference, 0);
+  const countdown = `Faltan ${daysRemaining} días`;
+
+  return {
+    formattedDate,
+    countdown,
+  };
+};
 
 export default function PlanDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -42,6 +118,10 @@ export default function PlanDetailScreen() {
   const { plans } = usePlansStore();
   const scrollViewRef = useRef<ScrollView>(null);
   const [videoPaused, setVideoPaused] = useState(false);
+  const [activeHeroIndex, setActiveHeroIndex] = useState(0);
+  const [viewerVisible, setViewerVisible] = useState(false);
+  const [viewerIndex, setViewerIndex] = useState(0);
+  const heroListRef = useRef<FlatList<string>>(null);
   
   // Buscar plan en mockPlans primero, luego en plans del store
   const plan = useMemo(() => {
@@ -62,13 +142,17 @@ export default function PlanDetailScreen() {
     enabled: !!id && !!plan,
   });
 
-  const reviews = reviewsQuery.data || [];
+  const remoteReviews = reviewsQuery.data || [];
 
   // Find similar plans (same category, exclude current plan)
   const similarPlans = useMemo(() => {
     if (!plan) return [];
+    const targetCategory = plan.primaryCategory || plan.category;
     return mockPlans
-      .filter(p => p.id !== plan.id && p.category === plan.category)
+      .filter(p => {
+        const candidateCategory = p.primaryCategory || p.category;
+        return p.id !== plan.id && candidateCategory === targetCategory;
+      })
       .slice(0, 6);
   }, [plan]);
 
@@ -124,6 +208,43 @@ export default function PlanDetailScreen() {
     );
   }
 
+  const accent = plan.primaryCategory ? CATEGORY_COLORS[plan.primaryCategory] : '#8B0000';
+  const communityReviews = plan.reviews ?? [];
+  const displayRating = useMemo(() => {
+    if (typeof plan.rating === 'number') return plan.rating;
+    if (communityReviews.length > 0) {
+      const total = communityReviews.reduce((sum, review) => sum + review.rating, 0);
+      return parseFloat((total / communityReviews.length).toFixed(1));
+    }
+    return 0;
+  }, [plan.rating, communityReviews]);
+  const totalReviewCount =
+    plan.reviewCount ??
+    (communityReviews.length > 0 ? communityReviews.length : remoteReviews.length);
+  const locationLabel =
+    plan.location.address ||
+    plan.location.city ||
+    plan.location.zone ||
+    'Medellín';
+  const capacityValue = plan.capacity ?? plan.maxPeople ?? null;
+  const attendeesValue = plan.currentAttendees ?? plan.currentPeople ?? null;
+  const capacityLabel =
+    capacityValue != null && attendeesValue != null
+      ? `${attendeesValue}/${capacityValue}`
+      : null;
+  const averagePriceValue =
+    typeof plan.averagePrice === 'number' ? plan.averagePrice : plan.price ?? null;
+  const averagePriceLabel =
+    averagePriceValue != null
+      ? averagePriceValue === 0
+        ? 'Gratis'
+        : `$${averagePriceValue.toLocaleString('es-CO')}`
+      : null;
+  const categoriesList =
+    plan.categories && plan.categories.length > 0 ? plan.categories : plan.tags ?? [];
+  const categoriesLabel = categoriesList.length > 0 ? categoriesList.join(' • ') : null;
+  const eventInfo = getEventInfo(plan.eventDate);
+
   const handleOpenMaps = () => {
     let address = plan.location.address;
     
@@ -136,7 +257,9 @@ export default function PlanDetailScreen() {
     }
     
     // Si hay coordenadas, usarlas; si no, usar la dirección
-    if (plan.location.latitude && plan.location.longitude) {
+    if (plan.location.lat != null && plan.location.lng != null) {
+      address = `${plan.location.lat},${plan.location.lng}`;
+    } else if (plan.location.latitude && plan.location.longitude) {
       address = `${plan.location.latitude},${plan.location.longitude}`;
     }
     
@@ -147,27 +270,6 @@ export default function PlanDetailScreen() {
       console.error("Error opening maps:", err);
       Alert.alert("Error", "No se pudo abrir Google Maps");
     });
-  };
-
-  const getPriceTypeLabel = (priceType?: string) => {
-    if (!priceType) {
-      return plan.price === 0 ? 'Gratis' : 'Económico';
-    }
-    
-    // Manejar los nuevos valores de priceType
-    if (priceType === 'free' || priceType === 'gratis') {
-      return 'Gratis';
-    }
-    if (priceType === 'paid') {
-      return plan.price ? `$${plan.price.toLocaleString()}` : 'Económico';
-    }
-    if (priceType === 'minimum_consumption') {
-      return 'Consumo mínimo';
-    }
-    
-    // Para los nuevos valores como "medio-alto", "bajo-medio", etc.
-    // Capitalizar la primera letra
-    return priceType.charAt(0).toUpperCase() + priceType.slice(1);
   };
 
   const renderStars = (rating: number) => {
@@ -181,7 +283,7 @@ export default function PlanDetailScreen() {
     ));
   };
 
-  const renderReview = ({ item, index }: { item: any; index: number }) => (
+  const renderRemoteReview = ({ item, index }: { item: any; index: number }) => (
     <Animated.View
       entering={FadeInUp.delay(index * 100).duration(300)}
       style={styles.reviewBubble}
@@ -193,13 +295,15 @@ export default function PlanDetailScreen() {
     </Animated.View>
   );
 
-  const renderPhoto = ({ item, index }: { item: string; index: number }) => (
-    <Image
-      source={{ uri: item }}
-      style={styles.photoItem}
-      contentFit="cover"
-    />
-  );
+  const imageSources = useMemo(() => {
+    if (plan?.images && plan.images.length > 0) {
+      return plan.images;
+    }
+    const categoryKey = plan?.primaryCategory || 'nightlife';
+    return Array.from({ length: 3 }, (_, index) =>
+      `https://source.unsplash.com/600x600/?${encodeURIComponent(categoryKey)},night,art,urban&sig=${index}`
+    );
+  }, [plan]);
 
   const renderSimilarPlan = ({ item }: { item: Plan }) => (
     <View style={styles.similarPlanWrapper}>
@@ -229,13 +333,32 @@ export default function PlanDetailScreen() {
       >
         {/* Hero Header */}
         <View style={styles.heroContainer}>
-          <Image
-            source={{ uri: plan.images[0] }}
-            style={styles.heroImage}
-            contentFit="cover"
+          <FlatList
+            ref={heroListRef}
+            data={imageSources}
+            keyExtractor={(item, index) => `${item}-${index}`}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            snapToInterval={width}
+            decelerationRate="fast"
+            onMomentumScrollEnd={(event) => {
+              const index = Math.round(event.nativeEvent.contentOffset.x / width);
+              setActiveHeroIndex(index);
+            }}
+            renderItem={({ item }) => (
+              <View style={styles.heroSlide}>
+                <Image
+                  source={{ uri: item }}
+                  style={styles.heroImage}
+                  contentFit="cover"
+                  cachePolicy="memory-disk"
+                />
+              </View>
+            )}
           />
           <LinearGradient
-            colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.75)', 'rgba(0,0,0,1)']}
+            colors={['rgba(0,0,0,0)', `${accent}AA`, accent]}
             style={styles.heroGradient}
           />
           
@@ -253,20 +376,76 @@ export default function PlanDetailScreen() {
             <Text style={styles.heroTitle}>{plan.name}</Text>
             
             {/* Rating Stars */}
-            <View style={styles.ratingRow}>
-              {renderStars(plan.rating)}
-              <Text style={styles.ratingText}>{plan.rating.toFixed(1)}</Text>
-              {plan.reviewCount > 0 && (
-                <Text style={styles.reviewCountText}>({plan.reviewCount})</Text>
+            {displayRating > 0 && (
+              <View style={styles.ratingRow}>
+                {renderStars(displayRating)}
+                <Text style={styles.ratingText}>{displayRating.toFixed(1)}</Text>
+                {totalReviewCount > 0 && (
+                  <Text style={styles.reviewCountText}>({totalReviewCount})</Text>
+                )}
+              </View>
+            )}
+
+            <View style={styles.heroInfoContainer}>
+              {locationLabel && (
+                <View style={styles.heroInfoRow}>
+                  <MapPin size={18} color="#BBBBBB" />
+                  <Text style={styles.heroInfoText} numberOfLines={1}>
+                    {locationLabel}
+                  </Text>
+                </View>
+              )}
+              {capacityLabel && (
+                <View style={styles.heroInfoRow}>
+                  <Users size={18} color="#BBBBBB" />
+                  <Text style={styles.heroInfoText}>
+                    {capacityLabel}
+                  </Text>
+                </View>
+              )}
+              {averagePriceLabel && (
+                <View style={styles.heroInfoRow}>
+                  <DollarSign size={18} color="#BBBBBB" />
+                  <Text style={styles.heroInfoText}>
+                    {averagePriceLabel}
+                  </Text>
+                </View>
+              )}
+              {categoriesLabel && (
+                <View style={styles.heroInfoRow}>
+                  <Text style={styles.heroInfoIcon}>🏷</Text>
+                  <Text style={styles.heroInfoText} numberOfLines={2}>
+                    {categoriesLabel}
+                  </Text>
+                </View>
+              )}
+              {eventInfo && (
+                <>
+                  <View style={styles.heroInfoRow}>
+                    <Calendar size={18} color="#BBBBBB" />
+                    <Text style={styles.heroInfoText}>
+                      {eventInfo.formattedDate}
+                    </Text>
+                  </View>
+                  <View style={styles.heroInfoRow}>
+                    <Hourglass size={18} color="#BBBBBB" />
+                    <Text style={styles.heroInfoText}>
+                      {eventInfo.countdown}
+                    </Text>
+                  </View>
+                </>
               )}
             </View>
 
-            {/* Price Type Badge */}
-            <View style={styles.priceBadge}>
-              <Text style={styles.priceBadgeText}>
-                {getPriceTypeLabel(plan.priceType)}
-              </Text>
-            </View>
+            {plan.tags && plan.tags.length > 0 && (
+              <View style={styles.heroTagsRow}>
+                {plan.tags.map((tag) => (
+                  <View key={tag} style={styles.heroTagChip}>
+                    <Text style={styles.heroTagText}>🏷️ {tag}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
           </View>
         </View>
 
@@ -281,24 +460,37 @@ export default function PlanDetailScreen() {
               isMuted={true}
             />
           </View>
-        ) : plan.images.length > 1 ? (
-          <View style={styles.photoCarouselWrapper}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.photoCarousel}
-            >
-              {plan.images.map((image, index) => (
-                <Image
-                  key={index}
-                  source={{ uri: image }}
-                  style={styles.photoCarouselItem}
-                  contentFit="cover"
-                />
-              ))}
-            </ScrollView>
-          </View>
         ) : null}
+
+        <View style={styles.thumbnailContainer}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.thumbnailScrollContent}
+          >
+            {imageSources.map((src, index) => (
+              <TouchableOpacity
+                key={`${src}-thumb-${index}`}
+                onPress={() => {
+                  setViewerIndex(index);
+                  setViewerVisible(true);
+                }}
+                activeOpacity={0.85}
+              >
+                <Image
+                  source={{ uri: src }}
+                  style={[
+                    styles.thumbnailImage,
+                    index === activeHeroIndex && styles.thumbnailImageActive,
+                    { marginRight: index === imageSources.length - 1 ? 0 : 12 },
+                  ]}
+                  contentFit="cover"
+                  cachePolicy="memory-disk"
+                />
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
 
         <View style={styles.contentContainer}>
           {/* Info Block */}
@@ -306,7 +498,7 @@ export default function PlanDetailScreen() {
             <View style={styles.locationRow}>
               <MapPin size={18} color="#D9D9D9" />
               <Text style={styles.locationText}>
-                {plan.location.address || "Medellín, Colombia"}
+                {locationLabel}
               </Text>
             </View>
 
@@ -325,28 +517,32 @@ export default function PlanDetailScreen() {
             {plan.vibe || plan.description || "Plan perfecto si buscas ambiente chill, luces cálidas y música suave."}
           </Text>
 
-          {/* Photo Carousel (horizontal, 120px) */}
-          {plan.images.length > 1 && (
+          {communityReviews.length > 0 && (
             <>
-              <Text style={styles.sectionTitle}>Fotos</Text>
-              <FlatList
-                data={plan.images}
-                renderItem={renderPhoto}
-                keyExtractor={(item, index) => `photo-${index}`}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.photosContainer}
-              />
+              <Text style={styles.sectionTitle}>Comentarios de la comunidad 💬</Text>
+              <View style={styles.communityReviewsList}>
+                {communityReviews.map((review, index) => (
+                  <View key={`${review.user}-${index}`} style={styles.communityReviewBubble}>
+                    <View style={styles.communityReviewHeader}>
+                      <Text style={styles.communityReviewAuthor}>{review.user}</Text>
+                      <Text style={styles.communityReviewRating}>
+                        {"⭐".repeat(Math.round(review.rating)).padEnd(5, "☆")}
+                      </Text>
+                    </View>
+                    <Text style={styles.communityReviewText}>{review.comment}</Text>
+                  </View>
+                ))}
+              </View>
             </>
           )}
 
           {/* Reviews */}
-          {reviews.length > 0 && (
+          {remoteReviews.length > 0 && (
             <>
               <Text style={styles.sectionTitle}>Lo que dice la gente 💬</Text>
               <FlatList
-                data={reviews.slice(0, 5)}
-                renderItem={renderReview}
+                data={remoteReviews.slice(0, 5)}
+                renderItem={renderRemoteReview}
                 keyExtractor={(item) => item.id}
                 scrollEnabled={false}
                 contentContainerStyle={styles.reviewsContainer}
@@ -373,6 +569,13 @@ export default function PlanDetailScreen() {
           )}
         </View>
       </ScrollView>
+
+      <ImageViewerModal
+        visible={viewerVisible}
+        images={imageSources}
+        index={viewerIndex}
+        onClose={() => setViewerVisible(false)}
+      />
     </>
   );
 }
@@ -389,14 +592,13 @@ const styles = StyleSheet.create({
     position: 'relative',
     overflow: 'hidden',
   },
+  heroSlide: {
+    width,
+    height: '100%',
+  },
   heroImage: {
     width: '100%',
     height: '100%',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
   },
   heroGradient: {
     position: 'absolute',
@@ -452,6 +654,68 @@ const styles = StyleSheet.create({
     color: '#BBBBBB',
     marginLeft: 4,
   },
+  heroInfoContainer: {
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 12,
+    marginBottom: 12,
+  },
+  heroInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  heroInfoText: {
+    color: '#BBBBBB',
+    fontSize: 14,
+    fontWeight: '500',
+    flex: 1,
+  },
+  heroInfoIcon: {
+    color: '#BBBBBB',
+    fontSize: 16,
+  },
+  heroMetaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 12,
+  },
+  heroMetaItem: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+  },
+  heroMetaText: {
+    color: '#F1F1F1',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  heroTagsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  heroTagChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  heroTagText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '500',
+  },
   priceBadge: {
     alignSelf: 'flex-start',
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
@@ -480,19 +744,24 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  photoCarouselWrapper: {
-    marginTop: -20,
-    marginHorizontal: 16,
-    marginBottom: 20,
+  thumbnailContainer: {
+    marginTop: 12,
+    paddingHorizontal: 16,
   },
-  photoCarousel: {
-    gap: 12,
+  thumbnailScrollContent: {
     paddingRight: 16,
   },
-  photoCarouselItem: {
-    width: width - 64,
-    height: 320,
-    borderRadius: 18,
+  thumbnailImage: {
+    width: 96,
+    height: 72,
+    borderRadius: 12,
+    opacity: 0.85,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+  },
+  thumbnailImageActive: {
+    opacity: 1,
+    borderColor: 'rgba(255,255,255,0.35)',
   },
   // Content
   contentContainer: {
@@ -546,17 +815,39 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   // Photo Carousel (horizontal)
-  photosContainer: {
+  // Reviews
+  communityReviewsList: {
     gap: 12,
-    paddingRight: 16,
     marginBottom: 32,
   },
-  photoItem: {
-    width: 120,
-    height: 120,
+  communityReviewBubble: {
+    backgroundColor: '#111111',
+    padding: 14,
     borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
   },
-  // Reviews
+  communityReviewHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  communityReviewAuthor: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  communityReviewRating: {
+    color: '#FFD54F',
+    fontSize: 12,
+    letterSpacing: 1,
+  },
+  communityReviewText: {
+    color: '#CFCFCF',
+    fontSize: 12,
+    lineHeight: 16,
+  },
   reviewsContainer: {
     gap: 12,
     marginBottom: 32,

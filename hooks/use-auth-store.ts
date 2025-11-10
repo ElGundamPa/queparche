@@ -1,11 +1,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { mockUsers } from '@/mocks/users';
 
 export interface User {
   id: string;
   name: string;
   username: string;
   email: string;
+  password?: string;
   bio: string;
   avatar: string;
   interests: string[];
@@ -25,7 +27,7 @@ interface AuthState {
   currentUser: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  users: User[]; // Lista de todos los usuarios registrados
+  users: Array<User & { password?: string }>; // Lista de todos los usuarios registrados
   
   // Acciones de autenticación
   login: (email: string, password: string) => Promise<boolean>;
@@ -36,25 +38,9 @@ interface AuthState {
 }
 
 // Usuario por defecto para pruebas
-const defaultUser: User = {
-  id: '1',
-  name: 'Usuario Demo',
-  username: '@usuario',
-  email: 'demo@example.com',
-  bio: 'Amante de la comida y las aventuras urbanas',
-  avatar: '',
-  interests: ['restaurants', 'nightlife', 'culture'],
-  location: 'Medellín, Colombia',
-  isVerified: true,
-  isPremium: false,
-  points: 150,
-  followersCount: 42,
-  followingCount: 28,
-  plansAttended: 12,
-  badges: ['explorer', 'foodie'],
-  preferences: ['Restaurants', 'Nightlife', 'Culture'],
-  createdAt: '2024-01-15T10:00:00Z',
-};
+const initialUsers = mockUsers.map(user => ({
+  ...user,
+}));
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -62,7 +48,7 @@ export const useAuthStore = create<AuthState>()(
       currentUser: null,
       isAuthenticated: false,
       isLoading: false,
-      users: [defaultUser], // Incluir usuario por defecto
+      users: initialUsers,
 
       login: async (email: string, password: string) => {
         set({ isLoading: true });
@@ -71,13 +57,28 @@ export const useAuthStore = create<AuthState>()(
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         const { users } = get();
-        const user = users.find(u => u.email === email);
+        const user = users.find(u => u.email === email && u.password === password);
         
         if (user) {
+          const { password: _password, ...safeUser } = user;
           set({ 
-            currentUser: user, 
+            currentUser: safeUser, 
             isAuthenticated: true, 
             isLoading: false 
+          });
+          return true;
+        }
+
+        // Fallback: buscar en mockUsers (por si el storage persistido está desactualizado)
+        const seedUser = mockUsers.find(u => u.email === email && u.password === password);
+        if (seedUser) {
+          const updatedUsers = [...users, seedUser];
+          const { password: _password, ...safeUser } = seedUser;
+          set({
+            users: updatedUsers,
+            currentUser: safeUser,
+            isAuthenticated: true,
+            isLoading: false,
           });
           return true;
         }
@@ -132,7 +133,7 @@ export const useAuthStore = create<AuthState>()(
         
         set({ 
           users: [...users, newUser],
-          currentUser: newUser,
+          currentUser: { ...newUser, password: undefined },
           isAuthenticated: true,
           isLoading: false 
         });
@@ -156,7 +157,7 @@ export const useAuthStore = create<AuthState>()(
         
         const updatedUser = { ...currentUser, ...updates };
         const updatedUsers = users.map(u => 
-          u.id === currentUser.id ? updatedUser : u
+          u.id === currentUser.id ? { ...updatedUser, password: u.password } : u
         );
         
         set({ 
@@ -187,7 +188,7 @@ export const useAuthStore = create<AuthState>()(
         console.log('Updated user:', updatedUser);
         
         const updatedUsers = users.map(u => 
-          u.id === currentUser.id ? updatedUser : u
+          u.id === currentUser.id ? { ...updatedUser, password: u.password } : u
         );
         
         set({ 

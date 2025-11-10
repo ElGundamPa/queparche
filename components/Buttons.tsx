@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { Pressable, Text, Animated, Easing, Platform } from 'react-native';
+import { Pressable, Text, Animated, Platform } from 'react-native';
+import { Easing } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 
 import Colors from '@/constants/colors';

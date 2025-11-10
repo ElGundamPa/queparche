@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef } from 'react';
-import { FlatList, Text, Pressable, Animated, Easing, Platform } from 'react-native';
+import { FlatList, Text, Pressable, Animated, Platform } from 'react-native';
+import { Easing } from 'react-native-reanimated';
 import { Activity, Building, Landmark, Music, ShoppingBag, Ticket, Trees, Utensils } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';

@@ -15,7 +15,8 @@ export default publicProcedure
     // Mock favorite categories based on user's plans
     const categoryCount: { [key: string]: number } = {};
     userPlans.forEach(plan => {
-      categoryCount[plan.category] = (categoryCount[plan.category] || 0) + 1;
+      const categoryKey = plan.primaryCategory || plan.category || 'otros';
+      categoryCount[categoryKey] = (categoryCount[categoryKey] || 0) + 1;
     });
     
     const favoriteCategories = Object.entries(categoryCount)

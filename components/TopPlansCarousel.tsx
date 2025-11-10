@@ -1,5 +1,5 @@
 import React, { memo, useMemo } from 'react';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -14,10 +14,20 @@ import { useRouter } from 'expo-router';
 import { mockPlans } from '@/mocks/plans';
 import { Plan } from '@/types/plan';
 
-const { width } = Dimensions.get('window');
-const CARD_WIDTH = width * 0.85;
-const CARD_HEIGHT = 280;
-const ACCENT_COLOR = '#FF3B30';
+const CARD_WIDTH = 230;
+const CARD_HEIGHT = 165;
+const ITEM_SPACING = 12;
+
+const CATEGORY_COLORS = {
+  barrio: '#E52D27',
+  mirador: '#FF725E',
+  rooftop: '#FF3B30',
+  restaurante: '#5FBF88',
+  cafe: '#CBAA7C',
+  bar: '#F39C12',
+  club: '#9B59B6',
+  parque: '#7ED957',
+} as const;
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
@@ -53,11 +63,11 @@ const TopPlansCarouselComponent = () => {
       renderItem={renderItem}
       keyExtractor={(item) => `top-plan-${item.id}`}
       showsHorizontalScrollIndicator={false}
-      snapToInterval={CARD_WIDTH + 16}
+      snapToInterval={CARD_WIDTH + ITEM_SPACING}
       pagingEnabled={false}
       decelerationRate="fast"
       contentContainerStyle={styles.listContent}
-      ItemSeparatorComponent={() => <View style={{ width: 16 }} />}
+      ItemSeparatorComponent={() => <View style={{ width: ITEM_SPACING }} />}
     />
   );
 };
@@ -86,6 +96,7 @@ const TopPlanCard = memo(function TopPlanCard({ plan, onPress, index }: TopPlanC
 
   const imageUrl = plan.images?.[0];
   const location = plan.location.zone || plan.location.city || 'Medellín';
+  const accent = plan.primaryCategory ? CATEGORY_COLORS[plan.primaryCategory] : '#8B0000';
 
   return (
     <AnimatedTouchable
@@ -106,7 +117,7 @@ const TopPlanCard = memo(function TopPlanCard({ plan, onPress, index }: TopPlanC
           cachePolicy="memory-disk"
         />
         <LinearGradient
-          colors={['transparent', '#000000', '#8B0000']}
+          colors={['rgba(0,0,0,0)', `${accent}AA`, accent]}
           locations={[0, 0.65, 1]}
           style={styles.gradient}
         />
@@ -115,8 +126,6 @@ const TopPlanCard = memo(function TopPlanCard({ plan, onPress, index }: TopPlanC
           <Text style={styles.title} numberOfLines={2}>
             {plan.name}
           </Text>
-
-          <View style={styles.accentLine} />
 
           <Text style={styles.rating}>⭐ {plan.rating.toFixed(1)}</Text>
           <Text style={styles.zone} numberOfLines={1}>
@@ -141,7 +150,7 @@ const styles = StyleSheet.create({
   card: {
     width: CARD_WIDTH,
     height: CARD_HEIGHT,
-    borderRadius: 22,
+    borderRadius: 18,
     overflow: 'hidden',
     backgroundColor: '#111111',
     shadowColor: '#000',
@@ -163,38 +172,31 @@ const styles = StyleSheet.create({
   },
   content: {
     position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
+    bottom: 14,
+    left: 14,
+    right: 14,
   },
   title: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
     color: '#FFFFFF',
-    marginBottom: 8,
+    marginBottom: 6,
     textShadowColor: 'rgba(0,0,0,0.45)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 6,
-    lineHeight: 26,
-  },
-  accentLine: {
-    width: '60%',
-    height: 2,
-    backgroundColor: ACCENT_COLOR,
-    borderRadius: 1,
-    marginBottom: 12,
+    lineHeight: 24,
   },
   rating: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: '#FFFFFF',
-    marginBottom: 6,
+    marginBottom: 4,
     textShadowColor: 'rgba(0,0,0,0.45)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
   zone: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#BBBBBB',
     textShadowColor: 'rgba(0,0,0,0.45)',
     textShadowOffset: { width: 0, height: 1 },

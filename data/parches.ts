@@ -61,12 +61,24 @@ function makePlan(base: { name: string; area: string; idx: number; category?: st
   const tag = pick(tagsPool, base.idx);
   const when = pick(timeLabels, base.idx);
   const images = [imageForIndex(base.idx)];
+  const capacity = 50 + (base.idx % 6) * 10;
+  const currentAttendees = Math.min(capacity - 5, 12 + (base.idx % 12) * 3);
+  const eventStart = new Date(Date.now() + (base.idx % 14 + 1) * 24 * 60 * 60 * 1000);
+  const categories = [
+    tag.toLowerCase(),
+    'plan urbano',
+  ];
 
   return {
     id: id(`plan_${base.area}`),
     name: `${base.name} · ${base.area}`,
     location: { latitude: 6.2442, longitude: -75.5812, address: `${base.area}, Medellín` },
     description: `${base.name} en ${base.area}. ${when}. Etiqueta: ${tag}.`,
+    capacity,
+    currentAttendees,
+    eventDate: eventStart.toISOString(),
+    averagePrice: price,
+    categories,
     category: base.category ?? 'Experiencias',
     maxPeople: 30,
     currentPeople: Math.floor((base.idx % 10) + 5),
@@ -83,8 +95,7 @@ function makePlan(base: { name: string; area: string; idx: number; category?: st
     price,
     priceType: price === 0 ? 'free' : 'paid',
     tags: [tag],
-    eventDate: new Date().toISOString(),
-    endDate: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+    endDate: new Date(eventStart.getTime() + 2 * 60 * 60 * 1000).toISOString(),
   };
 }
 
