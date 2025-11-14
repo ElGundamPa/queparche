@@ -22,6 +22,7 @@ export const mockUsers: User[] = [
     plansCreated: 0,
     plansAttended: 0,
     location: "Medellín, Colombia",
+  createdPlans: [],
   },
   {
     id: "1",
@@ -43,6 +44,7 @@ export const mockUsers: User[] = [
     followingCount: 89,
     plansCreated: 15,
     plansAttended: 47,
+  createdPlans: [],
   },
   {
     id: "2",
@@ -64,6 +66,7 @@ export const mockUsers: User[] = [
     followingCount: 123,
     plansCreated: 22,
     plansAttended: 31,
+  createdPlans: [],
   },
   {
     id: "3",
@@ -85,6 +88,7 @@ export const mockUsers: User[] = [
     followingCount: 67,
     plansCreated: 8,
     plansAttended: 29,
+  createdPlans: [],
   },
 ];
 
@@ -96,12 +100,12 @@ export type SocialUser = {
 };
 
 export const SOCIAL_MOCK_USERS: SocialUser[] = [
-  { id: "social-1", name: "Valentina R.", username: "valer", avatarColor: "#FF6B6B" },
-  { id: "social-2", name: "Mateo L.", username: "mateolab", avatarColor: "#4ECDC4" },
-  { id: "social-3", name: "Sara Q.", username: "sarita", avatarColor: "#FFD166" },
-  { id: "social-4", name: "Julián T.", username: "jtoro", avatarColor: "#A29BFE" },
-  { id: "social-5", name: "Camila V.", username: "milavibes", avatarColor: "#FF8FB1" },
-  { id: "social-6", name: "Nicolás P.", username: "nicoparra", avatarColor: "#6C5CE7" },
+  { id: "valer", name: "Valentina R.", username: "valer", avatarColor: "#FF6B6B" },
+  { id: "mateolab", name: "Mateo L.", username: "mateolab", avatarColor: "#4ECDC4" },
+  { id: "sarita", name: "Sara Q.", username: "sarita", avatarColor: "#FFD166" },
+  { id: "jtoro", name: "Julián T.", username: "jtoro", avatarColor: "#A29BFE" },
+  { id: "milavibes", name: "Camila V.", username: "milavibes", avatarColor: "#FF8FB1" },
+  { id: "nicoparra", name: "Nicolás P.", username: "nicoparra", avatarColor: "#6C5CE7" },
 ];
 
 export type PublicProfileUser = {

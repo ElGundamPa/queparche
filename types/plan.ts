@@ -40,7 +40,7 @@ export interface Plan {
 
   // Campos legacy opcionales para compatibilidad
   category?: string;
-  createdAt?: string;
+  createdAt?: string | number;
   createdBy?: string;
   userId?: string;
   likes?: number;

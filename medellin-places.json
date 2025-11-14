@@ -1,0 +1,194 @@
+[
+    [
+        {
+          "name": "La Casa del Santi",
+          "neighborhood": "Belén",
+          "rating": 5.0,
+          "images": [
+            "https://i.imgur.com/4mK8pY2.jpg",  // perreo intenso en la sala, luces rojas, gente pegada
+            "https://i.imgur.com/xJ9vR3t.jpg",  // piscina con LED llena, botellas, reggaetón
+            "https://i.imgur.com/Zx7fG9h.jpg"   // terraza llena, Medellín de fondo, puro fuego
+          ]
+        },
+        {
+          "name": "Mirador Las Palmas",
+          "neighborhood": "Las Palmas",
+          "rating": 4.8,
+          "images": [
+            "https://i.imgur.com/QwE4zF1.jpg",
+            "https://i.imgur.com/HtR8xL7.jpg",
+            "https://i.imgur.com/vN3kP9x.jpg"
+          ]
+        },
+        {
+          "name": "Cielo Abierto Rooftop",
+          "neighborhood": "El Poblado",
+          "rating": 4.9,
+          "images": [
+            "https://i.imgur.com/Zx9fG6y.jpg",
+            "https://i.imgur.com/MpL5rT2.jpg",
+            "https://i.imgur.com/8vB3nKx.jpg"
+          ]
+        },
+        {
+          "name": "Almendra Cocina Viva",
+          "neighborhood": "Laureles-Estadio",
+          "rating": 4.7,
+          "images": [
+            "https://i.imgur.com/J9hL2qW.jpg",
+            "https://i.imgur.com/Nf3kM8v.jpg",
+            "https://i.imgur.com/Rt7uY4p.jpg"
+          ]
+        },
+        {
+          "name": "Luna Negra Club",
+          "neighborhood": "El Poblado",
+          "rating": 4.6,
+          "images": [
+            "https://i.imgur.com/Gh4jL2z.jpg",
+            "https://i.imgur.com/Ty6rF9m.jpg",
+            "https://i.imgur.com/Kp8vN3x.jpg"
+          ]
+        }
+      ]
+    {
+      "name": "Mirador Las Palmas",
+      "neighborhood": "Las Palmas",
+      "rating": 4.8,
+      "images": [
+        "https://i.imgur.com/3mK9vP2.jpg",
+        "https://i.imgur.com/HtR8xL7.jpg",
+        "https://i.imgur.com/QwE4zF1.jpg"
+      ]
+    },
+    {
+      "name": "Cielo Abierto Rooftop",
+      "neighborhood": "El Poblado",
+      "rating": 4.9,
+      "images": [
+        "https://i.imgur.com/vB8nK9x.jpg",
+        "https://i.imgur.com/MpL5rT2.jpg",
+        "https://i.imgur.com/Zx9fG6y.jpg"
+      ]
+    },
+    {
+      "name": "Almendra Cocina Viva",
+      "neighborhood": "Laureles-Estadio",
+      "rating": 4.7,
+      "images": [
+        "https://i.imgur.com/Rt7uY4p.jpg",
+        "https://i.imgur.com/Nf3kM8v.jpg",
+        "https://i.imgur.com/J9hL2qW.jpg"
+      ]
+    },
+    {
+      "name": "Luna Negra Club",
+      "neighborhood": "El Poblado",
+      "rating": 4.6,
+      "images": [
+        "https://i.imgur.com/Kp8vN3x.jpg",
+        "https://i.imgur.com/Ty6rF9m.jpg",
+        "https://i.imgur.com/Gh4jL2z.jpg"
+      ]
+    },
+    {
+      "name": "Envy Rooftop",
+      "neighborhood": "El Poblado",
+      "rating": 4.9,
+      "images": [
+        "https://i.imgur.com/5vX8pK2.jpg",
+        "https://i.imgur.com/Lr5tY3v.jpg",
+        "https://i.imgur.com/Pq8nJ6h.jpg"
+      ]
+    },
+    {
+      "name": "Mosquito Rooftop",
+      "neighborhood": "Provenza",
+      "rating": 4.8,
+      "images": [
+        "https://i.imgur.com/Df9kP2m.jpg",
+        "https://i.imgur.com/Wx3vB8n.jpg",
+        "https://i.imgur.com/Hy6rT4q.jpg"
+      ]
+    },
+    {
+      "name": "Panorama Rooftop",
+      "neighborhood": "Provenza",
+      "rating": 4.7,
+      "images": [
+        "https://i.imgur.com/Mn5jL9x.jpg",
+        "https://i.imgur.com/Qr8tF3v.jpg",
+        "https://i.imgur.com/Ty2kP7h.jpg"
+      ]
+    },
+    {
+      "name": "The Rooftop at Click Clack",
+      "neighborhood": "El Poblado",
+      "rating": 4.8,
+      "images": [
+        "https://i.imgur.com/Xe9mR5t.jpg",
+        "https://i.imgur.com/Zx4vN8p.jpg",
+        "https://i.imgur.com/Bn7jK3q.jpg"
+      ]
+    },
+    {
+      "name": "Los Patios Rooftop Bar",
+      "neighborhood": "Manila",
+      "rating": 4.6,
+      "images": [
+        "https://i.imgur.com/Cf6kY9m.jpg",
+        "https://i.imgur.com/Vr3tL5n.jpg",
+        "https://i.imgur.com/Ny8pQ2h.jpg"
+      ]
+    },
+    {
+      "name": "Celeste Rooftop Garden",
+      "neighborhood": "Laureles-Estadio",
+      "rating": 4.7,
+      "images": [
+        "https://i.imgur.com/Pq5jM8x.jpg",
+        "https://i.imgur.com/Lr9tF4v.jpg",
+        "https://i.imgur.com/Ky7nJ3q.jpg"
+      ]
+    },
+    {
+      "name": "SkyBar – Energy Living",
+      "neighborhood": "Milla de Oro",
+      "rating": 4.9,
+      "images": [
+        "https://i.imgur.com/Wx2kP6m.jpg",
+        "https://i.imgur.com/Hy8vB9n.jpg",
+        "https://i.imgur.com/Df4rT7q.jpg"
+      ]
+    },
+    {
+      "name": "20Mission Cerveza Rooftop",
+      "neighborhood": "El Poblado",
+      "rating": 4.8,
+      "images": [
+        "https://i.imgur.com/Mn6jL5x.jpg",
+        "https://i.imgur.com/Qr7tF9v.jpg",
+        "https://i.imgur.com/Ty3kP2h.jpg"
+      ]
+    },
+    {
+      "name": "Zea Bar – Epic Hotel",
+      "neighborhood": "Parque Lleras",
+      "rating": 4.7,
+      "images": [
+        "https://i.imgur.com/Xe8mR4t.jpg",
+        "https://i.imgur.com/Zx5vN7p.jpg",
+        "https://i.imgur.com/Bn9jK6q.jpg"
+      ]
+    },
+    {
+      "name": "Alambique Terraza",
+      "neighborhood": "Parque del Poblado",
+      "rating": 4.8,
+      "images": [
+        "https://i.imgur.com/Cf7kY8m.jpg",
+        "https://i.imgur.com/Vr4tL6n.jpg",
+        "https://i.imgur.com/Ny9pQ5h.jpg"
+      ]
+    }
+  ]

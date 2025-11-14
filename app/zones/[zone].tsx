@@ -4,11 +4,11 @@ import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { ArrowLeft, MapPin } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ZONES, MEDELLIN_COMUNAS } from '@/data/zones';
-import { mockPlans } from '@/mocks/plans';
 import { Plan } from '@/types/plan';
 import PatchGridItem from '@/components/PatchGridItem';
 import theme from '@/lib/theme';
 import { Image } from 'expo-image';
+import { usePlansStore } from '@/store/plansStore';
 
 const { width } = Dimensions.get('window');
 
@@ -116,6 +116,7 @@ export default function ZoneDetail() {
     ZONES.find((z) => z.key.toLowerCase() === zoneKey), 
     [zoneKey]
   );
+  const plans = usePlansStore((state) => state.plans);
 
   // Filtrar planes por zona
   const zonePlans = useMemo(() => {
@@ -129,7 +130,7 @@ export default function ZoneDetail() {
       ? MEDELLIN_COMUNAS.map(c => normalizeZoneName(c.name))
       : [];
     
-    const filtered = mockPlans.filter((plan) => {
+    const filtered = plans.filter((plan) => {
       const planZone = getPlanZone(plan);
       if (!planZone) return false;
       
@@ -158,7 +159,7 @@ export default function ZoneDetail() {
     }
     
     return filtered;
-  }, [zoneItem]);
+  }, [zoneItem, plans]);
 
   const handlePlanPress = (plan: Plan) => {
     // Si es placeholder, no navegar

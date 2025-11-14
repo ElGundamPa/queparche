@@ -8,9 +8,9 @@ import {
   Alert,
   TextInput,
   Modal,
-  FlatList,
   Platform,
   Linking,
+  ActionSheetIOS,
 } from "react-native";
 import { Image } from "expo-image";
 import { StatusBar } from "expo-status-bar";
@@ -53,11 +53,16 @@ export default function ProfileScreen() {
     friends,
     requestsReceived,
     requestsSent,
-    sendRequest,
     acceptRequest,
     rejectRequest,
-    cancelRequest,
     removeFriend,
+    followUser,
+    unfollowUser,
+    isFollowing,
+    isFollowedBy,
+    isMutual,
+    follows,
+    currentUserId,
   } = useFriendsStore();
   const profileUser = React.useMemo(() => {
     if (!viewedUserId) {
@@ -167,13 +172,19 @@ export default function ProfileScreen() {
     }
   };
 
-  const friendId = !isCurrentProfile ? profileUser.id : null;
+  const profileUsername = (profileUser.username || profileUser.id || "").replace(/^@/, "");
+  const followersCount = follows.filter((relation) => relation.followingId === profileUsername).length;
+  const followingCount = follows.filter((relation) => relation.followerId === profileUsername).length;
+
+  const friendId = !isCurrentProfile ? profileUsername : null;
   const safeFriendId = friendId ?? "";
   const hasSentRequest =
     !!safeFriendId && requestsSent.some((request) => request.id === safeFriendId);
   const hasReceivedRequest =
     !!safeFriendId && requestsReceived.some((request) => request.id === safeFriendId);
-  const isFriendWithUser = !!safeFriendId && friends.some((friend) => friend.id === safeFriendId);
+  const isFriendWithUser =
+    !!safeFriendId &&
+    (friends.some((friend) => friend.id === safeFriendId) || isMutual(currentUserId, safeFriendId));
   const canManageFriendship = !!currentUser && !!safeFriendId && !isCurrentProfile;
 
   const friendCandidate = safeFriendId ? friends.find((friend) => friend.id === safeFriendId) : null;
@@ -184,28 +195,77 @@ export default function ProfileScreen() {
   const socialFallback =
     safeFriendId && profileUser
       ? {
-          id: profileUser.id,
+          id: profileUsername,
           name: profileUser.name ?? profileUser.username ?? "Usuario misterioso",
-          username: (profileUser.username ?? profileUser.id).replace(/^@/, ""),
+          username: profileUsername,
           avatarColor: "#FF3B30",
         }
       : null;
   const socialTarget = friendCandidate ?? receivedCandidate ?? sentCandidate ?? socialFallback;
 
-  const handleRemoveFriend = () => {
-    if (!safeFriendId || !socialTarget) return;
-    Alert.alert(
-      "Amigos",
-      "¿Quieres eliminar a esta persona de tus amigos?",
-      [
-        { text: "Cancelar", style: "cancel" },
+  const handleProfileMutualActions = (target: { id: string; username: string; name: string }) => {
+    const options = [
+      "Cancelar",
+      "Ver historial de parches",
+      "Invita a tu bro 🤙",
+      "Enviar mensaje",
+      "Dejar de ser amigos",
+    ];
+    const destructiveIndex = 4;
+    const cancelIndex = 0;
+
+    const handleOption = (index: number) => {
+      switch (index) {
+        case 1:
+          router.push("/coming-soon");
+          break;
+        case 2:
+          console.log("invite", target.username);
+          break;
+        case 3:
+          console.log("dm", target.username);
+          break;
+        case 4:
+          removeFriend({
+            id: target.id,
+            username: target.username,
+            name: target.name,
+            avatarColor: "#FF3B30",
+          });
+          break;
+        default:
+          break;
+      }
+    };
+
+    if (Platform.OS === "ios") {
+      ActionSheetIOS.showActionSheetWithOptions(
         {
-          text: "Eliminar amigo",
-          style: "destructive",
-          onPress: () => removeFriend(socialTarget),
+          options,
+          destructiveButtonIndex: destructiveIndex,
+          cancelButtonIndex: cancelIndex,
+          userInterfaceStyle: "dark",
         },
-      ]
-    );
+        handleOption
+      );
+    } else {
+      Alert.alert(
+        "Acciones",
+        undefined,
+        [
+          { text: options[1], onPress: () => handleOption(1) },
+          { text: options[2], onPress: () => handleOption(2) },
+          { text: options[3], onPress: () => handleOption(3) },
+          {
+            text: options[4],
+            style: "destructive",
+            onPress: () => handleOption(4),
+          },
+          { text: options[0], style: "cancel" },
+        ],
+        { cancelable: true }
+      );
+    }
   };
 
   const getLevelInfo = (points: number) => {
@@ -268,10 +328,10 @@ export default function ProfileScreen() {
 
   React.useEffect(() => {
     plansCount.value = withTiming(userPlans.length, { duration: 450 });
-    followers.value = withTiming(profileUser.followersCount ?? 0, { duration: 450 });
-    following.value = withTiming(profileUser.followingCount ?? 0, { duration: 450 });
+    followers.value = withTiming(followersCount, { duration: 450 });
+    following.value = withTiming(followingCount, { duration: 450 });
     attended.value = withTiming(profileUser.plansAttended ?? 0, { duration: 450 });
-  }, [profileUser, userPlans.length]);
+  }, [profileUser, userPlans.length, followersCount, followingCount]);
 
   const setTab = (tab: "plans" | "favorites" | "history") => {
     tabOpacity.value = withTiming(0, { duration: 160 });
@@ -352,11 +412,11 @@ export default function ProfileScreen() {
               <Text style={styles.statLabel}>Planes</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{profileUser.followersCount ?? 0}</Text>
+              <Text style={styles.statNumber}>{followersCount}</Text>
               <Text style={styles.statLabel}>Seguidores</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{profileUser.followingCount ?? 0}</Text>
+              <Text style={styles.statNumber}>{followingCount}</Text>
               <Text style={styles.statLabel}>Siguiendo</Text>
             </View>
             <View style={styles.statItem}>
@@ -365,50 +425,41 @@ export default function ProfileScreen() {
             </View>
           </View>
 
-          {canManageFriendship && (
-            <View style={styles.friendSection}>
-              {isFriendWithUser ? (
-                <TouchableOpacity
-                  style={[styles.friendButton, styles.friendButtonSuccess]}
-                  onPress={handleRemoveFriend}
-                >
-                  <Text style={styles.friendButtonText}>Amigos ✓</Text>
-                </TouchableOpacity>
-              ) : hasReceivedRequest ? (
-                <View style={styles.friendDualButtons}>
-                  <TouchableOpacity
-                    style={[styles.friendButton, styles.friendButtonPrimary, styles.friendButtonHalf]}
-                    onPress={() => socialTarget && acceptRequest(socialTarget)}
-                  >
-                    <Text style={styles.friendButtonText}>Aceptar</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.friendButton, styles.friendButtonGhost, styles.friendButtonHalf]}
-                    onPress={() => socialTarget && rejectRequest(socialTarget)}
-                  >
-                    <Text style={styles.friendButtonText}>Rechazar</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : hasSentRequest ? (
-                <>
-                  <TouchableOpacity
-                    style={[styles.friendButton, styles.friendButtonGhost]}
-                    onPress={() => socialTarget && cancelRequest(socialTarget)}
-                  >
-                    <Text style={styles.friendButtonText}>Solicitud enviada</Text>
-                  </TouchableOpacity>
-                  <Text style={styles.friendHint}>Toca para cancelar la solicitud</Text>
-                </>
-              ) : (
-                <TouchableOpacity
-                  style={[styles.friendButton, styles.friendButtonPrimary]}
-                  onPress={() => socialTarget && sendRequest(socialTarget)}
-                >
-                  <Text style={styles.friendButtonText}>Agregar amigo</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          )}
+        {canManageFriendship && socialTarget && (
+          <View style={styles.friendSection}>
+            <TouchableOpacity
+              style={[
+                styles.friendButton,
+                isMutual(currentUserId, socialTarget.id)
+                  ? styles.friendButtonPrimary
+                  : isFollowing(currentUserId, socialTarget.id)
+                  ? styles.friendButtonGhost
+                  : styles.friendButtonPrimary,
+              ]}
+              onPress={() => {
+                if (isMutual(currentUserId, socialTarget.id)) {
+                  handleProfileMutualActions(socialTarget);
+                  return;
+                }
+                if (isFollowing(currentUserId, socialTarget.id) && !isFollowedBy(currentUserId, socialTarget.id)) {
+                  unfollowUser(socialTarget);
+                  return;
+                }
+                followUser(socialTarget);
+              }}
+            >
+              <Text style={styles.friendButtonText}>
+                {isMutual(currentUserId, socialTarget.id)
+                  ? "Amigos ✓"
+                  : isFollowing(currentUserId, socialTarget.id) && !isFollowedBy(currentUserId, socialTarget.id)
+                  ? "Siguiendo"
+                  : isFollowedBy(currentUserId, socialTarget.id) && !isFollowing(currentUserId, socialTarget.id)
+                  ? "Seguir de vuelta"
+                  : "Seguir"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
           {/* Actions */}
           <View style={styles.actionsContainer}>
@@ -520,31 +571,6 @@ export default function ProfileScreen() {
           )}
         </Animated.View>
 
-        {/* Categories List */}
-        <View style={styles.categoriesContainer}>
-          <Text style={styles.categoriesTitle}>Descubre nuevas categorías</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {categories.map((category) => (
-              <View key={category.id} style={styles.categoryCard}>
-                <Text style={styles.categoryIcon}>{category.icon}</Text>
-                <Text style={styles.categoryName}>{category.name}</Text>
-              </View>
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* Recent Section Example */}
-        <View style={styles.recentContainer}>
-          <Text style={styles.sectionTitle}>Lo último de la comunidad</Text>
-          <FlatList
-            data={favoritePlans}
-            renderItem={renderPlanItem}
-            keyExtractor={(item) => item.id}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.recentList}
-          />
-        </View>
       </ScrollView>
 
       {/* Edit Modal */}
@@ -879,73 +905,6 @@ const styles = StyleSheet.create({
     color: "#BBBBBB",
     textAlign: "center",
   },
-  categoriesContainer: {
-    paddingHorizontal: 20,
-    marginTop: 32,
-    gap: 12,
-  },
-  categoriesTitle: {
-    color: "#FFFFFF",
-    fontWeight: "700",
-    fontSize: 18,
-  },
-  categoryCard: {
-    backgroundColor: "#121212",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: "center",
-    marginRight: 12,
-  },
-  categoryIcon: {
-    fontSize: 20,
-    marginBottom: 6,
-  },
-  categoryName: {
-    color: "#FFFFFF",
-    fontWeight: "600",
-  },
-  recentContainer: {
-    paddingHorizontal: 20,
-    marginTop: 36,
-    gap: 12,
-  },
-  sectionTitle: {
-    color: "#FFFFFF",
-    fontWeight: "700",
-    fontSize: 18,
-  },
-  recentList: {
-    gap: 12,
-  },
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: "#0E0E0E",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 24,
-    gap: 8,
-  },
-  loadingText: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "600",
-  },
-  errorSubtext: {
-    color: "#BBBBBB",
-    textAlign: "center",
-  },
-  loginButton: {
-    marginTop: 16,
-    paddingHorizontal: 24,
-    paddingVertical: 10,
-    borderRadius: 12,
-    backgroundColor: theme.colors.primary,
-  },
-  loginButtonText: {
-    color: "#FFFFFF",
-    fontWeight: "600",
-  },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.6)",
@@ -1041,6 +1000,34 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   saveButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "600",
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: "#0E0E0E",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 24,
+    gap: 8,
+  },
+  loadingText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  errorSubtext: {
+    color: "#BBBBBB",
+    textAlign: "center",
+  },
+  loginButton: {
+    marginTop: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: theme.colors.primary,
+  },
+  loginButtonText: {
     color: "#FFFFFF",
     fontWeight: "600",
   },

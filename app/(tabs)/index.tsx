@@ -28,16 +28,17 @@ import TrendingPlansCarousel from "@/components/TrendingPlansCarousel";
 import ZoneSelector from "@/components/ZoneSelector";
 import PatchGridItem from "@/components/PatchGridItem";
 import theme from "@/lib/theme";
-import { mockPlans } from "@/mocks/plans";
 import { Plan } from "@/types/plan";
 import { useUserStore } from "@/hooks/use-user-store";
 import { useSearchStore } from "@/hooks/use-search-store";
 import HomeHeaderActions from "@/components/HomeHeaderActions";
+import { usePlansStore } from "@/store/plansStore";
 
 export default function HomeScreen() {
   const router = useRouter();
   const { user } = useUserStore();
   const { searchQuery, performSearch } = useSearchStore();
+  const plans = usePlansStore((state) => state.plans);
   const [selectedZone, setSelectedZone] = useState<string>("medellin");
 
   const headerOpacity = useSharedValue(0);
@@ -54,7 +55,7 @@ export default function HomeScreen() {
 
   // Filtrar planes por zona y tag
   const allPlans = useMemo(() => {
-    let filtered = mockPlans;
+    let filtered = plans;
 
     // Filtrar por zona
     if (selectedZone && selectedZone !== "medellin") {
@@ -88,7 +89,7 @@ export default function HomeScreen() {
     }
 
     return filtered;
-  }, [selectedZone]);
+  }, [selectedZone, plans]);
 
   const handlePlanPress = (plan: Plan) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -176,25 +177,27 @@ export default function HomeScreen() {
         <TrendingPlansCarousel />
 
         <Text style={styles.sectionTitle}>🌍 Todos los parches</Text>
-        <View>
-          <FlatList
-            data={allPlans}
-            numColumns={3}
-            keyExtractor={(item) => `grid-${item.id}`}
-            renderItem={({ item, index }) => (
-              <PatchGridItem
-                plan={item}
-                onPress={() => handlePlanPress(item)}
-                index={index}
-              />
-            )}
-            columnWrapperStyle={styles.gridRow}
-            contentContainerStyle={styles.gridContent}
-            scrollEnabled={false}
-            removeClippedSubviews={false}
-            initialNumToRender={12}
-            windowSize={7}
-          />
+        <View style={styles.gridContainer}>
+          {allPlans.map((item, index) => {
+            const row = Math.floor(index / 3);
+            const col = index % 3;
+            return (
+              <View
+                key={`grid-${item.id}`}
+                style={[
+                  styles.gridItem,
+                  col === 0 && styles.gridItemFirst,
+                  col === 2 && styles.gridItemLast,
+                ]}
+              >
+                <PatchGridItem
+                  plan={item}
+                  onPress={() => handlePlanPress(item)}
+                  index={index}
+                />
+              </View>
+            );
+          })}
         </View>
 
         <View style={styles.bottomSpacing} />
@@ -284,13 +287,22 @@ const styles = StyleSheet.create({
     marginTop: 28,
     marginBottom: 16,
   },
-  gridRow: {
+  gridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 16,
     gap: 12,
     marginBottom: 12,
-    paddingHorizontal: 16,
   },
-  gridContent: {
-    paddingBottom: 12,
+  gridItem: {
+    width: '31%',
+    marginBottom: 12,
+  },
+  gridItemFirst: {
+    marginRight: 'auto',
+  },
+  gridItemLast: {
+    marginLeft: 'auto',
   },
   zoneSelectorContainer: {
     paddingVertical: 8,

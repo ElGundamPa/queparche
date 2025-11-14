@@ -21,6 +21,7 @@ export interface User {
   badges: string[];
   preferences: string[];
   createdAt: string;
+  createdPlans: string[];
 }
 
 interface AuthState {
@@ -40,6 +41,7 @@ interface AuthState {
 // Usuario por defecto para pruebas
 const initialUsers = mockUsers.map(user => ({
   ...user,
+  createdPlans: user.createdPlans ?? [],
 }));
 
 export const useAuthStore = create<AuthState>()(
@@ -125,6 +127,7 @@ export const useAuthStore = create<AuthState>()(
           avatar: '',
           location: '',
           createdAt: new Date().toISOString(),
+          createdPlans: [],
         };
         
         console.log('=== REGISTER DEBUG ===');

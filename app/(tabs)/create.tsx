@@ -43,7 +43,7 @@ export default function CreateScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setModalVisible(false);
     videoStateManager.pauseAllVideos();
-    router.push("/create-post");
+    router.push("/create");
   };
 
   return (

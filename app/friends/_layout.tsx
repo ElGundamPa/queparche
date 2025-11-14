@@ -16,19 +16,10 @@ export default function FriendsLayout() {
       <Stack.Screen
         name="index"
         options={{
-          title: "Amistades",
+          title: "Amigos",
           headerLeft: () => (
             <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Volver" style={{ padding: 8 }}>
               <ChevronLeft size={20} color="#fff" />
-            </TouchableOpacity>
-          ),
-          headerRight: () => (
-            <TouchableOpacity
-              onPress={() => router.push("/friends/search")}
-              accessibilityLabel="Buscar amigos"
-              style={{ padding: 8 }}
-            >
-              <Search size={18} color="#FF3B30" />
             </TouchableOpacity>
           ),
         }}
@@ -37,6 +28,17 @@ export default function FriendsLayout() {
         name="search"
         options={{
           title: "Buscar amigos",
+          headerLeft: () => (
+            <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Volver" style={{ padding: 8 }}>
+              <ChevronLeft size={20} color="#fff" />
+            </TouchableOpacity>
+          ),
+        }}
+      />
+      <Stack.Screen
+        name="chats"
+        options={{
+          title: "Chats 🤙",
           headerLeft: () => (
             <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Volver" style={{ padding: 8 }}>
               <ChevronLeft size={20} color="#fff" />

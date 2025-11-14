@@ -18,6 +18,7 @@ export interface User {
   followingCount: number;
   plansCreated: number;
   plansAttended: number;
+  createdPlans: string[];
 }
 
 export interface UserStats {

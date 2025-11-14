@@ -8,6 +8,7 @@ import { trpc } from "@/lib/trpc";
 import { mockPlans } from "@/mocks/plans";
 import { mockEvents } from "@/mocks/events";
 import { mockShorts } from "@/mocks/shorts";
+import { usePlansStore as usePlansDataStore } from "@/store/plansStore";
 
 const CACHE_KEYS = {
   PLANS: 'cached_plans',
@@ -21,6 +22,8 @@ export const [PlansProvider, usePlansStore] = createContextHook(() => {
   const [cachedPlans, setCachedPlans] = useState<Plan[]>(mockPlans);
   const [cachedShorts, setCachedShorts] = useState<Short[]>(mockShorts);
   const queryClient = useQueryClient();
+  const plansFromStore = usePlansDataStore((state) => state.plans);
+  const setPlansInStore = usePlansDataStore((state) => state.setPlans);
 
   // Load cached data on mount
   useEffect(() => {
@@ -35,13 +38,18 @@ export const [PlansProvider, usePlansStore] = createContextHook(() => {
       ]);
       
       if (plansData) {
-        setCachedPlans(JSON.parse(plansData));
+        const parsedPlans = JSON.parse(plansData) as Plan[];
+        setCachedPlans(parsedPlans);
+        setPlansInStore(parsedPlans);
       }
       if (shortsData) {
         setCachedShorts(JSON.parse(shortsData));
       } else {
         // Si no hay datos en caché, usar los mock shorts
         setCachedShorts(mockShorts);
+      }
+      if (!plansData) {
+        setPlansInStore(mockPlans);
       }
     } catch (error) {
       console.error('Error loading cached data:', error);
@@ -76,9 +84,10 @@ export const [PlansProvider, usePlansStore] = createContextHook(() => {
   useEffect(() => {
     if (plansQuery.data) {
       setCachedPlans(plansQuery.data);
+      setPlansInStore(plansQuery.data);
       saveCachedData(plansQuery.data, cachedShorts);
     }
-  }, [plansQuery.data, cachedShorts]);
+  }, [plansQuery.data, cachedShorts, setPlansInStore]);
 
   useEffect(() => {
     if (shortsQuery.data) {
@@ -110,6 +119,7 @@ export const [PlansProvider, usePlansStore] = createContextHook(() => {
       
       const updatedPlans = [optimisticPlan, ...cachedPlans];
       setCachedPlans(updatedPlans);
+      setPlansInStore(updatedPlans);
       queryClient.setQueryData([["plans", "getAll"]], updatedPlans);
       saveCachedData(updatedPlans, cachedShorts);
       
@@ -120,6 +130,7 @@ export const [PlansProvider, usePlansStore] = createContextHook(() => {
       if (context?.previousPlans) {
         queryClient.setQueryData([["plans", "getAll"]], context.previousPlans);
         setCachedPlans(context.previousPlans as Plan[]);
+        setPlansInStore(context.previousPlans as Plan[]);
         saveCachedData(context.previousPlans as Plan[], cachedShorts);
       }
     },
@@ -150,6 +161,7 @@ export const [PlansProvider, usePlansStore] = createContextHook(() => {
       );
       
       setCachedPlans(updatedPlans);
+      setPlansInStore(updatedPlans);
       queryClient.setQueryData([["plans", "getAll"]], updatedPlans);
       
       return { previousPlans };
@@ -158,6 +170,7 @@ export const [PlansProvider, usePlansStore] = createContextHook(() => {
       if (context?.previousPlans) {
         queryClient.setQueryData([["plans", "getAll"]], context.previousPlans);
         setCachedPlans(context.previousPlans as Plan[]);
+        setPlansInStore(context.previousPlans as Plan[]);
       }
     },
     onSuccess: () => {
@@ -213,7 +226,7 @@ export const [PlansProvider, usePlansStore] = createContextHook(() => {
   });
 
   // Use cached data as fallback while loading, or mock data if no backend
-  const plans = plansQuery.data || cachedPlans || mockPlans;
+  const plans = plansFromStore.length ? plansFromStore : plansQuery.data || cachedPlans || mockPlans;
   const shorts = shortsQuery.data || cachedShorts || mockShorts;
 
   // Add a new plan

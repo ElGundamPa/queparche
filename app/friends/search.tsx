@@ -7,13 +7,16 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  ActionSheetIOS,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
+import { Platform } from "react-native";
 
 import theme from "@/lib/theme";
-import { SOCIAL_MOCK_USERS } from "@/mocks/users";
+import { SOCIAL_MOCK_USERS, type SocialUser } from "@/mocks/users";
 import { useFriendsStore } from "@/store/friendsStore";
+import { useChatStore } from "@/store/chatStore";
 
 const normalize = (value: string) => value.trim().toLowerCase();
 
@@ -26,13 +29,9 @@ const initials = (name: string) =>
 
 export default function FriendSearchScreen() {
   const [query, setQuery] = useState("");
-  const {
-    friends,
-    requestsSent,
-    requestsReceived,
-    sendRequest,
-    acceptRequest,
-  } = useFriendsStore();
+  const { followUser, unfollowUser, removeFriend, isFollowing, isFollowedBy, isMutual, currentUserId } =
+    useFriendsStore();
+  const router = useRouter();
 
   const lowerQuery = normalize(query);
   const results = useMemo(() => {
@@ -43,22 +42,109 @@ export default function FriendSearchScreen() {
     });
   }, [lowerQuery]);
 
-  const isFriend = (userId: string) => friends.some((user) => user.id === userId);
-  const hasSent = (userId: string) => requestsSent.some((user) => user.id === userId);
-  const hasReceived = (userId: string) => requestsReceived.some((user) => user.id === userId);
-
-  const handleSend = (userId: string) => {
-    const target = SOCIAL_MOCK_USERS.find((item) => item.id === userId);
-    if (!target) return;
-    sendRequest(target);
-    Alert.alert("Solicitud enviada", `Le avisaremos a ${target.name}.`);
+  const handleSend = (user: SocialUser) => {
+    followUser(user);
   };
 
-  const handleAccept = (userId: string) => {
-    const target = requestsReceived.find((item) => item.id === userId);
-    if (!target) return;
-    acceptRequest(target);
-    Alert.alert("Ahora son panas", `${target.name} ya aparece en tu lista de amigos.`);
+  const handleMutualActions = (user: SocialUser) => {
+    const options = [
+      "Cancelar",
+      "Ver historial de parches",
+      "Invita a tu bro 🤙",
+      "Enviar mensaje",
+      "Dejar de ser amigos",
+    ];
+    const destructiveIndex = 4;
+    const cancelIndex = 0;
+
+    const handleOption = (index: number) => {
+      switch (index) {
+        case 1:
+          router.push("/coming-soon");
+          break;
+        case 2:
+        case 3: {
+          if (!currentUserId) return;
+          const chatId = useChatStore.getState().createChatIfNotExists(currentUserId, user.id);
+          router.push(`/chat/${chatId}`);
+          break;
+        }
+        case 4:
+          removeFriend(user);
+          break;
+        default:
+          break;
+      }
+    };
+
+    if (Platform.OS === "ios") {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options,
+          destructiveButtonIndex: destructiveIndex,
+          cancelButtonIndex: cancelIndex,
+          userInterfaceStyle: "dark",
+        },
+        handleOption
+      );
+    } else {
+      Alert.alert(
+        "Acciones",
+        undefined,
+        [
+          { text: options[1], onPress: () => handleOption(1) },
+          { text: options[2], onPress: () => handleOption(2) },
+          { text: options[3], onPress: () => handleOption(3) },
+          {
+            text: options[4],
+            style: "destructive",
+            onPress: () => handleOption(4),
+          },
+          { text: options[0], style: "cancel" },
+        ],
+        { cancelable: true }
+      );
+    }
+  };
+
+  const getButtonProps = (user: SocialUser) => {
+    const following = isFollowing(currentUserId, user.id);
+    const followedBy = isFollowedBy(currentUserId, user.id);
+    const mutual = isMutual(currentUserId, user.id);
+
+    if (!following && !followedBy) {
+      return {
+        label: "Seguir",
+        style: [styles.actionButton, styles.primaryButton],
+        textStyle: styles.primaryButtonText,
+        onPress: () => handleSend(user),
+      };
+    }
+
+    if (following && !followedBy) {
+      return {
+        label: "Siguiendo",
+        style: [styles.statusBadge, styles.statusBadgePending],
+        textStyle: styles.statusText,
+        onPress: () => unfollowUser(user),
+      };
+    }
+
+    if (!following && followedBy) {
+      return {
+        label: "Seguir de vuelta",
+        style: [styles.actionButton, styles.primaryButton],
+        textStyle: styles.primaryButtonText,
+        onPress: () => handleSend(user),
+      };
+    }
+
+    return {
+      label: "Amigos ✓",
+      style: [styles.statusBadge, styles.statusBadgeSuccess],
+      textStyle: styles.statusText,
+      onPress: () => handleMutualActions(user),
+    };
   };
 
   return (
@@ -88,9 +174,7 @@ export default function FriendSearchScreen() {
             <Text style={styles.emptyText}>No encontramos coincidencias.</Text>
           ) : (
             results.map((user) => {
-              const friend = isFriend(user.id);
-              const sent = hasSent(user.id);
-              const incoming = hasReceived(user.id);
+              const buttonProps = getButtonProps(user);
 
               return (
                 <View key={user.id} style={styles.card}>
@@ -108,29 +192,9 @@ export default function FriendSearchScreen() {
                     </TouchableOpacity>
                   </Link>
 
-                  {friend ? (
-                    <View style={[styles.statusBadge, styles.statusBadgeSuccess]}>
-                      <Text style={styles.statusText}>Amigos ✓</Text>
-                    </View>
-                  ) : incoming ? (
-                    <TouchableOpacity
-                      style={[styles.actionButton, styles.primaryButton]}
-                      onPress={() => handleAccept(user.id)}
-                    >
-                      <Text style={styles.primaryButtonText}>Aceptar solicitud</Text>
-                    </TouchableOpacity>
-                  ) : sent ? (
-                    <View style={[styles.statusBadge, styles.statusBadgePending]}>
-                      <Text style={styles.statusText}>Solicitud enviada</Text>
-                    </View>
-                  ) : (
-                    <TouchableOpacity
-                      style={[styles.actionButton, styles.primaryButton]}
-                      onPress={() => handleSend(user.id)}
-                    >
-                      <Text style={styles.primaryButtonText}>Agregar amigo</Text>
-                    </TouchableOpacity>
-                  )}
+                  <TouchableOpacity style={buttonProps.style} onPress={buttonProps.onPress}>
+                    <Text style={buttonProps.textStyle}>{buttonProps.label}</Text>
+                  </TouchableOpacity>
                 </View>
               );
             })

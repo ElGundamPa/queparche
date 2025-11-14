@@ -10,7 +10,6 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Image } from "expo-image";
 import { X, Send } from "lucide-react-native";
 import Toast from "react-native-toast-message";
@@ -121,31 +120,21 @@ export default function CommentModal({ visible, onClose, shortId }: CommentModal
           </TouchableOpacity>
         </View>
 
-        <KeyboardAwareScrollView
-          style={styles.flex}
-          contentContainerStyle={styles.flex}
-          enableOnAndroid={true}
-          enableAutomaticScroll={Platform.OS === 'ios'}
-          extraScrollHeight={Platform.OS === 'ios' ? 20 : 40}
-          keyboardShouldPersistTaps="handled"
+        <FlatList
+          data={comments}
+          keyExtractor={(item) => item.id}
+          renderItem={renderComment}
+          style={styles.commentsList}
+          contentContainerStyle={styles.commentsContainer}
           showsVerticalScrollIndicator={false}
-        >
-          <FlatList
-            data={comments}
-            keyExtractor={(item) => item.id}
-            renderItem={renderComment}
-            style={styles.commentsList}
-            contentContainerStyle={styles.commentsContainer}
-            showsVerticalScrollIndicator={false}
-            scrollEnabled={false}
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>No hay comentarios aún</Text>
-                <Text style={styles.emptySubtext}>¡Sé el primero en comentar!</Text>
-              </View>
-            }
-          />
-        </KeyboardAwareScrollView>
+          keyboardShouldPersistTaps="handled"
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No hay comentarios aún</Text>
+              <Text style={styles.emptySubtext}>¡Sé el primero en comentar!</Text>
+            </View>
+          }
+        />
 
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}

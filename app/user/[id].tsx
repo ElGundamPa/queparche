@@ -12,6 +12,7 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import theme from "@/lib/theme";
 import { SOCIAL_MOCK_USERS } from "@/mocks/users";
 import { useFriendsStore } from "@/store/friendsStore";
+import { useChatStore } from "@/store/chatStore";
 import { StatusBar } from "expo-status-bar";
 
 const MOCK_VISITS = [
@@ -33,11 +34,14 @@ export default function UserProfileScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const {
-    friends,
-    requestsSent,
-    requestsReceived,
-    sendRequest,
-    acceptRequest,
+    followUser,
+    unfollowUser,
+    removeFriend,
+    isFollowing,
+    isFollowedBy,
+    isMutual,
+    currentUserId,
+    follows,
   } = useFriendsStore();
 
   const user = useMemo(() => SOCIAL_MOCK_USERS.find((item) => item.id === id), [id]);
@@ -55,41 +59,63 @@ export default function UserProfileScreen() {
   }
 
   const stats = statsFromId(user.id);
-  const isFriend = friends.some((friend) => friend.id === user.id);
-  const sent = requestsSent.some((request) => request.id === user.id);
-  const incoming = requestsReceived.some((request) => request.id === user.id);
+  const following = isFollowing(currentUserId, user.id);
+  const followedBy = isFollowedBy(currentUserId, user.id);
+  const mutual = isMutual(currentUserId, user.id);
 
-  const handleAddFriend = () => {
-    sendRequest(user);
-    Alert.alert("Solicitud enviada", `Le avisaremos a ${user.name} que quieres conectar.`);
+  const followersCount = follows.filter((relation) => relation.followingId === user.id).length;
+  const followingCount = follows.filter((relation) => relation.followerId === user.id).length;
+
+  const handleMutualActions = () => {
+    const options = [
+      "Cancelar",
+      "Ver historial de parches",
+      "Invita a tu bro 🤙",
+      "Enviar mensaje",
+      "Dejar de ser amigos",
+    ];
+    Alert.alert("Acciones", undefined, [
+      { text: options[1], onPress: () => router.push("/coming-soon") },
+      {
+        text: options[2],
+        onPress: () => {
+          if (!currentUserId) return;
+          const chatId = useChatStore.getState().createChatIfNotExists(currentUserId, user.id);
+          router.push(`/chat/${chatId}`);
+        },
+      },
+      {
+        text: options[3],
+        onPress: () => {
+          if (!currentUserId) return;
+          const chatId = useChatStore.getState().createChatIfNotExists(currentUserId, user.id);
+          router.push(`/chat/${chatId}`);
+        },
+      },
+      { text: options[4], style: "destructive", onPress: () => removeFriend(user) },
+      { text: options[0], style: "cancel" },
+    ]);
   };
 
-  const handleAccept = () => {
-    acceptRequest(user);
-    Alert.alert("Ahora son panas", `${user.name} ya aparece en tu lista de amigos.`);
-  };
-
-  let buttonLabel = "Agregar amigo";
+  let buttonLabel = "Seguir";
   let buttonStyle = [styles.actionButton, styles.primaryButton];
-  let buttonDisabled = false;
-  let buttonAction: (() => void) | undefined = handleAddFriend;
+  let buttonAction: (() => void) | undefined = () => followUser(user);
 
-  if (isFriend) {
+  if (mutual) {
     buttonLabel = "Amigos ✓";
-    buttonStyle = [styles.actionButton, styles.disabledButton];
-    buttonDisabled = true;
-    buttonAction = undefined;
-  } else if (sent) {
-    buttonLabel = "Solicitud enviada";
-    buttonStyle = [styles.actionButton, styles.disabledButton];
-    buttonDisabled = true;
-    buttonAction = undefined;
-  } else if (incoming) {
-    buttonLabel = "Aceptar solicitud";
     buttonStyle = [styles.actionButton, styles.primaryButton];
-    buttonDisabled = false;
-    buttonAction = handleAccept;
+    buttonAction = handleMutualActions;
+  } else if (following && !followedBy) {
+    buttonLabel = "Siguiendo";
+    buttonStyle = [styles.actionButton, styles.disabledButton];
+    buttonAction = () => unfollowUser(user);
+  } else if (!following && followedBy) {
+    buttonLabel = "Seguir de vuelta";
+    buttonStyle = [styles.actionButton, styles.primaryButton];
+    buttonAction = () => followUser(user);
   }
+
+  const buttonDisabled = !buttonAction;
 
   return (
     <View style={styles.container}>
@@ -106,18 +132,18 @@ export default function UserProfileScreen() {
         </View>
 
         <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{stats.created}</Text>
-            <Text style={styles.statLabel}>Parches creados</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{stats.visited}</Text>
-            <Text style={styles.statLabel}>Parches visitados</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{stats.level}</Text>
-            <Text style={styles.statLabel}>Nivel parche</Text>
-          </View>
+        <View style={styles.statCard}>
+          <Text style={styles.statNumber}>{stats.created}</Text>
+          <Text style={styles.statLabel}>Parches creados</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Text style={styles.statNumber}>{followersCount}</Text>
+          <Text style={styles.statLabel}>Seguidores</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Text style={styles.statNumber}>{followingCount}</Text>
+          <Text style={styles.statLabel}>Siguiendo</Text>
+        </View>
         </View>
 
         <TouchableOpacity
