@@ -7,7 +7,6 @@ import {
   Dimensions,
   StatusBar,
   Platform,
-  Image,
 } from 'react-native';
 import theme from '@/lib/theme';
 import { useRouter } from 'expo-router';
@@ -135,11 +134,6 @@ const LoginScreen = () => {
         <Animated.View style={[styles.textContainer, textStyle]}>
           <View style={styles.titleContainer}>
             <Text style={styles.welcomeText}>Que Parche</Text>
-            <Image
-              source={require('../assets/logo/logo.png')}
-              style={styles.logo}
-              resizeMode="contain"
-            />
           </View>
           <Text style={styles.subtitleText}>Tu nueva experiencia te espera</Text>
         </Animated.View>
@@ -210,17 +204,6 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
     justifyContent: 'center',
     marginBottom: 12,
-  },
-  logo: {
-    width: 16,
-    height: 16,
-    marginLeft: 4,
-    tintColor: theme.colors.primary,
-    shadowColor: 'rgba(255, 68, 68, 0.3)',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    elevation: 8,
   },
   welcomeText: {
     fontSize: 40,
