@@ -24,3 +24,14 @@ npm start
 - tRPC
 - React Query
 - React Native Reanimated
+
+## 📚 Documentación
+
+Para el equipo de backend y desarrolladores, consulta la **[Documentación Oficial Completa](./DOCUMENTACION_QUE_PARCHE.md)** que incluye:
+
+- Estructura completa del proyecto
+- Documentación de todas las pantallas
+- Endpoints requeridos con ejemplos JSON
+- Modelos de datos sugeridos
+- Requerimientos técnicos para el backend
+- Checklist de implementación
