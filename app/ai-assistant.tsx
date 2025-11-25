@@ -57,7 +57,7 @@ export default function AIAssistantScreen() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
-      content: `¡Hola ${user?.name?.split(' ')[0] || 'amigo'}! 👋 Soy tu asistente de IA para encontrar el plan perfecto en Medellín. ¿Qué tipo de experiencia estás buscando hoy?`,
+      content: `¡Hola ${user?.name?.split(' ')[0] || 'amigo'}! Soy Parche AI, tu compa que conoce todos los planes chéveres de Medellín. ¿Qué tipo de experiencia buscas? ¿Romántico, rumba, comida, naturaleza, cultura o algo más tranquilo?`,
       isUser: false,
       timestamp: new Date(),
     },
@@ -76,81 +76,7 @@ export default function AIAssistantScreen() {
     }
   }, [messages]);
 
-  const generateAIResponse = useCallback(async (userMessage: string): Promise<AIResponse> => {
-    try {
-      // Create context about available plans with structured data
-      const availablePlans = plans.map(plan => 
-        `ID: ${plan.id} | Name: ${plan.name} | Category: ${plan.primaryCategory || plan.category} | Description: ${plan.description.substring(0, 150)}... | Rating: ${plan.rating} | Likes: ${plan.likes}`
-      ).join('\n');
-
-      const systemPrompt = `You are "Parche AI", a friendly and professional AI assistant specialized in recommending plans and places in Medellín, Colombia.
-
-Available plans database:
-${availablePlans}
-
-Available categories: ${Array.from(new Set(plans.map(p => p.category))).join(', ')}
-
-Current user: ${user?.name || 'User'}
-Selected category: ${selectedCategory || 'None'}
-
-IMPORTANT INSTRUCTIONS:
-1. Respond in a conversational, friendly but professional tone
-2. When mentioning specific plans, use their EXACT names as they appear in the database
-3. Avoid excessive regional slang - keep it accessible to all users
-4. When recommending multiple plans, mention 2-4 relevant options
-5. Focus on being helpful and relevant to the user's request
-6. If asked about romantic spots, nightlife, food, etc., recommend appropriate plans from the database
-
-Response format: Provide a natural, conversational response that mentions specific plan names when relevant.`;
-
-      // Simulación de respuesta de IA local
-      // En producción, reemplaza con tu propio servicio de IA
-      const response = await fetch('/api/ai/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userMessage },
-          ],
-        }),
-      });
-
-      if (!response.ok) {
-        if (response.status === 429) {
-          throw new Error('Demasiadas solicitudes. Por favor espera un momento antes de intentar de nuevo.');
-        } else if (response.status >= 500) {
-          throw new Error('Problemas del servidor. Por favor intenta de nuevo en unos minutos.');
-        } else {
-          throw new Error('Error de conexión. Verifica tu conexión a internet.');
-        }
-      }
-
-      const data = await response.json();
-      const content = data.completion || 'Lo siento, no pude procesar tu solicitud en este momento.';
-      
-      // Extract plan references from the AI response
-      const planReferences = extractPlanReferences(content, plans);
-      
-      return {
-        content,
-        planReferences,
-        typingDelay: Math.random() * 1000 + 500, // 500-1500ms
-        confidenceScore: planReferences.length > 0 ? 0.9 : 0.7
-      };
-    } catch (error) {
-      console.error('AI Response Error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Disculpa, tengo problemas técnicos en este momento. ¿Podrías intentar de nuevo?';
-      return {
-        content: errorMessage,
-        confidenceScore: 0.1
-      };
-    }
-  }, [plans, user, selectedCategory]);
-
-  const extractPlanReferences = (content: string, availablePlans: Plan[]): PlanReference[] => {
+  const extractPlanReferences = useCallback((content: string, availablePlans: Plan[]): PlanReference[] => {
     const references: PlanReference[] = [];
     
     availablePlans.forEach(plan => {
@@ -175,7 +101,299 @@ Response format: Provide a natural, conversational response that mentions specif
     return references
       .sort((a, b) => b.confidence - a.confidence)
       .slice(0, 4);
-  };
+  }, []);
+
+  // Helper para formatear recomendaciones localmente
+  const formatLocalRecommendations = useCallback((plans: Plan[], intro: string, question: string): string => {
+    if (plans.length === 0) {
+      return "No tengo planes específicos para eso ahora. ¿Puedes darme más detalles de lo que buscas?";
+    }
+
+    let response = intro + "\n\n";
+
+    plans.forEach((plan) => {
+      const planType = plan.category || plan.primaryCategory || "Lugar";
+      const description = plan.description?.substring(0, 80).trim() || plan.vibe?.substring(0, 80).trim() || "Lugar chévere para pasar el rato";
+      const rating = plan.rating ? `⭐ ${plan.rating.toFixed(1)}/5` : "";
+      
+      let idealFor = "pasar el rato";
+      const categoryLower = (plan.category || "").toLowerCase();
+      if (categoryLower.includes("romántic")) idealFor = "plan romántico o cita";
+      else if (categoryLower.includes("nocturno") || categoryLower.includes("rumba")) idealFor = "rumba y fiesta";
+      else if (categoryLower.includes("comida") || categoryLower.includes("restaurante")) idealFor = "comer rico";
+      else if (categoryLower.includes("parque") || categoryLower.includes("naturaleza")) idealFor = "relax y charla tranquila";
+      else if (categoryLower.includes("cultura") || categoryLower.includes("museo")) idealFor = "cultura y aprendizaje";
+      else if (categoryLower.includes("aventura") || categoryLower.includes("deporte")) idealFor = "aventura y deporte";
+      else if (plan.rating && plan.rating >= 4.5) idealFor = "experiencia especial";
+
+      response += `**${plan.name}**\n`;
+      response += `${planType} – ${description}${description.length >= 80 ? '...' : ''}\n`;
+      if (rating) response += `${rating}\n`;
+      response += `Ideal para: ${idealFor}\n\n`;
+    });
+
+    response += question;
+    return response;
+  }, []);
+
+  // Función para generar respuestas locales cuando el API no está disponible
+  const generateLocalAIResponse = useCallback((userMessage: string, availablePlans: Plan[]): AIResponse => {
+    const messageLower = userMessage.toLowerCase().trim();
+    
+    // Detectar mensajes muy cortos
+    const isVeryShort = messageLower.length <= 3 || messageLower === "m" || messageLower === "no sé" || messageLower === "nose" || messageLower === "ns";
+    if (isVeryShort) {
+      return {
+        content: "Necesito un poco más de info para ayudarte mejor. ¿Qué tipo de plan buscas? ¿Romántico, rumba, comida, naturaleza, cultura...?",
+        planReferences: [],
+        typingDelay: 500,
+        confidenceScore: 0.8
+      };
+    }
+    
+    // Detectar saludos
+    const greetings = ['hola', 'hi', 'hey', 'buenos días', 'buenas tardes', 'buenas noches', 
+                     'qué tal', 'que tal', 'qué hay', 'que hay', 'qué pasa', 'que pasa',
+                     'buen día', 'buendía', 'saludos', 'qué más', 'que más'];
+    const isGreeting = greetings.some(greeting => 
+      messageLower === greeting || 
+      messageLower.startsWith(greeting + ' ') ||
+      messageLower.endsWith(' ' + greeting) ||
+      messageLower.includes(' ' + greeting + ' ')
+    );
+    
+    // Detectar mensajes generales
+    const isGeneralMessage = messageLower.length < 15 && !messageLower.includes('?') && 
+                             !messageLower.includes('busco') && !messageLower.includes('quiero') &&
+                             !messageLower.includes('necesito') && !messageLower.includes('recomienda') &&
+                             !messageLower.includes('dónde') && !messageLower.includes('donde');
+    
+    if (isGreeting || isGeneralMessage) {
+      return {
+        content: "¡Hola! Soy Parche AI, tu compa que conoce todos los planes chéveres de Medellín. ¿Qué tipo de experiencia buscas? ¿Romántico, rumba, comida, naturaleza, cultura o algo más tranquilo?",
+        planReferences: [],
+        typingDelay: 500,
+        confidenceScore: 0.8
+      };
+    }
+    
+    // Detectar categorías
+    const isRomantic = messageLower.includes('romántico') || messageLower.includes('romantico') || 
+                      messageLower.includes('romance') || messageLower.includes('pareja') || messageLower.includes('cita');
+    const isNightlife = messageLower.includes('noche') || messageLower.includes('rumba') || 
+                       messageLower.includes('fiesta') || messageLower.includes('bar') || messageLower.includes('discoteca');
+    const isFood = messageLower.includes('comida') || messageLower.includes('comer') || 
+                  messageLower.includes('restaurante') || messageLower.includes('gastronomía');
+    const isAdventure = messageLower.includes('aventura') || messageLower.includes('deporte') || 
+                      messageLower.includes('ejercicio') || messageLower.includes('caminar');
+    const isCulture = messageLower.includes('cultura') || messageLower.includes('museo') || 
+                     messageLower.includes('arte') || messageLower.includes('teatro');
+    const isNature = messageLower.includes('naturaleza') || messageLower.includes('parque') || 
+                    messageLower.includes('aire libre');
+    const isChill = messageLower.includes('relajarse') || messageLower.includes('chill') || 
+                   messageLower.includes('tranquilo');
+    
+    // Filtrar planes relevantes
+    let relevantPlans = availablePlans;
+    if (isRomantic) {
+      relevantPlans = availablePlans.filter(p => p.rating && p.rating >= 4.5 || p.category?.toLowerCase().includes('romántico') || p.name?.toLowerCase().includes('rooftop'));
+    } else if (isNightlife) {
+      relevantPlans = availablePlans.filter(p => p.category?.toLowerCase().includes('nocturno') || p.category?.toLowerCase().includes('rumba') || p.name?.toLowerCase().includes('bar'));
+    } else if (isFood) {
+      relevantPlans = availablePlans.filter(p => p.category?.toLowerCase().includes('comida') || p.category?.toLowerCase().includes('restaurante'));
+    } else if (isAdventure) {
+      relevantPlans = availablePlans.filter(p => p.category?.toLowerCase().includes('aventura') || p.category?.toLowerCase().includes('deporte'));
+    } else if (isCulture) {
+      relevantPlans = availablePlans.filter(p => p.category?.toLowerCase().includes('cultura') || p.category?.toLowerCase().includes('museo'));
+    } else if (isNature || isChill) {
+      relevantPlans = availablePlans.filter(p => p.category?.toLowerCase().includes('naturaleza') || p.category?.toLowerCase().includes('parque') || p.name?.toLowerCase().includes('parque'));
+    }
+    
+    if (relevantPlans.length === 0) relevantPlans = availablePlans;
+    
+    const selectedPlans = relevantPlans.sort(() => Math.random() - 0.5).slice(0, 3);
+    
+    let intro = "";
+    let question = "";
+    if (isRomantic) {
+      intro = "Para algo romántico, estos lugares son top:";
+      question = "¿Cuál te llama más?";
+    } else if (isNightlife) {
+      intro = "Para la rumba, estos planes suenan:";
+      question = "¿Cuál te pica?";
+    } else if (isFood) {
+      intro = "Para comer rico, estos lugares valen la pena:";
+      question = "¿Cuál te tienta más?";
+    } else if (isAdventure) {
+      intro = "Para aventura, estos planes están chéveres:";
+      question = "¿Cuál te anima?";
+    } else if (isCulture) {
+      intro = "Para cultura, estos lugares son interesantes:";
+      question = "¿Cuál te interesa?";
+    } else if (isNature || isChill) {
+      intro = "Para relajarse, estos planes están tranquilos:";
+      question = "¿Cuál te gusta más?";
+    } else {
+      intro = "Basándome en lo que dices, te recomiendo:";
+      question = "¿Cuál te llama la atención?";
+    }
+    
+    const response = formatLocalRecommendations(selectedPlans, intro, question);
+    const planReferences = extractPlanReferences(response, availablePlans);
+    
+    return {
+      content: response,
+      planReferences,
+      typingDelay: Math.random() * 1000 + 500,
+      confidenceScore: 0.7
+    };
+  }, [extractPlanReferences, formatLocalRecommendations]);
+
+  const generateAIResponse = useCallback(async (userMessage: string, conversationHistory: Message[] = []): Promise<AIResponse> => {
+    try {
+      // Create context about available plans with structured data
+      const availablePlans = plans.map(plan => 
+        `ID: ${plan.id} | Name: ${plan.name} | Category: ${plan.primaryCategory || plan.category} | Description: ${plan.description.substring(0, 150)}... | Rating: ${plan.rating} | Likes: ${plan.likes}`
+      ).join('\n');
+
+      const systemPrompt = `You are "Parche AI", the official assistant of the "Qué Parche" app. Your function is to help users find plans, places, and experiences in Medellín.
+
+Available plans database:
+${availablePlans}
+
+Available categories: ${Array.from(new Set(plans.map(p => p.category))).join(', ')}
+
+Current user: ${user?.name || 'User'}
+Selected category: ${selectedCategory || 'None'}
+
+PERSONALITY:
+- Friendly, fresh, youthful, close, real
+- Speak like a reliable friend, never exaggerated
+- Respond with clarity, few words, zero filler
+- Never repeat information, never duplicate blocks, never greet twice
+- Maintain warm vibes without sounding like a salesperson
+
+BEHAVIOR RULES:
+1. Always respond ONCE. Never generate duplicate blocks.
+2. Never greet if there was a previous greeting.
+3. Never repeat the same message you already gave.
+4. Always make ONE final question to guide the user better.
+5. Offer maximum 3 recommendations per message.
+6. If user writes very little ("m", "no sé", "hola"), ask for clarity.
+7. If user says "Nope", completely change the type of recommendation.
+8. Never generate long lists or unnecessary text.
+9. Never invent non-existent places. If you don't have info, ask for more details.
+10. Avoid excessive emojis (maximum 2 per message).
+
+RESPONSE FORMAT:
+Each recommendation must follow this EXACT format:
+
+**Place Name**
+Type (bar, café, mirador, parque, club...)
+Mini description in 1 line (vibe of the place)
+⭐ Rating (optional)
+Ideal for: a situation (romantic, rumba, relax, chat, etc.)
+
+CONVERSATION HANDLING:
+- If user doesn't know what they want, offer categories (romantic, food, rumba, nature...)
+- If user asks something very specific, respond directly without detours
+- If user shows indecision, make a concrete question: "¿Quieres algo más tranquilo, más romántico o más de rumba?"
+
+Remember: Be extremely solid, stable, and useful. Maintain absolute coherence: no repetitions, no loops, no resets, no extra greetings.`;
+
+      // Determinar la URL base del API
+      const getBaseUrl = () => {
+        if (__DEV__) {
+          return "http://localhost:3000";
+        }
+        return "https://api.queparche.com";
+      };
+
+      const apiUrl = `${getBaseUrl()}/api/ai/chat`;
+
+      // Construir historial de mensajes para el backend
+      const messageHistory = conversationHistory
+        .slice(-10) // Últimos 10 mensajes para contexto
+        .map(msg => ({
+          role: msg.isUser ? 'user' : 'assistant',
+          content: msg.content
+        }));
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...messageHistory,
+            { role: 'user', content: userMessage },
+          ],
+        }),
+      });
+
+      // Verificar si la respuesta es HTML (error 404 u otro)
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        // Si recibimos HTML, intentar leer el texto para confirmar
+        const text = await response.text();
+        if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
+          // Es HTML, usar respuesta local
+          return generateLocalAIResponse(userMessage, plans);
+        }
+        // Si no es JSON ni HTML, lanzar error
+        throw new Error('El servicio de IA no está disponible en este momento. Por favor intenta más tarde.');
+      }
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          throw new Error('Demasiadas solicitudes. Por favor espera un momento antes de intentar de nuevo.');
+        } else if (response.status >= 500) {
+          throw new Error('Problemas del servidor. Por favor intenta de nuevo en unos minutos.');
+        } else {
+          // Para errores 404 u otros, usar respuesta local
+          if (response.status === 404) {
+            return generateLocalAIResponse(userMessage, plans);
+          }
+          throw new Error('Error de conexión. Verifica tu conexión a internet.');
+        }
+      }
+
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        // Si falla el parseo JSON, usar respuesta local
+        console.warn('Error parsing JSON response, using local fallback:', jsonError);
+        return generateLocalAIResponse(userMessage, plans);
+      }
+      const content = data.completion || data.error || 'Lo siento, no pude procesar tu solicitud en este momento.';
+      
+      // Extract plan references from the AI response
+      const planReferences = extractPlanReferences(content, plans);
+      
+      return {
+        content,
+        planReferences,
+        typingDelay: Math.random() * 1000 + 500, // 500-1500ms
+        confidenceScore: planReferences.length > 0 ? 0.9 : 0.7
+      };
+    } catch (error) {
+      console.error('AI Response Error:', error);
+      
+      // Si hay un error de red o el endpoint no existe, generar respuesta local inteligente
+      if (error instanceof TypeError || (error instanceof Error && error.message.includes('fetch'))) {
+        return generateLocalAIResponse(userMessage, plans);
+      }
+      
+      const errorMessage = error instanceof Error ? error.message : 'Disculpa, tengo problemas técnicos en este momento. ¿Podrías intentar de nuevo?';
+      return {
+        content: errorMessage,
+        confidenceScore: 0.1
+      };
+    }
+  }, [plans, user, selectedCategory, generateLocalAIResponse, extractPlanReferences, messages]);
 
   const handleSendMessage = useCallback(async () => {
     if (!inputText.trim() || isLoading) {
@@ -221,7 +439,7 @@ Response format: Provide a natural, conversational response that mentions specif
     }
 
     try {
-      const aiResponse = await generateAIResponse(userMessage.content);
+      const aiResponse = await generateAIResponse(userMessage.content, messages);
       
       // Simulate typing delay for better UX
       if (aiResponse.typingDelay) {
