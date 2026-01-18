@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { Platform } from 'react-native';
+import { uploadShortVideo } from '@/lib/storage-helpers';
 
 export interface UploadProgress {
   progress: number;
@@ -20,11 +21,12 @@ export const useBackgroundUpload = () => {
     stage: 'preparing',
     message: 'Preparando subida...'
   });
-  
+
   const uploadAbortController = useRef<AbortController | null>(null);
 
   const uploadVideo = useCallback(async (
-    videoBlob: Blob,
+    videoUri: string,
+    thumbnailUri: string,
     metadata: {
       title: string;
       description: string;
@@ -37,59 +39,49 @@ export const useBackgroundUpload = () => {
     uploadAbortController.current = new AbortController();
 
     try {
-      // Simular preparación
-      setUploadProgress({
+      // Preparación
+      const prepProgress = {
         progress: 10,
-        stage: 'preparing',
+        stage: 'preparing' as const,
         message: 'Preparando archivo...'
-      });
-      
-      options.onProgress?.(uploadProgress);
+      };
+      setUploadProgress(prepProgress);
+      options.onProgress?.(prepProgress);
 
-      // Simular subida con progreso realista
-      const formData = new FormData();
-      formData.append('video', videoBlob, 'short.mp4');
-      formData.append('metadata', JSON.stringify(metadata));
+      // Generar ID temporal para el short
+      const shortId = `short-${Date.now()}`;
 
-      // Simular progreso de subida
-      for (let i = 10; i <= 80; i += 10) {
-        if (uploadAbortController.current?.signal.aborted) {
-          throw new Error('Upload cancelled');
-        }
+      // Subida del video y thumbnail a Supabase Storage
+      const uploadingProgress = {
+        progress: 30,
+        stage: 'uploading' as const,
+        message: 'Subiendo video...'
+      };
+      setUploadProgress(uploadingProgress);
+      options.onProgress?.(uploadingProgress);
 
-        await new Promise(resolve => setTimeout(resolve, 200));
-        
-        const progress = {
-          progress: i,
-          stage: 'uploading' as const,
-          message: `Subiendo video... ${i}%`
-        };
-        
-        setUploadProgress(progress);
-        options.onProgress?.(progress);
-      }
+      const { videoUrl, thumbnailUrl } = await uploadShortVideo(
+        shortId,
+        videoUri,
+        thumbnailUri
+      );
 
-      // Simular procesamiento en servidor
-      setUploadProgress({
+      // Procesamiento completado
+      const processingProgress = {
         progress: 85,
-        stage: 'processing',
+        stage: 'processing' as const,
         message: 'Procesando en servidor...'
-      });
-      
-      options.onProgress?.(uploadProgress);
+      };
+      setUploadProgress(processingProgress);
+      options.onProgress?.(processingProgress);
 
-      // Simular llamada al API real
-      const response = await fetch('/api/shorts/create', {
-        method: 'POST',
-        body: formData,
-        signal: uploadAbortController.current.signal,
-      });
-
-      if (!response.ok) {
-        throw new Error(`Upload failed: ${response.statusText}`);
-      }
-
-      const result = await response.json();
+      // Resultado final
+      const result = {
+        id: shortId,
+        videoUrl,
+        thumbnailUrl,
+        ...metadata,
+      };
 
       // Completar
       const finalProgress = {
@@ -97,7 +89,7 @@ export const useBackgroundUpload = () => {
         stage: 'complete' as const,
         message: '¡Subida completada!'
       };
-      
+
       setUploadProgress(finalProgress);
       options.onProgress?.(finalProgress);
       options.onSuccess?.(result);
@@ -109,11 +101,11 @@ export const useBackgroundUpload = () => {
         stage: 'error' as const,
         message: error instanceof Error ? error.message : 'Error desconocido'
       };
-      
+
       setUploadProgress(errorProgress);
       options.onProgress?.(errorProgress);
       options.onError?.(error as Error);
-      
+
       throw error;
     } finally {
       setIsUploading(false);

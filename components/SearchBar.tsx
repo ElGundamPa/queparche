@@ -1,7 +1,8 @@
-import React, { useState, useRef } from "react";
-import { StyleSheet, TextInput, View, TouchableOpacity, Text, FlatList, Animated } from "react-native";
-import { Search, Filter, X, Clock } from "lucide-react-native";
+import React, { useState, useRef, useEffect } from "react";
+import { StyleSheet, TextInput, View, TouchableOpacity, Text, ScrollView, Animated, Platform } from "react-native";
+import { Search, Filter, X, Clock, Sparkles } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from 'expo-blur';
 
 import Colors from "@/constants/colors";
 import { useSearchStore } from "@/hooks/use-search-store";
@@ -30,13 +31,61 @@ export default function SearchBar({
   const animatedHeight = useRef(new Animated.Value(0)).current;
   const inputRef = useRef<TextInput>(null);
 
+  // Animaciones para efectos visuales
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const glowAnim = useRef(new Animated.Value(0)).current;
+  const iconRotate = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (isFocused) {
+      Animated.parallel([
+        Animated.spring(scaleAnim, {
+          toValue: 1.02,
+          useNativeDriver: true,
+          friction: 8,
+        }),
+        Animated.loop(
+          Animated.sequence([
+            Animated.timing(glowAnim, {
+              toValue: 1,
+              duration: 2000,
+              useNativeDriver: false,
+            }),
+            Animated.timing(glowAnim, {
+              toValue: 0,
+              duration: 2000,
+              useNativeDriver: false,
+            }),
+          ])
+        ),
+        Animated.spring(iconRotate, {
+          toValue: 1,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          useNativeDriver: true,
+        }),
+        Animated.timing(iconRotate, {
+          toValue: 0,
+          useNativeDriver: true,
+        }),
+      ]).start();
+      glowAnim.stopAnimation();
+      glowAnim.setValue(0);
+    }
+  }, [isFocused]);
+
   const handleFocus = () => {
     setIsFocused(true);
     if (showSuggestions) {
-      Animated.timing(animatedHeight, {
+      Animated.spring(animatedHeight, {
         toValue: 200,
-        duration: 200,
         useNativeDriver: false,
+        friction: 8,
       }).start();
     }
   };
@@ -65,19 +114,54 @@ export default function SearchBar({
   };
 
   const suggestions = value.trim() ? searchSuggestions : searchHistory;
+
+  const iconSpin = iconRotate.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, { transform: [{ scale: scaleAnim }] }]}>
+      {/* Glow effect al enfocar */}
+      {isFocused && (
+        <Animated.View
+          style={[
+            styles.glowContainer,
+            {
+              opacity: glowAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.3, 0.6],
+              }),
+            },
+          ]}
+        >
+          <LinearGradient
+            colors={[Colors.light.primary + '40', Colors.light.secondary + '40', Colors.light.primary + '40']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.glowGradient}
+          />
+        </Animated.View>
+      )}
+
       <LinearGradient
-        colors={[
-          isFocused ? Colors.light.primary + '20' : Colors.light.card,
-          isFocused ? Colors.light.primary + '10' : Colors.light.lightGray
-        ]}
-        style={[
-          styles.gradient,
-          isFocused && styles.gradientFocused
-        ]}
+        colors={
+          isFocused
+            ? ['rgba(26, 26, 26, 0.95)', 'rgba(38, 38, 38, 0.95)']
+            : ['#1A1A1A', '#222222']
+        }
+        style={[styles.gradient, isFocused && styles.gradientFocused]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
       >
-        <Search size={20} color={isFocused ? Colors.light.primary : Colors.light.darkGray} style={styles.icon} />
+        {/* Icon con animación */}
+        <Animated.View style={{ transform: [{ rotate: iconSpin }] }}>
+          {isFocused ? (
+            <Sparkles size={20} color={Colors.light.primary} style={styles.icon} />
+          ) : (
+            <Search size={20} color={Colors.light.darkGray} style={styles.icon} />
+          )}
+        </Animated.View>
+
         <TextInput
           ref={inputRef}
           style={styles.input}
@@ -86,26 +170,38 @@ export default function SearchBar({
           onFocus={handleFocus}
           onBlur={handleBlur}
           placeholder={placeholder}
-          placeholderTextColor={Colors.light.darkGray}
+          placeholderTextColor="#666666"
           autoFocus={autoFocus}
           returnKeyType="search"
           testID="search-input"
+          selectionColor={Colors.light.primary}
         />
-        
+
         {value.length > 0 && (
-          <TouchableOpacity onPress={handleClearSearch} style={styles.clearButton}>
-            <X size={18} color={Colors.light.darkGray} />
-          </TouchableOpacity>
+          <Animated.View entering={undefined}>
+            <TouchableOpacity onPress={handleClearSearch} style={styles.clearButton}>
+              <View style={styles.clearButtonInner}>
+                <X size={14} color="#FFFFFF" />
+              </View>
+            </TouchableOpacity>
+          </Animated.View>
         )}
-        
+
         {showFilter && (
           <TouchableOpacity onPress={onFilterPress} style={styles.filterButton}>
-            <Filter size={20} color={Colors.light.primary} />
+            <LinearGradient
+              colors={[Colors.light.primary, Colors.light.secondary]}
+              style={styles.filterGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Filter size={16} color="#FFFFFF" />
+            </LinearGradient>
           </TouchableOpacity>
         )}
       </LinearGradient>
-      
-      {showSuggestions && (
+
+      {showSuggestions && isFocused && suggestions.length > 0 && (
         <Animated.View style={[styles.suggestionsContainer, { height: animatedHeight }]}>
           {suggestions.length > 0 && (
             <>
@@ -119,12 +215,14 @@ export default function SearchBar({
                   </TouchableOpacity>
                 )}
               </View>
-              
-              <FlatList
-                data={suggestions.slice(0, 5)}
-                keyExtractor={(item, index) => `${item}-${index}`}
-                renderItem={({ item }) => (
+
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                nestedScrollEnabled={true}
+              >
+                {suggestions.slice(0, 5).map((item, index) => (
                   <TouchableOpacity
+                    key={`${item}-${index}`}
                     style={styles.suggestionItem}
                     onPress={() => handleSuggestionPress(item)}
                   >
@@ -135,94 +233,140 @@ export default function SearchBar({
                     )}
                     <Text style={styles.suggestionText}>{item}</Text>
                   </TouchableOpacity>
-                )}
-                showsVerticalScrollIndicator={false}
-              />
+                ))}
+              </ScrollView>
             </>
           )}
         </Animated.View>
       )}
-    </View>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: 20,
     marginBottom: 16,
-    borderRadius: 20,
+    borderRadius: 24,
+    overflow: 'visible',
+  },
+  glowContainer: {
+    position: 'absolute',
+    top: -4,
+    left: -4,
+    right: -4,
+    bottom: -4,
+    borderRadius: 28,
     overflow: 'hidden',
-    shadowColor: Colors.light.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+  },
+  glowGradient: {
+    flex: 1,
+    borderRadius: 28,
   },
   gradient: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderWidth: 1,
-    borderColor: 'transparent',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderWidth: 1.5,
+    borderColor: '#333333',
+    borderRadius: 24,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
   },
   gradientFocused: {
-    borderColor: Colors.light.primary + '40',
+    borderColor: Colors.light.primary,
+    borderWidth: 1.5,
+    shadowColor: Colors.light.primary,
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 12,
   },
   icon: {
     marginRight: 12,
   },
   input: {
     flex: 1,
-    fontSize: 16,
-    color: Colors.light.text,
-    fontWeight: '500',
+    paddingVertical: 0,
+    paddingHorizontal: 10,
+    fontSize: 15,
+    color: '#FFFFFF',
+    fontWeight: '600',
+    letterSpacing: 0.3,
   },
   clearButton: {
-    padding: 4,
     marginLeft: 8,
+  },
+  clearButtonInner: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   filterButton: {
-    padding: 4,
     marginLeft: 8,
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  filterGradient: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   suggestionsContainer: {
-    backgroundColor: Colors.light.card,
-    borderRadius: 12,
-    marginTop: 4,
+    backgroundColor: '#1F1F1F',
+    borderRadius: 16,
+    marginTop: 8,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: Colors.light.border,
+    borderColor: '#333333',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   suggestionsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.light.border,
+    borderBottomColor: '#333333',
+    backgroundColor: 'rgba(255, 59, 48, 0.05)',
   },
   suggestionsTitle: {
     fontSize: 14,
-    fontWeight: '600',
-    color: Colors.light.text,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
   },
   clearHistoryText: {
-    fontSize: 12,
+    fontSize: 13,
     color: Colors.light.primary,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   suggestionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
     gap: 12,
+    backgroundColor: 'transparent',
+    borderBottomWidth: 1,
+    borderBottomColor: '#2A2A2A',
   },
   suggestionText: {
-    fontSize: 14,
-    color: Colors.light.text,
+    fontSize: 15,
+    color: '#CCCCCC',
     flex: 1,
+    fontWeight: '500',
   },
 });

@@ -8,6 +8,7 @@ import {
   Platform,
   Modal,
   Pressable,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -52,6 +53,7 @@ export default function MapScreen() {
   const [MapView, setMapView] = useState<any>(null);
   const [Marker, setMarker] = useState<any>(null);
   const [Location, setLocation] = useState<any>(null);
+  const [isMapLoading, setIsMapLoading] = useState(true);
   const filterButtonRef = useRef<React.ElementRef<typeof TouchableOpacity> | null>(null);
   const [filterButtonPosition, setFilterButtonPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   
@@ -78,18 +80,19 @@ export default function MapScreen() {
       import("react-native-maps").then((MapModule) => {
         setMapView(() => MapModule.default);
         setMarker(() => MapModule.Marker);
+        setIsMapLoading(false);
       });
 
       // Dynamically import expo-location only on native platforms
       import("expo-location").then((LocationModule) => {
         setLocation(LocationModule);
-        
+
         (async () => {
           const { status } = await LocationModule.requestForegroundPermissionsAsync();
           if (status === "granted") {
             const location = await LocationModule.getCurrentPositionAsync({});
             setUserLocation(location);
-            
+
             setRegion({
               latitude: location.coords.latitude,
               longitude: location.coords.longitude,
@@ -99,6 +102,8 @@ export default function MapScreen() {
           }
         })();
       });
+    } else {
+      setIsMapLoading(false);
     }
   }, []);
 
@@ -192,8 +197,13 @@ export default function MapScreen() {
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      
-      {Platform.OS !== "web" && MapView && Marker ? (
+
+      {isMapLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <Text style={styles.loadingText}>Cargando mapa...</Text>
+        </View>
+      ) : Platform.OS !== "web" && MapView && Marker ? (
         <MapView
           ref={mapRef}
           style={styles.map}
@@ -226,20 +236,6 @@ export default function MapScreen() {
           <Text style={styles.webFallbackSubtext}>
             Please use the mobile app to view the map.
           </Text>
-          
-          <View style={styles.webPlansContainer}>
-            <Text style={styles.webPlansTitle}>Available Plans:</Text>
-            {filteredPlans.slice(0, 5).map((plan) => (
-              <TouchableOpacity
-                key={plan.id}
-                style={styles.webPlanItem}
-                onPress={() => handleMarkerPress(plan.id)}
-              >
-                <Text style={styles.webPlanName}>{plan.name}</Text>
-                <Text style={styles.webPlanCategory}>{plan.primaryCategory || plan.category}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
         </View>
       )}
 
@@ -333,6 +329,18 @@ const styles = StyleSheet.create({
   map: {
     width: "100%",
     height: "100%",
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.background,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    fontWeight: "600",
+    color: theme.colors.textPrimary,
   },
   webFallback: {
     flex: 1,

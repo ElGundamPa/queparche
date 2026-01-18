@@ -8,6 +8,7 @@ import { useVideoPlayer } from "expo-video";
 import { PlansProvider } from "@/hooks/use-plans-store";
 import { UserProvider } from "@/hooks/use-user-store";
 import { SearchProvider } from "@/hooks/use-search-store";
+import { useAuthStore } from "@/hooks/use-auth-store";
 import { trpc, trpcClient } from "@/lib/trpc";
 import { FiltersProvider } from "@/store/filters";
 
@@ -43,7 +44,12 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
+  const initialize = useAuthStore((state) => state.initialize);
+
   useEffect(() => {
+    // Inicializar autenticación con Supabase
+    initialize();
+
     SplashScreen.hideAsync();
     configureAudioMode(); // Configurar audio mode en el mount
   }, []);

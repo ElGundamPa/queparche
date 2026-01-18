@@ -192,16 +192,15 @@ export default function PlanDetailScreen() {
   const toggleCommentLike = useCommentsStore((state) => state.toggleLike);
 
   const currentUser = useAuthStore((state) => state.currentUser);
-  const users = useAuthStore((state) => state.users);
   const [commentText, setCommentText] = useState("");
   const canSendComment = commentText.trim().length > 0;
- 
+
   const glowProgress = useSharedValue(0);
   const takeMeButtonScale = useSharedValue(1);
- 
+
   const usersDirectory = useMemo(() => {
     const directory: Map<string, { id: string; name: string; username: string; avatar: string }> = new Map();
-    [...mockUsers, ...users].forEach((user) => {
+    mockUsers.forEach((user) => {
       const safeName = user.name ?? user.username ?? "Explorador";
       const safeUsername = user.username ?? user.name ?? `user-${user.id}`;
       directory.set(user.id, {
@@ -212,7 +211,7 @@ export default function PlanDetailScreen() {
       });
     });
     return directory;
-  }, [users]);
+  }, []);
 
   useEffect(() => {
     glowProgress.value = withRepeat(
@@ -463,12 +462,13 @@ export default function PlanDetailScreen() {
   }, [takeMeButtonScale]);
 
   const renderStars = (rating: number) => {
+    const starColor = accent || "#FF3B30";
     return Array.from({ length: 5 }, (_, i) => (
       <Star
         key={i}
         size={18}
-        color={i < Math.round(rating) ? "#FFD54F" : "#444444"}
-        fill={i < Math.round(rating) ? "#FFD54F" : "none"}
+        color={i < Math.round(rating) ? starColor : "#444444"}
+        fill={i < Math.round(rating) ? starColor : "none"}
       />
     ));
   };
@@ -626,8 +626,8 @@ export default function PlanDetailScreen() {
                     <Star
                       key={i}
                       size={14}
-                      color={i < Math.round(displayRating) ? "#FFD54F" : "#444444"}
-                      fill={i < Math.round(displayRating) ? "#FFD54F" : "none"}
+                      color={i < Math.round(displayRating) ? accent : "#444444"}
+                      fill={i < Math.round(displayRating) ? accent : "none"}
                     />
                   ))}
                 </View>
@@ -763,10 +763,10 @@ export default function PlanDetailScreen() {
                   {hasMoreAttendees && (
                     <TouchableOpacity
                       onPress={handleSeeAllAttendees}
-                      style={styles.attendeeMoreButton}
+                      style={[styles.attendeeMoreButton, { backgroundColor: `${accent}20` }]}
                       activeOpacity={0.85}
                     >
-                      <Text style={styles.attendeeMoreText}>Invita a tus bros 🤙🔥</Text>
+                      <Text style={[styles.attendeeMoreText, { color: accent }]}>Invita a tus bros</Text>
                     </TouchableOpacity>
                   )}
                 </ScrollView>
@@ -780,15 +780,22 @@ export default function PlanDetailScreen() {
 
             {communityReviews.length > 0 && (
               <>
-                <Text style={styles.sectionTitle}>Comentarios de la comunidad 💬</Text>
+                <Text style={styles.sectionTitle}>Comentarios de la comunidad</Text>
                 <View style={styles.communityReviewsList}>
                   {communityReviews.map((review, index) => (
                     <View key={`${review.user}-${index}`} style={styles.communityReviewBubble}>
                       <View style={styles.communityReviewHeader}>
                         <Text style={styles.communityReviewAuthor}>{review.user}</Text>
-                        <Text style={styles.communityReviewRating}>
-                          {"⭐".repeat(Math.round(review.rating)).padEnd(5, "☆")}
-                        </Text>
+                        <View style={styles.communityReviewRatingContainer}>
+                          {Array.from({ length: 5 }, (_, i) => (
+                            <Star
+                              key={i}
+                              size={12}
+                              color={i < Math.round(review.rating) ? accent : "#444444"}
+                              fill={i < Math.round(review.rating) ? accent : "none"}
+                            />
+                          ))}
+                        </View>
                       </View>
                       <Text style={styles.communityReviewText}>{review.comment}</Text>
                     </View>
@@ -886,12 +893,17 @@ export default function PlanDetailScreen() {
                 blurOnSubmit={false}
               />
               <TouchableOpacity
-                style={[styles.commentSendButton, !canSendComment && styles.commentSendButtonDisabled]}
+                style={[
+                  styles.commentSendButton,
+                  { backgroundColor: canSendComment ? accent : '#3A3A3A' },
+                ]}
                 onPress={handleSendComment}
                 activeOpacity={0.8}
                 disabled={!canSendComment}
               >
-                <Text style={styles.commentSendButtonText}>Enviar</Text>
+                <Text style={[styles.commentSendButtonText, { color: canSendComment ? '#FFFFFF' : '#777777' }]}>
+                  Enviar
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1127,7 +1139,6 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   attendeeMoreText: {
-    color: '#FFD54F',
     fontSize: 13,
     fontWeight: '600',
   },
@@ -1175,8 +1186,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
+  communityReviewRatingContainer: {
+    flexDirection: 'row',
+    gap: 2,
+  },
   communityReviewRating: {
-    color: '#FFD54F',
     fontSize: 12,
     letterSpacing: 1,
   },
@@ -1360,19 +1374,14 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   commentSendButton: {
-    backgroundColor: '#FFD54F',
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  commentSendButtonDisabled: {
-    backgroundColor: '#3A3A3A',
-  },
   commentSendButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#000000',
   },
 });

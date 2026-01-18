@@ -50,11 +50,18 @@ export default function NotificationsScreen() {
   const markAllAsRead = useNotificationsStore((state) => state.markAllAsRead);
   const removeNotification = useNotificationsStore((state) => state.removeNotification);
   const plansFromStore = usePlanStore((state) => state.plans);
-  const authUsers = useAuthStore((state) => state.users);
+  const currentUser = useAuthStore((state) => state.currentUser);
 
   const usersDirectory = useMemo(() => {
     const directory = new Map<string, { name: string; username: string; avatar: string }>();
-    [...authUsers, ...mockUsers, ...SOCIAL_MOCK_USERS].forEach((user) => {
+    const allUsers = [...mockUsers, ...SOCIAL_MOCK_USERS];
+
+    // Add current user if exists
+    if (currentUser) {
+      allUsers.push(currentUser);
+    }
+
+    allUsers.forEach((user) => {
       if (!directory.has(user.id)) {
         const name = (user as any).name ?? (user as any).fullName ?? (user as any).username ?? "Explorador";
         const username = (user as any).username ?? (user as any).name ?? `user-${user.id}`;
@@ -72,7 +79,7 @@ export default function NotificationsScreen() {
       }
     });
     return directory;
-  }, [authUsers]);
+  }, [currentUser]);
 
   const plansDirectory = useMemo(() => {
     const map = new Map<string, { name: string }>();
@@ -278,7 +285,8 @@ const styles = StyleSheet.create({
   markAllButtonText: {
     color: "#FFD54F",
     fontSize: 13,
-    fontWeight: "600",
+    fontWeight: "700",
+    letterSpacing: -0.1,
   },
   markAllButtonTextDisabled: {
     color: "#555555",
@@ -292,22 +300,31 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 12,
+    paddingTop: 60,
+    paddingBottom: 16,
+    backgroundColor: "#0B0B0B",
   },
   inlineBackButton: {
-    padding: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 213, 79, 0.15)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   inlineHeaderTitle: {
     flex: 1,
     textAlign: "center",
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "700",
     color: "#FFFFFF",
     marginHorizontal: 12,
+    letterSpacing: -0.3,
   },
   inlineMarkButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 213, 79, 0.15)",
   },
 });

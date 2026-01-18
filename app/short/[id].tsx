@@ -32,12 +32,12 @@ export default function ShortDetailScreen() {
   if (!short) {
     return (
       <View style={styles.notFoundContainer}>
-        <Text style={styles.notFoundText}>Short not found</Text>
+        <Text style={styles.notFoundText}>Short no encontrado</Text>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Text style={styles.backButtonText}>Go Back</Text>
+          <Text style={styles.backButtonText}>Volver</Text>
         </TouchableOpacity>
       </View>
     );

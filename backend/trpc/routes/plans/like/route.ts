@@ -1,19 +1,45 @@
 import { z } from "zod";
-import { publicProcedure } from "../../../create-context";
-import { mockPlans } from "@/mocks/plans";
+import { protectedProcedure } from "../../../create-context";
 
-export default publicProcedure
-  .input(z.object({ planId: z.string() }))
-  .mutation(({ input }) => {
-    const planIndex = mockPlans.findIndex(p => p.id === input.planId);
-    if (planIndex === -1) {
-      throw new Error("Plan not found");
+export default protectedProcedure
+  .input(z.object({
+    planId: z.string(),
+  }))
+  .mutation(async ({ ctx, input }) => {
+    // Check if already liked
+    const { data: existingLike } = await ctx.supabase
+      .from('likes')
+      .select('id')
+      .eq('plan_id', input.planId)
+      .eq('user_id', ctx.user.id)
+      .maybeSingle();
+
+    if (existingLike) {
+      // Unlike - remove the like
+      const { error } = await ctx.supabase
+        .from('likes')
+        .delete()
+        .eq('plan_id', input.planId)
+        .eq('user_id', ctx.user.id);
+
+      if (error) {
+        throw new Error(`Error al quitar like: ${error.message}`);
+      }
+
+      return { liked: false };
+    } else {
+      // Like - add the like
+      const { error } = await ctx.supabase
+        .from('likes')
+        .insert({
+          plan_id: input.planId,
+          user_id: ctx.user.id,
+        });
+
+      if (error) {
+        throw new Error(`Error al dar like: ${error.message}`);
+      }
+
+      return { liked: true };
     }
-    
-    mockPlans[planIndex] = {
-      ...mockPlans[planIndex],
-      likes: mockPlans[planIndex].likes + 1,
-    };
-    
-    return mockPlans[planIndex];
   });

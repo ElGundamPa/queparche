@@ -1,48 +1,48 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { mockUsers } from '@/mocks/users';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import type { User } from '@/types/user';
+import { supabase } from '@/lib/supabase';
 
-export interface User {
-  id: string;
-  name: string;
-  username: string;
-  email: string;
-  password?: string;
-  bio: string;
-  avatar: string;
-  interests: string[];
-  location: string;
-  isVerified: boolean;
-  isPremium: boolean;
-  points: number;
-  followersCount: number;
-  followingCount: number;
-  plansAttended: number;
-  badges: string[];
-  preferences: string[];
-  createdAt: string;
-  createdPlans: string[];
+// Tipo extendido de User con campos adicionales que necesita Supabase
+// Nota: Algunos campos tienen nombres diferentes entre el tipo User y Supabase
+export interface ExtendedUser extends Omit<User, 'createdAt' | 'updatedAt' | 'followersCount' | 'followingCount' | 'plansCreated' | 'createdPlans'> {
+  created_at?: string;
+  updated_at?: string;
+  followers_count?: number;
+  following_count?: number;
+  plans_created?: number;
+  interests?: string[];
+  promo_code?: string;
 }
 
 interface AuthState {
   currentUser: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  users: Array<User & { password?: string }>; // Lista de todos los usuarios registrados
-  
-  // Acciones de autenticación
-  login: (email: string, password: string) => Promise<boolean>;
-  register: (userData: Omit<User, 'id' | 'createdAt' | 'points' | 'followersCount' | 'followingCount' | 'plansAttended' | 'badges' | 'preferences' | 'isVerified' | 'isPremium'>) => Promise<boolean>;
-  logout: () => void;
-  updateProfile: (updates: Partial<User>) => void;
-  completeOnboarding: (onboardingData: { bio: string; interests: string[]; avatar: string }) => void;
-}
 
-// Usuario por defecto para pruebas
-const initialUsers = mockUsers.map(user => ({
-  ...user,
-  createdPlans: user.createdPlans ?? [],
-}));
+  // Acciones de autenticación
+  login: (emailOrUsername: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  register: (userData: {
+    email: string;
+    password: string;
+    name: string;
+    username: string;
+  }) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
+  updateProfile: (updates: Partial<User>) => Promise<void>;
+  completeOnboarding: (onboardingData: {
+    bio: string;
+    interests: string[];
+    avatar: string;
+  }) => Promise<void>;
+
+  // Session management
+  initialize: () => Promise<void>;
+
+  // Admin - solo para desarrollo
+  clearAllData: () => Promise<void>;
+}
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -50,165 +50,224 @@ export const useAuthStore = create<AuthState>()(
       currentUser: null,
       isAuthenticated: false,
       isLoading: false,
-      users: initialUsers,
 
-      login: async (email: string, password: string) => {
+      initialize: async () => {
         set({ isLoading: true });
-        
-        // Simular delay de red
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const { users } = get();
-        const user = users.find(u => u.email === email && u.password === password);
-        
-        if (user) {
-          const { password: _password, ...safeUser } = user;
-          set({ 
-            currentUser: safeUser, 
-            isAuthenticated: true, 
-            isLoading: false 
-          });
-          return true;
-        }
 
-        // Fallback: buscar en mockUsers (por si el storage persistido está desactualizado)
-        const seedUser = mockUsers.find(u => u.email === email && u.password === password);
-        if (seedUser) {
-          const updatedUsers = [...users, seedUser];
-          const { password: _password, ...safeUser } = seedUser;
-          set({
-            users: updatedUsers,
-            currentUser: safeUser,
-            isAuthenticated: true,
-            isLoading: false,
-          });
-          return true;
+        try {
+          console.log('🔄 Inicializando autenticación...');
+
+          const { currentUser } = get();
+
+          if (currentUser) {
+            console.log('✅ Sesión encontrada para:', currentUser.username);
+            set({ isAuthenticated: true });
+          } else {
+            console.log('ℹ️ No hay sesión activa');
+          }
+        } catch (error) {
+          console.error('Error initializing auth:', error);
+        } finally {
+          set({ isLoading: false });
         }
-        
-        set({ isLoading: false });
-        return false;
+      },
+
+      login: async (emailOrUsername: string, password: string) => {
+        set({ isLoading: true });
+
+        try {
+          console.log('🔐 Intentando login...');
+          console.log('📧 Email/Username:', emailOrUsername);
+
+          // Llamar a la función de Supabase
+          const { data, error } = await supabase.rpc('login_user', {
+            p_email_or_username: emailOrUsername,
+            p_password: password,
+          });
+
+          if (error) {
+            console.error('❌ Error de Supabase:', error);
+            throw new Error('Error al conectar con el servidor');
+          }
+
+          console.log('📦 Respuesta de Supabase:', data);
+
+          if (data?.success && data?.user) {
+            set({
+              currentUser: data.user,
+              isAuthenticated: true,
+              isLoading: false,
+            });
+
+            console.log('✅ Login exitoso para:', data.user.username);
+            return { success: true };
+          } else {
+            throw new Error(data?.error || 'Credenciales incorrectas');
+          }
+        } catch (error: any) {
+          set({ isLoading: false });
+          console.error('❌ Login error:', error);
+          return {
+            success: false,
+            error: error.message || 'Error al iniciar sesión',
+          };
+        }
       },
 
       register: async (userData) => {
         set({ isLoading: true });
-        
-        // Simular delay de red
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const { users } = get();
-        
-        // Verificar si el email o username ya existen
-        const emailExists = users.some(u => u.email === userData.email);
-        const usernameExists = users.some(u => u.username === userData.username);
-        
-        if (emailExists) {
+
+        try {
+          console.log('🚀 Registrando usuario...');
+          console.log('📧 Email:', userData.email);
+          console.log('👤 Username:', userData.username);
+
+          // Llamar a la función de Supabase
+          const { data, error } = await supabase.rpc('register_user', {
+            p_email: userData.email,
+            p_username: userData.username,
+            p_password: userData.password,
+            p_name: userData.name,
+          });
+
+          if (error) {
+            console.error('❌ Error de Supabase:', error);
+            throw new Error('Error al conectar con el servidor');
+          }
+
+          console.log('📦 Respuesta de Supabase:', data);
+
+          if (data?.success && data?.user) {
+            set({
+              currentUser: data.user,
+              isAuthenticated: true,
+              isLoading: false,
+            });
+
+            console.log('✅ Registro exitoso para:', data.user.username);
+            return { success: true };
+          } else {
+            throw new Error(data?.error || 'Error al registrar usuario');
+          }
+        } catch (error: any) {
           set({ isLoading: false });
-          throw new Error('El email ya está registrado');
+          console.error('❌ Register error:', error);
+
+          return {
+            success: false,
+            error: error.message || 'Error al registrarse',
+          };
         }
-        
-        if (usernameExists) {
-          set({ isLoading: false });
-          throw new Error('El nombre de usuario ya está en uso');
-        }
-        
-        const newUser: User = {
-          ...userData,
-          id: Date.now().toString(),
-          points: 0,
-          followersCount: 0,
-          followingCount: 0,
-          plansAttended: 0,
-          badges: [],
-          preferences: [],
-          isVerified: false,
-          isPremium: false,
-          bio: '',
-          interests: [],
-          avatar: '',
-          location: '',
-          createdAt: new Date().toISOString(),
-          createdPlans: [],
-        };
-        
-        console.log('=== REGISTER DEBUG ===');
-        console.log('New user created:', newUser);
-        console.log('Setting current user and authentication...');
-        
-        set({ 
-          users: [...users, newUser],
-          currentUser: { ...newUser, password: undefined },
-          isAuthenticated: true,
-          isLoading: false 
-        });
-        
-        console.log('User registered successfully');
-        console.log('========================');
-        
-        return true;
       },
 
-      logout: () => {
-        set({ 
-          currentUser: null, 
-          isAuthenticated: false 
+      logout: async () => {
+        console.log('👋 Cerrando sesión...');
+
+        // Limpiar estado de autenticación
+        set({
+          currentUser: null,
+          isAuthenticated: false,
         });
       },
 
-      updateProfile: (updates) => {
-        const { currentUser, users } = get();
+      updateProfile: async (updates) => {
+        const { currentUser } = get();
         if (!currentUser) return;
-        
-        const updatedUser = { ...currentUser, ...updates };
-        const updatedUsers = users.map(u => 
-          u.id === currentUser.id ? { ...updatedUser, password: u.password } : u
-        );
-        
-        set({ 
-          currentUser: updatedUser,
-          users: updatedUsers 
-        });
+
+        try {
+          console.log('📝 Actualizando perfil en Supabase...');
+
+          // Actualizar en Supabase
+          const { error } = await supabase
+            .from('profiles')
+            .update(updates)
+            .eq('id', currentUser.id);
+
+          if (error) {
+            console.error('❌ Error actualizando perfil:', error);
+            throw new Error('Error al actualizar perfil');
+          }
+
+          // Actualizar estado local
+          const updatedUser = { ...currentUser, ...updates };
+
+          set({
+            currentUser: updatedUser,
+          });
+
+          console.log('✅ Perfil actualizado exitosamente');
+        } catch (error: any) {
+          console.error('Error updating profile:', error);
+          throw new Error(error.message || 'Error al actualizar perfil');
+        }
       },
 
-      completeOnboarding: (onboardingData) => {
-        const { currentUser, users } = get();
+      completeOnboarding: async (onboardingData) => {
+        const { currentUser } = get();
         if (!currentUser) {
-          console.log('No current user found for onboarding completion');
-          return;
+          console.error('❌ No current user found for onboarding completion');
+          throw new Error('No hay usuario autenticado');
         }
-        
-        console.log('=== COMPLETE ONBOARDING ===');
-        console.log('Current user before update:', currentUser);
-        console.log('Onboarding data:', onboardingData);
-        
-        const updatedUser = {
-          ...currentUser,
-          bio: onboardingData.bio,
-          interests: onboardingData.interests,
-          avatar: onboardingData.avatar,
-          preferences: onboardingData.interests, // Mapear intereses a preferencias
-        };
-        
-        console.log('Updated user:', updatedUser);
-        
-        const updatedUsers = users.map(u => 
-          u.id === currentUser.id ? { ...updatedUser, password: u.password } : u
-        );
-        
-        set({ 
-          currentUser: updatedUser,
-          users: updatedUsers 
+
+        try {
+          console.log('💾 Guardando datos de onboarding...');
+          console.log('👤 User ID:', currentUser.id);
+          console.log('📝 Bio:', onboardingData.bio);
+          console.log('🎯 Interests:', onboardingData.interests);
+
+          const updates = {
+            bio: onboardingData.bio,
+            preferences: onboardingData.interests,
+            avatar: onboardingData.avatar || currentUser.avatar,
+          };
+
+          // Actualizar en Supabase
+          const { error } = await supabase
+            .from('profiles')
+            .update(updates)
+            .eq('id', currentUser.id);
+
+          if (error) {
+            console.error('❌ Error en onboarding:', error);
+            throw new Error('Error al completar onboarding');
+          }
+
+          // Actualizar estado local
+          const updatedUser = { ...currentUser, ...updates };
+
+          set({
+            currentUser: updatedUser,
+          });
+
+          console.log('✅ Onboarding completado exitosamente');
+        } catch (error) {
+          console.error('❌ Error completing onboarding:', error);
+          throw error;
+        }
+      },
+
+      clearAllData: async () => {
+        console.log('🗑️ Limpiando todos los datos de autenticación...');
+
+        // Limpiar AsyncStorage
+        await AsyncStorage.removeItem('auth-storage');
+
+        // Resetear estado
+        set({
+          currentUser: null,
+          isAuthenticated: false,
+          isLoading: false,
         });
-        
-        console.log('Onboarding data saved successfully');
-        console.log('===============================');
+
+        console.log('✅ Datos limpiados. Recarga la app para empezar de cero.');
       },
     }),
     {
       name: 'auth-storage',
-      partialize: (state) => ({ 
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
         currentUser: state.currentUser,
         isAuthenticated: state.isAuthenticated,
-        users: state.users 
       }),
     }
   )

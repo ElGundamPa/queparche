@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -9,16 +9,22 @@ import {
   ScrollView,
   TouchableWithoutFeedback,
   Keyboard,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 
 import theme from "@/lib/theme";
 import { useDraftsStore } from "@/store/draftsStore";
 import type { WizardStepProps } from "./types";
+import { trpc } from "@/lib/trpc";
+import { uploadPlanImages } from "@/lib/storage-helpers";
 
 export default function Step5({ onBack, onNext: _onNext }: WizardStepProps) {
   const router = useRouter();
-  const { draft, saveDraft, publishDraft } = useDraftsStore();
+  const { draft, saveDraft, resetDraft } = useDraftsStore();
+  const createPlanMutation = trpc.plans.create.useMutation();
+  const utils = trpc.useUtils();
+  const [isPublishing, setIsPublishing] = useState(false);
 
   const formattedPrice = draft.averagePrice > 0 ? `$${draft.averagePrice.toLocaleString("es-CO")}` : "Pendiente";
   const formattedDate = draft.eventDate
@@ -36,19 +42,67 @@ export default function Step5({ onBack, onNext: _onNext }: WizardStepProps) {
     Alert.alert("Borrador guardado", "Puedes continuar más tarde desde este dispositivo.");
   };
 
-  const handlePublish = () => {
-    const plan = publishDraft(router);
-    if (!plan) {
+  const handlePublish = async () => {
+    if (!draft.name.trim()) {
       Alert.alert("Completa tu parche", "Necesitas mínimo un nombre para publicar.");
       return;
     }
 
-    Alert.alert("Parche publicado", "¡Tu parche ya está visible para la comunidad!", [
-      {
-        text: "Ver parche",
-        onPress: () => router.replace(`/plan/${plan.id}`),
-      },
-    ]);
+    setIsPublishing(true);
+
+    try {
+      // Subir imágenes a Supabase Storage si son URIs locales
+      let imageUrls: string[] = [];
+      if (draft.images && draft.images.length > 0) {
+        const localImages = draft.images.filter(img => img.startsWith('file://'));
+        const remoteImages = draft.images.filter(img => !img.startsWith('file://'));
+
+        if (localImages.length > 0) {
+          const tempPlanId = `plan-${Date.now()}`;
+          const uploadedUrls = await uploadPlanImages(tempPlanId, localImages);
+          imageUrls = [...remoteImages, ...uploadedUrls];
+        } else {
+          imageUrls = remoteImages;
+        }
+      }
+
+      // Crear el plan en Supabase usando tRPC
+      await createPlanMutation.mutateAsync({
+        name: draft.name,
+        description: draft.description,
+        category: draft.categories[0] || 'bar',
+        primary_category: draft.categories[0] || 'bar',
+        zone: draft.location.label,
+        city: "Medellín",
+        address: draft.location.label,
+        latitude: draft.location.lat,
+        longitude: draft.location.lng,
+        capacity: draft.capacity,
+        average_price: draft.averagePrice,
+        price_type: draft.averagePrice > 100000 ? 'alto' : draft.averagePrice > 50000 ? 'medio-alto' : 'bajo',
+        event_date: draft.eventDate || undefined,
+        images: imageUrls,
+        tags: draft.categories,
+      });
+
+      // Invalidar queries para actualizar la UI
+      await utils.plans.getAll.invalidate();
+
+      // Resetear borrador
+      resetDraft();
+
+      Alert.alert("Parche publicado", "¡Tu parche ya está visible para la comunidad!", [
+        {
+          text: "Ver inicio",
+          onPress: () => router.replace("/(tabs)"),
+        },
+      ]);
+    } catch (error: any) {
+      console.error('Error publishing plan:', error);
+      Alert.alert("Error", error.message || "No se pudo publicar el parche. Inténtalo de nuevo.");
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   return (
@@ -117,11 +171,23 @@ export default function Step5({ onBack, onNext: _onNext }: WizardStepProps) {
       </View>
 
       <View style={styles.buttonRow}>
-        <TouchableOpacity style={styles.secondaryButton} onPress={handleSaveDraft}>
+        <TouchableOpacity
+          style={styles.secondaryButton}
+          onPress={handleSaveDraft}
+          disabled={isPublishing}
+        >
           <Text style={styles.secondaryButtonText}>Guardar como borrador</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.primaryButton} onPress={handlePublish}>
-          <Text style={styles.primaryButtonText}>Publicar</Text>
+        <TouchableOpacity
+          style={[styles.primaryButton, isPublishing && styles.disabledButton]}
+          onPress={handlePublish}
+          disabled={isPublishing}
+        >
+          {isPublishing ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.primaryButtonText}>Publicar</Text>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -239,6 +305,9 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     color: "#FFFFFF",
     fontWeight: "700",
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
   backLink: {
     alignItems: "center",

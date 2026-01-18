@@ -28,6 +28,10 @@ import getUserProfile from "./routes/users/get-profile/route";
 import updateUserProfile from "./routes/users/update-profile/route";
 import getUserStats from "./routes/users/get-stats/route";
 
+// Auth routes
+import login from "./routes/auth/login/route";
+import register from "./routes/auth/register/route";
+
 export const appRouter = createTRPCRouter({
   plans: createTRPCRouter({
     getAll: getAllPlans,
@@ -56,6 +60,10 @@ export const appRouter = createTRPCRouter({
     getProfile: getUserProfile,
     updateProfile: updateUserProfile,
     getStats: getUserStats,
+  }),
+  auth: createTRPCRouter({
+    login: login,
+    register: register,
   }),
 });
 

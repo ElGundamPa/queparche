@@ -15,7 +15,9 @@ import { useRouter, Stack } from "expo-router";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { StatusBar } from "expo-status-bar";
-import { Camera, Video as VideoIcon, Upload, X, Check } from "lucide-react-native";
+import { Camera, Video as VideoIcon, Upload, X, Check, ChevronLeft, Sparkles } from "lucide-react-native";
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from "expo-haptics";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -28,10 +30,10 @@ import Animated, {
 } from "react-native-reanimated";
 
 import Colors from "@/constants/colors";
+import theme from "@/lib/theme";
 import { categories } from "@/mocks/categories";
 import { usePlansStore } from "@/hooks/use-plans-store";
 import { useUserStore } from "@/hooks/use-user-store";
-import { useVideoProcessor } from "@/hooks/use-video-processor";
 import { useBackgroundUpload } from "@/hooks/use-background-upload";
 import VideoPreview from "@/components/VideoPreview";
 import ProgressBar from "@/components/ProgressBar";
@@ -55,18 +57,15 @@ export default function CreateShortScreen() {
   // Estados del video
   const [videoUri, setVideoUri] = useState<string | null>(null);
   const [thumbnailUri, setThumbnailUri] = useState<string | null>(null);
-  const [processedVideoBlob, setProcessedVideoBlob] = useState<Blob | null>(null);
-  const [originalVideoFile, setOriginalVideoFile] = useState<File | null>(null);
-  
+
   // Estados de la UI
   const [showVideoPreview, setShowVideoPreview] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [currentStep, setCurrentStep] = useState<'form' | 'preview' | 'uploading' | 'success' | 'error'>('form');
-  
+
   // Hooks personalizados
-  const { isProcessing, progress, processVideo, resetProgress } = useVideoProcessor();
   const { isUploading, uploadProgress, uploadVideo, cancelUpload, resetUpload } = useBackgroundUpload();
   
   // Animaciones
@@ -74,23 +73,8 @@ export default function CreateShortScreen() {
   const previewScale = useSharedValue(0.9);
 
   const pickVideo = async () => {
-    if (Platform.OS === "web") {
-      // Para web, usar input file
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = 'video/*';
-      input.onchange = async (e) => {
-        const file = (e.target as HTMLInputElement).files?.[0];
-        if (file) {
-          await handleVideoSelection(file);
-        }
-      };
-      input.click();
-      return;
-    }
-
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
+
     if (status !== "granted") {
       Alert.alert(
         "Permiso Requerido",
@@ -101,7 +85,7 @@ export default function CreateShortScreen() {
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-      allowsEditing: false, // No editar aquí, lo haremos después
+      allowsEditing: false,
       quality: 1,
     });
 
@@ -114,22 +98,13 @@ export default function CreateShortScreen() {
     }
   };
 
-  const handleVideoSelection = async (file: File) => {
-    setOriginalVideoFile(file);
-    const videoUrl = URL.createObjectURL(file);
-    setVideoUri(videoUrl);
-    setThumbnailUri(videoUrl);
-    setShowVideoPreview(true);
-    setCurrentStep('preview');
-  };
-
   const pickThumbnail = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     
     if (status !== "granted") {
       Alert.alert(
-        "Permission Required",
-        "Please grant permission to access your photo library."
+        "Permiso Requerido",
+        "Por favor otorga permiso para acceder a tu galería de fotos."
       );
       return;
     }
@@ -147,7 +122,7 @@ export default function CreateShortScreen() {
   };
 
   const handleProcessAndUpload = async () => {
-    if ((!originalVideoFile && !videoUri) || !placeName || !description || !category || !user) {
+    if (!videoUri || !placeName || !description || !category || !user) {
       Alert.alert(
         "Información Faltante",
         "Por favor completa todos los campos y selecciona un video."
@@ -157,27 +132,12 @@ export default function CreateShortScreen() {
 
     try {
       setCurrentStep('uploading');
-      resetProgress();
       resetUpload();
 
-      // Procesar video - usar File para web, URI para móvil
-      const input = Platform.OS === 'web' ? originalVideoFile : videoUri;
-      if (!input) {
-        throw new Error('No se pudo obtener el video para procesar');
-      }
-
-      const processedBlob = await processVideo(input, {
-        targetWidth: 1080,
-        targetHeight: 1920,
-        quality: 'high',
-        addBlurBackground: true,
-      });
-
-      setProcessedVideoBlob(processedBlob);
-
-      // Subir en background
+      // Subir video y thumbnail directamente a Supabase Storage
       await uploadVideo(
-        processedBlob,
+        videoUri,
+        thumbnailUri || videoUri,
         {
           title: placeName,
           description,
@@ -192,8 +152,8 @@ export default function CreateShortScreen() {
             // Agregar a la store local
             const shortData = {
               id: result.id || Date.now().toString(),
-              videoUrl: result.videoUrl || URL.createObjectURL(processedBlob),
-              thumbnailUrl: thumbnailUri,
+              videoUrl: result.videoUrl,
+              thumbnailUrl: result.thumbnailUrl,
               placeName,
               category,
               description,
@@ -218,7 +178,7 @@ export default function CreateShortScreen() {
         }
       );
     } catch (error) {
-      console.error('Processing error:', error);
+      console.error('Upload error:', error);
       setCurrentStep('error');
       setShowErrorModal(true);
     }
@@ -227,7 +187,6 @@ export default function CreateShortScreen() {
   const handleRetry = () => {
     setShowErrorModal(false);
     setCurrentStep('preview');
-    resetProgress();
     resetUpload();
   };
 
@@ -242,8 +201,6 @@ export default function CreateShortScreen() {
     setCurrentStep('form');
     setVideoUri(null);
     setThumbnailUri(null);
-    setProcessedVideoBlob(null);
-    setOriginalVideoFile(null);
   };
 
   const formAnimatedStyle = useAnimatedStyle(() => {
@@ -262,18 +219,38 @@ export default function CreateShortScreen() {
     <>
       <Stack.Screen
         options={{
-          title: "Crear Short",
-          headerStyle: { backgroundColor: Colors.light.background },
-          headerTintColor: Colors.light.text,
-          headerLeft: () => (
-            <TouchableOpacity onPress={() => router.back()} style={{ paddingHorizontal: 12 }}>
-              <Text style={{ color: Colors.light.primary, fontWeight: "700" }}>← Volver</Text>
-            </TouchableOpacity>
-          ),
+          headerShown: false,
         }}
       />
       <View style={styles.container}>
-        <StatusBar style="dark" />
+        <StatusBar style="light" />
+
+        {/* Custom Gradient Header */}
+        <LinearGradient
+          colors={[theme.colors.primary, theme.colors.secondary]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.customHeader}
+        >
+          <TouchableOpacity
+            onPress={() => {
+              if (Platform.OS !== 'web') {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }
+              router.back();
+            }}
+            style={styles.headerBackButton}
+            activeOpacity={0.7}
+          >
+            <ChevronLeft size={28} color="#FFFFFF" strokeWidth={2.5} />
+          </TouchableOpacity>
+
+          <View style={styles.headerCenter}>
+            <VideoIcon size={24} color="#FFFFFF" />
+            <Text style={styles.headerTitle}>Crea tu Short</Text>
+          </View>
+          <View style={styles.headerPlaceholder} />
+        </LinearGradient>
         
         {currentStep === 'form' && (
           <Animated.View style={[styles.formContainer, formAnimatedStyle]}>
@@ -282,12 +259,15 @@ export default function CreateShortScreen() {
               contentContainerStyle={styles.contentContainer}
               showsVerticalScrollIndicator={false}
             >
-              <View style={styles.header}>
-                <Text style={styles.title}>¡Crea tu Short! ✨</Text>
+              <Animated.View entering={FadeIn.duration(400)} style={styles.header}>
+                <View style={styles.titleContainer}>
+                  <Sparkles size={32} color={theme.colors.primary} />
+                  <Text style={styles.title}>Comparte tu Parche</Text>
+                </View>
                 <Text style={styles.subtitle}>
-                  Comparte un video corto de tu lugar favorito
+                  Graba un video corto de tu lugar favorito y compártelo con la comunidad
                 </Text>
-              </View>
+              </Animated.View>
 
               <View style={styles.formSection}>
                 <Text style={styles.label}>Nombre del Lugar</Text>
@@ -295,8 +275,8 @@ export default function CreateShortScreen() {
                   style={styles.input}
                   value={placeName}
                   onChangeText={setPlaceName}
-                  placeholder="¿Dónde estuviste?"
-                  placeholderTextColor={Colors.light.darkGray}
+                  placeholder="Ej: Parque Arví, Pueblito Paisa..."
+                  placeholderTextColor="#666"
                   testID="place-name-input"
                 />
 
@@ -305,8 +285,8 @@ export default function CreateShortScreen() {
                   style={[styles.input, styles.textArea]}
                   value={description}
                   onChangeText={setDescription}
-                  placeholder="Cuéntanos sobre este lugar..."
-                  placeholderTextColor={Colors.light.darkGray}
+                  placeholder="Cuéntanos qué hace especial este lugar, qué actividades se pueden hacer, ambiente, recomendaciones..."
+                  placeholderTextColor="#666"
                   multiline
                   numberOfLines={4}
                   testID="description-input"
@@ -345,19 +325,26 @@ export default function CreateShortScreen() {
                   value={tags}
                   onChangeText={setTags}
                   placeholder="#aventura #naturaleza #diversión"
-                  placeholderTextColor={Colors.light.darkGray}
+                  placeholderTextColor="#666"
                 />
 
                 <Text style={styles.label}>Video</Text>
                 <TouchableOpacity
                   style={styles.addVideoButton}
-                  onPress={pickVideo}
+                  onPress={() => {
+                    if (Platform.OS !== 'web') {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    }
+                    pickVideo();
+                  }}
                   testID="add-video-button"
+                  activeOpacity={0.7}
                 >
-                  <VideoIcon size={32} color={Colors.light.primary} />
+                  <VideoIcon size={40} color={theme.colors.primary} strokeWidth={2} />
                   <Text style={styles.addVideoText}>Seleccionar Video</Text>
                   <Text style={styles.addVideoSubtext}>
-                    Se procesará automáticamente a formato vertical
+                    Toca aquí para elegir un video de tu galería{'\n'}
+                    Se procesará automáticamente a formato vertical (9:16)
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -404,9 +391,9 @@ export default function CreateShortScreen() {
             </View>
 
             <ProgressBar
-              progress={isProcessing ? progress.progress : uploadProgress.progress}
-              stage={isProcessing ? progress.stage : uploadProgress.stage}
-              message={isProcessing ? progress.message : uploadProgress.message}
+              progress={uploadProgress.progress}
+              stage={uploadProgress.stage}
+              message={uploadProgress.message}
               showPulse={true}
             />
 
@@ -509,7 +496,36 @@ export default function CreateShortScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
+    backgroundColor: '#0B0B0B',
+  },
+  customHeader: {
+    paddingTop: Platform.OS === 'ios' ? 50 : 30,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  headerBackButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerCenter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  headerPlaceholder: {
+    width: 40,
   },
   formContainer: {
     flex: 1,
@@ -522,40 +538,50 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 24,
     paddingBottom: 20,
+    alignItems: 'center',
+  },
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 8,
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: "800",
-    color: Colors.light.text,
-    textAlign: 'center',
+    color: '#FFFFFF',
+    letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 16,
-    color: Colors.light.darkGray,
-    marginTop: 8,
+    fontSize: 15,
+    color: '#AAAAAA',
+    marginTop: 4,
     textAlign: 'center',
+    lineHeight: 22,
+    paddingHorizontal: 20,
   },
   formSection: {
     paddingHorizontal: 20,
   },
   label: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.light.text,
+    fontSize: 15,
+    fontWeight: "700",
+    color: '#FFFFFF',
     marginTop: 20,
-    marginBottom: 8,
+    marginBottom: 10,
+    letterSpacing: -0.2,
   },
   input: {
-    backgroundColor: Colors.light.lightGray,
-    borderRadius: 16,
+    backgroundColor: '#1A1A1A',
+    borderRadius: 14,
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 16,
     fontSize: 16,
-    color: Colors.light.text,
+    color: '#FFFFFF',
     borderWidth: 2,
-    borderColor: 'transparent',
+    borderColor: '#333',
   },
   textArea: {
     height: 120,
@@ -566,53 +592,56 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   categoryButton: {
-    backgroundColor: Colors.light.lightGray,
-    paddingVertical: 10,
+    backgroundColor: '#1A1A1A',
+    paddingVertical: 12,
     paddingHorizontal: 20,
-    borderRadius: 25,
-    marginRight: 8,
+    borderRadius: 20,
+    marginRight: 10,
     borderWidth: 2,
-    borderColor: 'transparent',
+    borderColor: '#333',
   },
   selectedCategoryButton: {
-    backgroundColor: Colors.light.primary,
-    borderColor: Colors.light.primary,
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
   },
   categoryText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: Colors.light.text,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   selectedCategoryText: {
-    color: Colors.light.white,
+    color: '#FFFFFF',
   },
   addVideoButton: {
-    height: 200,
+    height: 220,
     borderRadius: 20,
-    borderWidth: 2,
-    borderColor: Colors.light.primary,
+    borderWidth: 3,
+    borderColor: theme.colors.primary,
     borderStyle: "dashed",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: Colors.light.lightGray + '20',
+    backgroundColor: 'rgba(255, 68, 68, 0.08)',
     marginTop: 8,
   },
   addVideoText: {
     fontSize: 18,
-    fontWeight: '600',
-    color: Colors.light.primary,
+    fontWeight: '700',
+    color: theme.colors.primary,
     marginTop: 12,
+    letterSpacing: -0.3,
   },
   addVideoSubtext: {
-    fontSize: 14,
-    color: Colors.light.darkGray,
-    marginTop: 4,
+    fontSize: 13,
+    color: '#AAAAAA',
+    marginTop: 6,
     textAlign: 'center',
+    paddingHorizontal: 40,
+    lineHeight: 20,
   },
   // Preview styles
   previewContainer: {
     flex: 1,
-    backgroundColor: Colors.light.background,
+    backgroundColor: '#0B0B0B',
   },
   previewHeader: {
     flexDirection: 'row',
@@ -626,14 +655,16 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.light.lightGray,
+    backgroundColor: '#1A1A1A',
+    borderWidth: 1,
+    borderColor: '#333',
     alignItems: 'center',
     justifyContent: 'center',
   },
   previewTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: Colors.light.text,
+    color: '#FFFFFF',
   },
   placeholder: {
     width: 40,
@@ -643,15 +674,16 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   previewInfoText: {
-    fontSize: 14,
-    color: Colors.light.darkGray,
+    fontSize: 13,
+    color: '#AAAAAA',
     textAlign: 'center',
     fontStyle: 'italic',
+    lineHeight: 20,
   },
   // Uploading styles
   uploadingContainer: {
     flex: 1,
-    backgroundColor: Colors.light.background,
+    backgroundColor: '#0B0B0B',
   },
   uploadingHeader: {
     paddingHorizontal: 20,
@@ -662,14 +694,15 @@ const styles = StyleSheet.create({
   uploadingTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: Colors.light.text,
+    color: '#FFFFFF',
     textAlign: 'center',
   },
   uploadingSubtitle: {
-    fontSize: 16,
-    color: Colors.light.darkGray,
+    fontSize: 15,
+    color: '#AAAAAA',
     marginTop: 8,
     textAlign: 'center',
+    lineHeight: 22,
   },
   formWhileUploading: {
     paddingHorizontal: 20,

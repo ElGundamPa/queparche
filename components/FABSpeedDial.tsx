@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, memo, useCallback } from 'react';
 import { Pressable, View, ViewStyle, Animated, Platform, Text, TouchableWithoutFeedback } from 'react-native';
 import { Easing } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Plus, MessageSquare, Wand2, CalendarPlus } from 'lucide-react-native';
+import { Plus, X, MessageSquare, Wand2, CalendarPlus, Video } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 
@@ -41,6 +41,7 @@ export default function FABSpeedDial({ style }: FABSpeedDialProps) {
   const router = useRouter();
   const pulse = useRef(new Animated.Value(0)).current;
   const mainScale = useRef(new Animated.Value(1)).current;
+  const rotation = useRef(new Animated.Value(0)).current;
   const [open, setOpen] = useState<boolean>(false);
 
   useEffect(() => {
@@ -56,11 +57,21 @@ export default function FABSpeedDial({ style }: FABSpeedDialProps) {
     if (Platform.OS !== 'web') {
       Haptics.selectionAsync();
     }
-    Animated.sequence([
-      Animated.timing(mainScale, { toValue: 0.92, duration: 90, useNativeDriver: true }),
-      Animated.timing(mainScale, { toValue: 1, duration: 90, useNativeDriver: true }),
-    ]).start(() => setOpen((v) => !v));
-  }, [mainScale]);
+    const willOpen = !open;
+
+    Animated.parallel([
+      Animated.sequence([
+        Animated.timing(mainScale, { toValue: 0.92, duration: 90, useNativeDriver: true }),
+        Animated.timing(mainScale, { toValue: 1, duration: 90, useNativeDriver: true }),
+      ]),
+      Animated.timing(rotation, {
+        toValue: willOpen ? 1 : 0,
+        duration: 200,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start(() => setOpen(willOpen));
+  }, [mainScale, rotation, open]);
 
   const goRandom = () => {
     const pools = [
@@ -81,9 +92,10 @@ export default function FABSpeedDial({ style }: FABSpeedDialProps) {
 
   const pulseScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.06] });
   const glow = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.25, 0.45] });
+  const iconRotation = rotation.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '135deg'] });
 
   return (
-    <View pointerEvents="box-none" style={[{ position: 'absolute', right: 16, bottom: Math.max(16, bottom + 12) }, style]}>
+    <View pointerEvents="box-none" style={[{ position: 'absolute', right: 16, bottom: Math.max(80, bottom + 70) }, style]}>
       {open ? (
         <TouchableWithoutFeedback onPress={() => setOpen(false)}>
           <View style={{ position: 'absolute', right: -16, bottom: -12, left: -1000, top: -1000 }} />
@@ -93,16 +105,19 @@ export default function FABSpeedDial({ style }: FABSpeedDialProps) {
       <View style={{ alignItems: 'flex-end', marginBottom: 12 }}>
         {open && (
           <>
-            <ActionButton icon={<MessageSquare size={20} color={Colors.light.white} />} label="AI Chat" onPress={() => { setOpen(false); router.push('/ai-assistant'); }} delay={0} />
-            <ActionButton icon={<CalendarPlus size={20} color={Colors.light.white} />} label="Crear mi plan" onPress={() => { setOpen(false); router.push('/create'); }} delay={50} />
-            <ActionButton icon={<Wand2 size={20} color={Colors.light.white} />} label="Parche random" onPress={goRandom} delay={100} />
+            <ActionButton icon={<MessageSquare size={20} color={Colors.light.white} />} label="Chat IA" onPress={() => { setOpen(false); router.push('/ai-assistant'); }} delay={0} />
+            <ActionButton icon={<Video size={20} color={Colors.light.white} />} label="Subir parche" onPress={() => { setOpen(false); router.push('/create-short'); }} delay={50} />
+            <ActionButton icon={<CalendarPlus size={20} color={Colors.light.white} />} label="Crear parche" onPress={() => { setOpen(false); router.push('/create'); }} delay={100} />
+            <ActionButton icon={<Wand2 size={20} color={Colors.light.white} />} label="Parche random" onPress={goRandom} delay={150} />
           </>
         )}
       </View>
 
       <Animated.View style={{ transform: [{ scale: pulseScale }, { scale: mainScale }], shadowColor: '#FF4444', shadowOpacity: glow as unknown as number, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 8 }}>
         <Pressable onPress={handleToggle} accessibilityRole="button" accessibilityLabel="Abrir acciones rápidas" style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: '#FF4444', alignItems: 'center', justifyContent: 'center' }} testID="floating-action-button">
-          <Plus size={24} color={Colors.light.white} strokeWidth={2.5} />
+          <Animated.View style={{ transform: [{ rotate: iconRotation }] }}>
+            <Plus size={24} color={Colors.light.white} strokeWidth={2.5} />
+          </Animated.View>
         </Pressable>
       </Animated.View>
     </View>

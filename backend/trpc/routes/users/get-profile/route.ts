@@ -1,13 +1,18 @@
 import { z } from "zod";
 import { publicProcedure } from "../../../create-context";
-import { mockUsers } from "@/mocks/users";
 
 export default publicProcedure
   .input(z.object({ userId: z.string() }))
-  .query(({ input }) => {
-    const user = mockUsers.find(u => u.id === input.userId);
-    if (!user) {
-      throw new Error("User not found");
+  .query(async ({ ctx, input }) => {
+    const { data: profile, error } = await ctx.supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', input.userId)
+      .single();
+
+    if (error || !profile) {
+      throw new Error("Usuario no encontrado");
     }
-    return user;
+
+    return profile;
   });

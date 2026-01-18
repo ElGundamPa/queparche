@@ -11,15 +11,30 @@ import {
   TextInput,
   Platform,
   Linking,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
-import { ArrowRight, Camera, User } from 'lucide-react-native';
+import Animated, {
+  FadeIn,
+  FadeOut,
+  SlideInRight,
+  SlideOutLeft,
+  ZoomIn,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withSequence,
+  withTiming,
+  runOnJS,
+} from 'react-native-reanimated';
+import { ArrowRight, Camera, User, Sparkles, Check } from 'lucide-react-native';
 import Colors from '../../constants/colors';
 import { useOnboardingStore } from '../../hooks/use-onboarding-store';
 import { useAuthStore } from '../../hooks/use-auth-store';
 import { pickImageFromGallery } from '../../utils/permissions';
+import OnboardingSuccess from '../../components/OnboardingSuccess';
 
 const { width } = Dimensions.get('window');
 
@@ -42,6 +57,13 @@ export default function OnboardingScreen() {
   const { data, updateData, completeOnboarding: completeOnboardingStore } = useOnboardingStore();
   const { completeOnboarding: completeAuthOnboarding } = useAuthStore();
   const [currentStep, setCurrentStep] = useState(1);
+  const [isCompleting, setIsCompleting] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  // Animaciones
+  const successScale = useSharedValue(0);
+  const successOpacity = useSharedValue(0);
+  const confettiPositions = Array.from({ length: 20 }).map(() => useSharedValue(0));
 
   const handleInterestToggle = (interestId: string) => {
     const newInterests = data.interests.includes(interestId)
@@ -75,26 +97,50 @@ export default function OnboardingScreen() {
     }
   };
 
-  const handleComplete = () => {
-    console.log('=== ONBOARDING COMPLETE ===');
-    console.log('Onboarding data:', data);
-    
-    // Guardar datos en el store de autenticación
-    completeAuthOnboarding({
-      bio: data.bio,
-      interests: data.interests,
-      avatar: data.avatar,
-    });
-    
-    // Marcar onboarding como completado
-    completeOnboardingStore();
-    
-    console.log('Onboarding completed successfully');
-    console.log('==============================');
-    
-    Alert.alert('¡Bienvenido!', 'Tu perfil ha sido configurado exitosamente', [
-      { text: 'Continuar', onPress: () => router.replace('/(tabs)') }
-    ]);
+  const handleComplete = async () => {
+    setIsCompleting(true);
+
+    try {
+      console.log('=== ONBOARDING COMPLETE ===');
+      console.log('📝 Bio:', data.bio);
+      console.log('🎯 Interests:', data.interests);
+      console.log('🖼️ Avatar:', data.avatar);
+      console.log('👤 Usuario actual:', useAuthStore.getState().currentUser?.id);
+
+      // Guardar datos en el store de autenticación
+      await completeAuthOnboarding({
+        bio: data.bio,
+        interests: data.interests,
+        avatar: data.avatar,
+      });
+
+      console.log('✅ Datos guardados en Supabase');
+
+      // Marcar onboarding como completado
+      completeOnboardingStore();
+
+      console.log('✅ Onboarding marcado como completado');
+      console.log('==============================');
+
+      // Mostrar pantalla de éxito
+      setShowSuccess(true);
+
+      // Animar confetti
+      successOpacity.value = withTiming(1, { duration: 300 });
+      successScale.value = withSequence(
+        withSpring(1.2, { damping: 8 }),
+        withSpring(1, { damping: 10 })
+      );
+
+    } catch (error) {
+      console.error('❌ Error completing onboarding:', error);
+      setIsCompleting(false);
+      Alert.alert('Error', 'Hubo un problema al completar tu perfil. Intenta de nuevo.');
+    }
+  };
+
+  const navigateToHome = () => {
+    router.replace('/(tabs)');
   };
 
   const renderStep1 = () => (
@@ -129,32 +175,50 @@ export default function OnboardingScreen() {
       <Text style={styles.stepSubtitle}>
         Selecciona tus intereses para personalizar tu experiencia
       </Text>
-      
+
       <View style={styles.interestsGrid}>
-        {INTERESTS.map((interest) => (
-          <TouchableOpacity
-            key={interest.id}
-            style={[
-              styles.interestCard,
-              data.interests.includes(interest.id) && styles.selectedInterestCard,
-              { borderColor: interest.color }
-            ]}
-            onPress={() => handleInterestToggle(interest.id)}
-          >
-            <Text style={styles.interestIcon}>{interest.icon}</Text>
-            <Text style={[
-              styles.interestName,
-              data.interests.includes(interest.id) && styles.selectedInterestName
-            ]}>
-              {interest.name}
-            </Text>
-          </TouchableOpacity>
-        ))}
+        {INTERESTS.map((interest, index) => {
+          const isSelected = data.interests.includes(interest.id);
+
+          return (
+            <Animated.View
+              key={interest.id}
+              entering={ZoomIn.delay(index * 50).duration(400)}
+            >
+              <TouchableOpacity
+                style={[
+                  styles.interestCard,
+                  isSelected && styles.selectedInterestCard,
+                  { borderColor: isSelected ? interest.color : 'transparent' }
+                ]}
+                onPress={() => handleInterestToggle(interest.id)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.interestContent}>
+                  <Text style={styles.interestIcon}>{interest.icon}</Text>
+                  <Text style={[
+                    styles.interestName,
+                    isSelected && styles.selectedInterestName
+                  ]}>
+                    {interest.name}
+                  </Text>
+                  {isSelected && (
+                    <Animated.View entering={ZoomIn.duration(200)}>
+                      <Check size={18} color={interest.color} strokeWidth={3} />
+                    </Animated.View>
+                  )}
+                </View>
+              </TouchableOpacity>
+            </Animated.View>
+          );
+        })}
       </View>
-      
-      <Text style={styles.selectionCount}>
-        {data.interests.length} intereses seleccionados
-      </Text>
+
+      <Animated.View entering={FadeIn.delay(600).duration(400)}>
+        <Text style={styles.selectionCount}>
+          {data.interests.length} {data.interests.length === 1 ? 'interés seleccionado' : 'intereses seleccionados'}
+        </Text>
+      </Animated.View>
     </View>
   );
 
@@ -191,42 +255,95 @@ export default function OnboardingScreen() {
     </View>
   );
 
+  if (showSuccess) {
+    return (
+      <OnboardingSuccess
+        onComplete={navigateToHome}
+        userName={useAuthStore.getState().currentUser?.name}
+      />
+    );
+  }
+
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {/* Progress Bar */}
-        <View style={styles.progressContainer}>
+        <Animated.View
+          entering={FadeIn.duration(500)}
+          style={styles.progressContainer}
+        >
           <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: `${(currentStep / 3) * 100}%` }]} />
+            <Animated.View
+              style={[
+                styles.progressFill,
+                { width: `${(currentStep / 3) * 100}%` }
+              ]}
+            />
           </View>
           <Text style={styles.progressText}>Paso {currentStep} de 3</Text>
-        </View>
+        </Animated.View>
 
         {/* Content */}
-        {currentStep === 1 && renderStep1()}
-        {currentStep === 2 && renderStep2()}
-        {currentStep === 3 && renderStep3()}
+        {currentStep === 1 && (
+          <Animated.View
+            key="step1"
+            entering={SlideInRight.duration(400)}
+            exiting={SlideOutLeft.duration(300)}
+          >
+            {renderStep1()}
+          </Animated.View>
+        )}
+        {currentStep === 2 && (
+          <Animated.View
+            key="step2"
+            entering={SlideInRight.duration(400)}
+            exiting={SlideOutLeft.duration(300)}
+          >
+            {renderStep2()}
+          </Animated.View>
+        )}
+        {currentStep === 3 && (
+          <Animated.View
+            key="step3"
+            entering={SlideInRight.duration(400)}
+            exiting={SlideOutLeft.duration(300)}
+          >
+            {renderStep3()}
+          </Animated.View>
+        )}
 
         {/* Navigation */}
         <View style={styles.navigationContainer}>
           {currentStep > 1 && (
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => setCurrentStep(currentStep - 1)}
-            >
-              <Text style={styles.backButtonText}>Atrás</Text>
-            </TouchableOpacity>
+            <Animated.View entering={FadeIn.duration(300)}>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => setCurrentStep(currentStep - 1)}
+              >
+                <Text style={styles.backButtonText}>Atrás</Text>
+              </TouchableOpacity>
+            </Animated.View>
           )}
-          
-          <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+
+          <TouchableOpacity
+            style={styles.nextButton}
+            onPress={handleNext}
+            disabled={isCompleting}
+          >
             <LinearGradient
               colors={[Colors.light.primary, Colors.light.secondary] as [string, string]}
               style={styles.nextButtonGradient}
             >
-              <Text style={styles.nextButtonText}>
-                {currentStep === 3 ? 'Completar' : 'Siguiente'}
-              </Text>
-              <ArrowRight size={20} color={Colors.light.white} />
+              {isCompleting ? (
+                <ActivityIndicator color={Colors.light.white} />
+              ) : (
+                <>
+                  <Text style={styles.nextButtonText}>
+                    {currentStep === 3 ? 'Completar' : 'Siguiente'}
+                  </Text>
+                  <ArrowRight size={20} color={Colors.light.white} />
+                </>
+              )}
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -332,6 +449,10 @@ const styles = StyleSheet.create({
   selectedInterestCard: {
     backgroundColor: Colors.light.primary + '20',
     borderColor: Colors.light.primary,
+  },
+  interestContent: {
+    alignItems: 'center',
+    position: 'relative',
   },
   interestIcon: {
     fontSize: 32,

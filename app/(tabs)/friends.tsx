@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback } from "react";
+import React, { useMemo, useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -8,12 +8,14 @@ import {
   Platform,
   ActionSheetIOS,
   Alert,
+  TextInput,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { MessageCircle, Search } from "lucide-react-native";
+import { MessageCircle, Search, X } from "lucide-react-native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Link } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useFriendsStore } from "@/store/friendsStore";
 import { useAuthStore } from "@/hooks/use-auth-store";
@@ -41,6 +43,8 @@ type SectionData = {
 
 export default function FriendsScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const [searchQuery, setSearchQuery] = useState("");
   const {
     friends,
     requestsReceived,
@@ -354,7 +358,7 @@ export default function FriendsScreen() {
               onPress={() => handleChatPress(item.id)}
               activeOpacity={0.7}
             >
-              <MessageCircle size={20} color="#9B9B9B" />
+              <MessageCircle size={19} color="#9B9B9B" />
               {unreadCount > 0 && <View style={styles.chatDotBadge} />}
             </TouchableOpacity>
           </View>
@@ -382,7 +386,7 @@ export default function FriendsScreen() {
     </View>
   ), []);
 
-  const renderSectionFooter = useCallback(() => <View style={{ height: 24 }} />, []);
+  const renderSectionFooter = useCallback(() => <View style={{ height: 20 }} />, []);
 
   const renderSectionEmpty = useCallback(
     ({ section }: { section: SectionData }) => {
@@ -411,23 +415,28 @@ export default function FriendsScreen() {
     <>
       <Stack.Screen
         options={{
-          title: "Amigos 🤙",
+          title: "Chats",
+          headerTitleStyle: {
+            fontSize: 18,
+            fontWeight: "700",
+            color: "#FFFFFF",
+          },
           headerRight: () => (
             <View style={{ flexDirection: "row", gap: 12, alignItems: "center", paddingRight: 8 }}>
               <TouchableOpacity
                 onPress={() => router.push("/friends/search")}
                 accessibilityLabel="Buscar amigos"
-                style={{ padding: 8 }}
+                style={styles.headerSearchButton}
                 activeOpacity={0.7}
               >
-                <Search size={18} color="#FF3B30" />
+                <Search size={20} color="#FFFFFF" />
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => router.push("/friends/chats")}
                 style={styles.headerChatButton}
                 activeOpacity={0.7}
               >
-                <MessageCircle size={24} color="#FFFFFF" />
+                <MessageCircle size={20} color="#FFFFFF" />
                 {unreadChatsCount > 0 && (
                   <View style={styles.headerChatBadge}>
                     <Text style={styles.headerChatBadgeText}>
@@ -442,6 +451,48 @@ export default function FriendsScreen() {
       />
       <View style={styles.container}>
         <StatusBar style="light" />
+
+        {/* Barra de búsqueda de usuarios */}
+        <View style={[styles.searchContainer, { paddingTop: insets.top + 12 }]}>
+          <View style={styles.searchInputContainer}>
+            <Search size={18} color="#9B9B9B" style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Buscar usuario por @username"
+              placeholderTextColor="#666666"
+              value={searchQuery}
+              onChangeText={(text) => {
+                // Auto-agregar @ al username
+                let newText = text;
+                if (newText.length > 0 && !newText.startsWith('@')) {
+                  newText = '@' + newText;
+                }
+                // Si el usuario borra todo, permitir que quede vacío
+                if (newText === '@') {
+                  newText = '';
+                }
+                setSearchQuery(newText);
+              }}
+              autoCapitalize="none"
+              autoCorrect={false}
+              onSubmitEditing={() => {
+                if (searchQuery.trim()) {
+                  router.push(`/friends/search?q=${searchQuery.trim()}`);
+                }
+              }}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity
+                onPress={() => setSearchQuery("")}
+                style={styles.clearButton}
+                activeOpacity={0.7}
+              >
+                <X size={16} color="#9B9B9B" />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
         <SectionList
           sections={sections}
           keyExtractor={(item, index) => `${item?.id || index}-${index}`}
@@ -469,21 +520,30 @@ export default function FriendsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: "#0B0B0B",
   },
   listContent: {
-    paddingHorizontal: 20,
-    paddingTop: 24,
+    paddingHorizontal: 18,
+    paddingTop: 0,
     paddingBottom: 32,
   },
   sectionHeader: {
-    marginBottom: 16,
+    marginBottom: 12,
+    paddingTop: 0,
   },
   sectionTitle: {
     color: "#FFFFFF",
-    fontSize: 22,
-    fontWeight: "600",
-    letterSpacing: -0.5,
+    fontSize: 19,
+    fontWeight: "700",
+    letterSpacing: -0.4,
+  },
+  headerSearchButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   emptyState: {
     paddingVertical: 32,
@@ -499,7 +559,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 24,
-    backgroundColor: "#D7263D",
+    backgroundColor: "#FF3B30",
   },
   ctaButtonText: {
     color: "#FFFFFF",
@@ -507,26 +567,32 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   requestItem: {
-    paddingVertical: 20,
-    gap: 16,
+    paddingVertical: 14,
+    gap: 14,
+    backgroundColor: "#1A1A1A",
+    borderRadius: 15,
+    paddingHorizontal: 15,
+    marginBottom: 11,
+    borderWidth: 1,
+    borderColor: "#222222",
   },
   requestUserInfo: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 16,
+    gap: 13,
     flex: 1,
   },
   requestAvatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     alignItems: "center",
     justifyContent: "center",
   },
   requestAvatarText: {
     color: "#FFFFFF",
-    fontWeight: "600",
-    fontSize: 18,
+    fontWeight: "700",
+    fontSize: 19,
   },
   requestUserDetails: {
     flex: 1,
@@ -534,42 +600,42 @@ const styles = StyleSheet.create({
   },
   requestUserName: {
     color: "#FFFFFF",
-    fontWeight: "600",
-    fontSize: 17,
+    fontWeight: "700",
+    fontSize: 16,
     letterSpacing: -0.3,
   },
   requestUserUsername: {
-    color: "#9B9B9B",
+    color: "#AAAAAA",
     fontSize: 14,
   },
   requestActions: {
     flexDirection: "row",
-    gap: 12,
-    marginTop: 4,
+    gap: 9,
+    marginTop: 3,
   },
   acceptButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 24,
-    backgroundColor: "#111111",
-    borderWidth: 1.5,
-    borderColor: "#D7263D",
+    flex: 1,
+    paddingVertical: 11,
+    borderRadius: 11,
+    backgroundColor: "#FF3B30",
+    alignItems: "center",
   },
   acceptButtonText: {
     color: "#FFFFFF",
     fontSize: 15,
-    fontWeight: "600",
+    fontWeight: "700",
   },
   rejectButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 24,
-    backgroundColor: "#111111",
-    borderWidth: 1.5,
-    borderColor: "#444444",
+    flex: 1,
+    paddingVertical: 11,
+    borderRadius: 11,
+    backgroundColor: "#1A1A1A",
+    borderWidth: 1,
+    borderColor: "#333333",
+    alignItems: "center",
   },
   rejectButtonText: {
-    color: "#9B9B9B",
+    color: "#AAAAAA",
     fontSize: 15,
     fontWeight: "600",
   },
@@ -582,13 +648,18 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 16,
-    paddingHorizontal: 4,
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    backgroundColor: "#1A1A1A",
+    borderRadius: 15,
+    marginBottom: 9,
+    borderWidth: 1,
+    borderColor: "#222222",
   },
   friendUserInfo: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 16,
+    gap: 13,
     flex: 1,
   },
   friendAvatar: {
@@ -600,7 +671,7 @@ const styles = StyleSheet.create({
   },
   friendAvatarText: {
     color: "#FFFFFF",
-    fontWeight: "600",
+    fontWeight: "700",
     fontSize: 18,
   },
   friendUserDetails: {
@@ -609,47 +680,47 @@ const styles = StyleSheet.create({
   },
   friendUserName: {
     color: "#FFFFFF",
-    fontWeight: "600",
-    fontSize: 17,
+    fontWeight: "700",
+    fontSize: 16,
     letterSpacing: -0.3,
   },
   friendUserUsername: {
-    color: "#9B9B9B",
-    fontSize: 14,
+    color: "#AAAAAA",
+    fontSize: 13,
   },
   friendActions: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 8,
   },
   statusButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: 13,
+    paddingVertical: 7,
+    borderRadius: 11,
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
   },
   statusButtonPrimary: {
-    backgroundColor: "#D7263D",
+    backgroundColor: "#FF3B30",
     borderColor: "transparent",
   },
   statusButtonMutual: {
-    backgroundColor: "#D7263D",
-    borderColor: "#D7263D",
+    backgroundColor: "#FF3B30",
+    borderColor: "transparent",
   },
   statusButtonMuted: {
-    backgroundColor: "#111111",
-    borderColor: "#444444",
+    backgroundColor: "#1A1A1A",
+    borderColor: "#333333",
   },
   statusButtonText: {
     color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 13,
+    fontWeight: "700",
   },
   statusButtonTextMuted: {
-    color: "#9B9B9B",
-    fontSize: 14,
+    color: "#AAAAAA",
+    fontSize: 13,
     fontWeight: "600",
   },
   chatIconButton: {
@@ -659,21 +730,28 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
+    backgroundColor: "rgba(255, 59, 48, 0.15)",
   },
   chatDotBadge: {
     position: "absolute",
-    top: 8,
-    right: 8,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: "#D7263D",
+    top: 6,
+    right: 6,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: "#FF3B30",
     borderWidth: 2,
-    borderColor: "#000000",
+    borderColor: "#1A1A1A",
   },
   headerChatButton: {
     position: "relative",
-    padding: 4,
+    padding: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   headerChatBadge: {
     position: "absolute",
@@ -682,16 +760,50 @@ const styles = StyleSheet.create({
     minWidth: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: "#D7263D",
+    backgroundColor: "#FF3B30",
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 4,
     borderWidth: 2,
-    borderColor: "#000000",
+    borderColor: "#0B0B0B",
   },
   headerChatBadgeText: {
     color: "#FFFFFF",
     fontSize: 10,
     fontWeight: "700",
+  },
+  searchContainer: {
+    paddingHorizontal: 18,
+    paddingBottom: 14,
+    backgroundColor: "#0B0B0B",
+  },
+  searchInputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1A1A1A",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#222222",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 10,
+  },
+  searchIcon: {
+    marginRight: 2,
+  },
+  searchInput: {
+    flex: 1,
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "500",
+    padding: 0,
+  },
+  clearButton: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "#2A2A2A",
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

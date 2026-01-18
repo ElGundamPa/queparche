@@ -1,5 +1,5 @@
 import React, { memo, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -48,27 +48,25 @@ const TopPlansCarouselComponent = () => {
       .slice(0, 5);
   }, []);
 
-  const renderItem = ({ item, index }: { item: Plan; index: number }) => (
-    <TopPlanCard
-      plan={item}
-      index={index}
-      onPress={() => router.push(`/plan/${item.id}`)}
-    />
-  );
-
   return (
-    <FlatList
+    <ScrollView
       horizontal
-      data={data}
-      renderItem={renderItem}
-      keyExtractor={(item) => `top-plan-${item.id}`}
       showsHorizontalScrollIndicator={false}
       snapToInterval={CARD_WIDTH + ITEM_SPACING}
       pagingEnabled={false}
       decelerationRate="fast"
       contentContainerStyle={styles.listContent}
-      ItemSeparatorComponent={() => <View style={{ width: ITEM_SPACING }} />}
-    />
+    >
+      {data.map((item, index) => (
+        <View key={`top-plan-${item.id}`} style={{ marginRight: index < data.length - 1 ? ITEM_SPACING : 0 }}>
+          <TopPlanCard
+            plan={item}
+            index={index}
+            onPress={() => router.push(`/plan/${item.id}`)}
+          />
+        </View>
+      ))}
+    </ScrollView>
   );
 };
 

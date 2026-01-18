@@ -115,7 +115,14 @@ export interface Event {
   organizerName: string;
   tags: string[];
   isPremium?: boolean;
+  isFeatured?: boolean;
   rating?: number;
+  socialLinks?: {
+    instagram?: string;
+    facebook?: string;
+    twitter?: string;
+    website?: string;
+  };
 }
 
 export type Category = {

@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { StatusBar } from "expo-status-bar";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Settings,
   LogOut,
@@ -40,6 +41,7 @@ import { useFriendsStore } from "@/store/friendsStore";
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ userId?: string }>();
   const viewedUserId = Array.isArray(params.userId) ? params.userId[0] : params.userId;
   const { plans } = usePlansStore();
@@ -88,6 +90,20 @@ export default function ProfileScreen() {
   const [selectedPreferences, setSelectedPreferences] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<"plans" | "favorites" | "history">("plans");
 
+  // Animación de contenido entre tabs
+  const tabOpacity = useSharedValue(1);
+  const tabTranslateY = useSharedValue(0);
+  const contentAnimStyle = useAnimatedStyle(() => ({
+    opacity: tabOpacity.value,
+    transform: [{ translateY: tabTranslateY.value }],
+  }));
+
+  // Contadores animados
+  const plansCount = useSharedValue(0);
+  const followers = useSharedValue(0);
+  const following = useSharedValue(0);
+  const attended = useSharedValue(0);
+
   // Update form fields when user data loads
   React.useEffect(() => {
     if (isCurrentProfile && currentUser) {
@@ -116,9 +132,9 @@ export default function ProfileScreen() {
         {
           text: "Cerrar sesión",
           style: "destructive",
-          onPress: () => {
+          onPress: async () => {
             const { logout } = useAuthStore.getState();
-            logout();
+            await logout();
             router.replace("/(auth)/login");
           },
         },
@@ -140,7 +156,7 @@ export default function ProfileScreen() {
     }
   };
 
-  const handleSaveProfile = () => {
+  const handleSaveProfile = async () => {
     if (!isCurrentProfile) return;
     const profileUpdates = {
       name: editName,
@@ -150,11 +166,20 @@ export default function ProfileScreen() {
       preferences: selectedPreferences,
     };
 
-    // Update both stores to keep them in sync
-    updateAuthProfile(profileUpdates);
-    updateUserStoreProfile(profileUpdates);
+    try {
+      // Update auth store (this is the primary store)
+      await updateAuthProfile(profileUpdates);
 
-    setShowEditModal(false);
+      // Update user store only if user exists
+      if (useUserStore.getState().user) {
+        updateUserStoreProfile(profileUpdates);
+      }
+
+      setShowEditModal(false);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      Alert.alert('Error', 'No se pudo actualizar el perfil. Intenta de nuevo.');
+    }
   };
 
   const pickImage = async () => {
@@ -171,6 +196,24 @@ export default function ProfileScreen() {
       setSelectedPreferences([...selectedPreferences, categoryName]);
     }
   };
+
+  // Early return if no profile user
+  if (!profileUser) {
+    return (
+      <View style={styles.container}>
+        <StatusBar style="light" />
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No se pudo cargar el perfil</Text>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.backButton}
+          >
+            <Text style={styles.backButtonText}>Volver</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   const profileUsername = (profileUser.username || profileUser.id || "").replace(/^@/, "");
   const followersCount = follows.filter((relation) => relation.followingId === profileUsername).length;
@@ -312,20 +355,6 @@ export default function ProfileScreen() {
 
   const { level, progress } = getLevelInfo(profileUser.points ?? 0);
 
-  // Animación de contenido entre tabs
-  const tabOpacity = useSharedValue(1);
-  const tabTranslateY = useSharedValue(0);
-  const contentAnimStyle = useAnimatedStyle(() => ({
-    opacity: tabOpacity.value,
-    transform: [{ translateY: tabTranslateY.value }],
-  }));
-
-  // Contadores animados
-  const plansCount = useSharedValue(0);
-  const followers = useSharedValue(0);
-  const following = useSharedValue(0);
-  const attended = useSharedValue(0);
-
   React.useEffect(() => {
     plansCount.value = withTiming(userPlans.length, { duration: 450 });
     followers.value = withTiming(followersCount, { duration: 450 });
@@ -356,7 +385,7 @@ export default function ProfileScreen() {
         {/* Header */}
         <LinearGradient
           colors={["rgba(0, 212, 170, 0.1)", "transparent"]}
-          style={styles.header}
+          style={[styles.header, { paddingTop: insets.top + 16 }]}
         >
           <View style={styles.headerContent}>
             <Text style={styles.title}>{isCurrentProfile ? "Mi Perfil" : profileUser.name}</Text>
@@ -648,6 +677,32 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#0E0E0E",
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 40,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#FFFFFF",
+    textAlign: "center",
+    marginBottom: 24,
+  },
+  backButton: {
+    backgroundColor: "#1A1A1A",
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#333333",
+  },
+  backButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFFFFF",
   },
   scrollView: {
     flex: 1,

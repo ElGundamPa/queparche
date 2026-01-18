@@ -2,6 +2,32 @@ import { Event } from "@/types/plan";
 
 export const mockEvents: Event[] = [
   {
+    id: "event-featured",
+    title: "808 Fest x Asado Mistico",
+    description: "El evento principal de la temporada. Música electrónica, asados artesanales y la mejor vibra de Medellín. ¡Usa tu código promocional y obtén 10% de descuento en consumibles!",
+    category: "Festival",
+    location: {
+      latitude: 6.2442,
+      longitude: -75.5812,
+      address: "Parque Lleras, El Poblado, Medellín",
+    },
+    startDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // En 7 días
+    endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000 + 12 * 60 * 60 * 1000).toISOString(), // 12 horas de duración
+    image: "https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?q=80&w=1000",
+    price: 0, // Entrada gratis
+    maxAttendees: 1000,
+    currentAttendees: 487,
+    organizerId: "featured-organizer",
+    organizerName: "808 Fest & Asado Mistico",
+    tags: ["festival", "música", "electronica", "asado", "comida", "descuento", "gratis"],
+    isPremium: true,
+    isFeatured: true,
+    socialLinks: {
+      instagram: "https://instagram.com/808fest",
+      website: "https://lanovena.vercel.app",
+    },
+  },
+  {
     id: "event-1",
     title: "Festival de Flores 2025",
     description: "El evento más colorido de Medellín con desfiles, música y gastronomía local",

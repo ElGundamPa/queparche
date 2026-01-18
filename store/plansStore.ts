@@ -1,4 +1,6 @@
 import { create } from "zustand";
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { mockPlans } from "@/mocks/plans";
 import type { Plan } from "@/types/plan";
@@ -24,10 +26,12 @@ const ensureUniquePlan = (plans: Plan[], plan: Plan) => {
   return [plan, ...plans];
 };
 
-export const usePlansStore = create<PlansState>((set, get) => ({
-  plans: mockPlans,
-  joinedPlans: [],
-  attendees: {},
+export const usePlansStore = create<PlansState>()(
+  persist(
+    (set, get) => ({
+      plans: mockPlans,
+      joinedPlans: [],
+      attendees: {},
 
   addPlan: (plan) =>
     set((state) => ({
@@ -120,7 +124,13 @@ export const usePlansStore = create<PlansState>((set, get) => ({
       };
     });
   },
-}));
+    }),
+    {
+      name: 'plans-storage',
+      storage: createJSONStorage(() => AsyncStorage),
+    }
+  )
+);
 
 export const usePlanStore = usePlansStore;
 

@@ -6,8 +6,11 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  Platform,
 } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { ArrowLeft, Home } from "lucide-react-native";
+import * as Haptics from "expo-haptics";
 
 import theme from "@/lib/theme";
 import { SOCIAL_MOCK_USERS } from "@/mocks/users";
@@ -120,7 +123,50 @@ export default function UserProfileScreen() {
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      <Stack.Screen options={{ headerShown: false }} />
+      <Stack.Screen
+        options={{
+          headerShown: true,
+          headerTransparent: true,
+          headerTitle: "",
+          headerBackVisible: false,
+          headerStyle: {
+            backgroundColor: "transparent",
+          },
+          headerShadowVisible: false,
+          headerLeft: () => (
+            <TouchableOpacity
+              onPress={() => {
+                if (Platform.OS !== "web") {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+                if (router.canGoBack()) {
+                  router.back();
+                } else {
+                  router.replace("/(tabs)");
+                }
+              }}
+              style={styles.backButton}
+              activeOpacity={0.7}
+            >
+              <ArrowLeft size={24} color="#FFFFFF" strokeWidth={2.5} />
+            </TouchableOpacity>
+          ),
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={() => {
+                if (Platform.OS !== "web") {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+                router.replace("/(tabs)");
+              }}
+              style={styles.homeButton}
+              activeOpacity={0.7}
+            >
+              <Home size={22} color="#FFFFFF" strokeWidth={2.5} />
+            </TouchableOpacity>
+          ),
+        }}
+      />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.avatarWrapper}>
           <View style={[styles.avatar, { backgroundColor: user.avatarColor }]}
@@ -176,26 +222,50 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(0, 0, 0, 0.85)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+    zIndex: 1000,
+  },
+  homeButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(0, 0, 0, 0.85)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+    zIndex: 1000,
+  },
   content: {
     paddingHorizontal: theme.spacing.horizontal,
-    paddingTop: theme.spacing.section,
-    paddingBottom: theme.spacing.section * 2,
-    gap: theme.spacing.section,
+    paddingTop: Platform.OS === 'ios' ? 100 : 80,
+    paddingBottom: 120,
+    gap: 16,
   },
   avatarWrapper: {
     alignItems: "center",
-    gap: 12,
+    gap: 8,
   },
   avatar: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     alignItems: "center",
     justifyContent: "center",
   },
   avatarText: {
     color: theme.colors.textPrimary,
-    fontSize: 48,
+    fontSize: 32,
     fontWeight: "700",
   },
   name: {
@@ -209,29 +279,29 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    gap: theme.spacing.md,
+    gap: 10,
   },
   statCard: {
     flex: 1,
     backgroundColor: theme.colors.surface,
     borderRadius: theme.radii.md,
-    paddingVertical: 18,
+    paddingVertical: 12,
     alignItems: "center",
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
   statNumber: {
     color: theme.colors.textPrimary,
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: "700",
   },
   statLabel: {
     color: theme.colors.textSecondary,
-    fontSize: 12,
+    fontSize: 11,
     marginTop: 4,
   },
   actionButton: {
-    paddingVertical: 16,
+    paddingVertical: 12,
     borderRadius: theme.radii.pill,
     alignItems: "center",
   },
@@ -249,18 +319,19 @@ const styles = StyleSheet.create({
   visitsSection: {
     backgroundColor: theme.colors.surface,
     borderRadius: theme.radii.lg,
-    padding: theme.spacing.lg,
-    gap: theme.spacing.md,
+    padding: 12,
+    gap: 10,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
   sectionTitle: {
-    ...theme.typography.h2,
+    fontSize: 16,
+    fontWeight: "700",
     color: theme.colors.textPrimary,
   },
   visitRow: {
     flexDirection: "row",
-    gap: theme.spacing.md,
+    gap: 10,
     alignItems: "center",
   },
   visitDot: {

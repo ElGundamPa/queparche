@@ -1,8 +1,10 @@
 import React, { useMemo, useCallback, useEffect } from "react";
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView } from "react-native";
-import { useRouter } from "expo-router";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, Platform } from "react-native";
+import { useRouter, Stack } from "expo-router";
 import { Image } from "expo-image";
 import { useNavigation } from "expo-router";
+import { ArrowLeft } from "lucide-react-native";
+import * as Haptics from "expo-haptics";
 
 import { useChatStore } from "@/store/chatStore";
 import { useAuthStore } from "@/hooks/use-auth-store";
@@ -156,34 +158,94 @@ export default function ChatsScreen() {
 
   if (!currentUser) {
     return (
-      <SafeAreaView style={styles.screen}>
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyTitle}>Debes iniciar sesión para ver tus chats.</Text>
-        </View>
-      </SafeAreaView>
+      <>
+        <Stack.Screen
+          options={{
+            headerShown: true,
+            headerTransparent: true,
+            headerTitle: "",
+            headerStyle: {
+              backgroundColor: "transparent",
+            },
+            headerLeft: () => (
+              <TouchableOpacity
+                onPress={() => {
+                  if (Platform.OS !== "web") {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }
+                  if (router.canGoBack()) {
+                    router.back();
+                  } else {
+                    router.replace("/(tabs)");
+                  }
+                }}
+                style={styles.backButton}
+                activeOpacity={0.7}
+              >
+                <ArrowLeft size={24} color="#FFFFFF" strokeWidth={2.5} />
+              </TouchableOpacity>
+            ),
+          }}
+        />
+        <SafeAreaView style={styles.screen}>
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyTitle}>Debes iniciar sesión para ver tus chats.</Text>
+          </View>
+        </SafeAreaView>
+      </>
     );
   }
 
   return (
-    <SafeAreaView style={styles.screen}>
-      <FlatList
-        data={chats}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={chats.length === 0 ? styles.emptyContainer : styles.listContent}
-        ListHeaderComponent={() => (
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Chats recientes 🤙🔥</Text>
-          </View>
-        )}
-        ListEmptyComponent={() => (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>Habla suavete con tus bros 🤙</Text>
-          </View>
-        )}
-        showsVerticalScrollIndicator={false}
+    <>
+      <Stack.Screen
+        options={{
+          headerShown: true,
+          headerTransparent: true,
+          headerTitle: "",
+          headerStyle: {
+            backgroundColor: "transparent",
+          },
+          headerLeft: () => (
+            <TouchableOpacity
+              onPress={() => {
+                if (Platform.OS !== "web") {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+                if (router.canGoBack()) {
+                  router.back();
+                } else {
+                  router.replace("/(tabs)");
+                }
+              }}
+              style={styles.backButton}
+              activeOpacity={0.7}
+            >
+              <ArrowLeft size={24} color="#FFFFFF" strokeWidth={2.5} />
+            </TouchableOpacity>
+          ),
+        }}
       />
-    </SafeAreaView>
+      <SafeAreaView style={styles.screen}>
+        <FlatList
+          data={chats}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          contentContainerStyle={chats.length === 0 ? styles.emptyContainer : styles.listContent}
+          ListHeaderComponent={() => (
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Chats recientes</Text>
+            </View>
+          )}
+          ListEmptyComponent={() => (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyTitle}>Habla con tus amigos</Text>
+            </View>
+          )}
+          showsVerticalScrollIndicator={false}
+        />
+      </SafeAreaView>
+    </>
   );
 }
 
@@ -192,9 +254,20 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#000000",
   },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+  },
   sectionHeader: {
     paddingHorizontal: 20,
-    paddingTop: 24,
+    paddingTop: Platform.OS === "ios" ? 100 : 80,
     paddingBottom: 20,
   },
   sectionTitle: {
